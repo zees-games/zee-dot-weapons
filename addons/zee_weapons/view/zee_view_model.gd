@@ -112,6 +112,23 @@ var _look := Vector2.ZERO
 var _aim_held: bool = false
 var _aim_fraction: float = 0.0
 
+## The vertical field of view, in degrees, the hands are drawn at whatever the camera's is.
+## 0 draws them through the camera's own lens.
+##
+## [b]Why the hands have a lens of their own.[/b] Every pose in [ZeeWeaponArtTable] was set
+## under a 90-degree camera, and the games hold them under 83, 92 and 100: through a wider
+## lens the same pose is a smaller gun drifting toward the middle of the screen, through a
+## narrower one a bigger gun pushed to the edge, and a zoom to aim magnified the gun with
+## the world. This genre draws the hands at a fixed field of view for exactly that reason.
+##
+## [b]Done with a scale, not a second camera.[/b] Scaling the view model's X and Y by
+## `tan(camera / 2) / tan(this / 2)` in the camera's own space, with Z left alone, gives
+## every vertex the screen position it would have under this lens -- exactly, because a
+## perspective projection divides X and Y by Z and nothing else. Depth is untouched, so the
+## hands still sort against the world the way they did, and the muzzle a tracer starts from
+## is read through the same transform, so a shot still leaves the drawn barrel.
+@export var hands_fov: float = 90.0
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -202,6 +219,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		# Legitimate, and the fists are exactly this: a weapon with hands and no object
 		# in them. Not a failure and not worth a log line.
 		_muzzle = Vector3.ZERO
+		_reach_for(art)
 		model_ready.emit(_id, null)
 		return DotResult.success(null)
 
@@ -232,8 +250,61 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		if part != null:
 			_attachments.append(part)
 
+	_reach_for(art)
 	model_ready.emit(_id, _weapon)
 	return DotResult.success(null)
+
+
+## Puts the hands on this weapon, measured from the weapon itself: the right hand 30% of
+## the way from its back end to its front along the barrel, the left at 62%, both just under
+## the middle of it. Duck-typed, because a game may hang its own arms here.
+##
+## [b]Measured, because the holder's origin is not the grip for every weapon.[/b] The long
+## ones are slid back along their length in the art table, and a right hand put on the
+## origin closed on air a hand's length in front of the stock.
+func _reach_for(art: ZeeWeaponArt) -> void:
+	if _arms == null or not _arms.has_method("reach"):
+		return
+
+	var forward := (_holder.transform.basis * Vector3.FORWARD).normalized()
+	var grip := _holder.transform.origin
+	var fore := grip + forward * 0.2
+
+	if _weapon != null:
+		var box := _bounds_here(_weapon)
+		if box.size != Vector3.ZERO:
+			var t_min := INF
+			var t_max := -INF
+			for i in 8:
+				var t := box.get_endpoint(i).dot(forward)
+				t_min = minf(t_min, t)
+				t_max = maxf(t_max, t)
+			var centre := box.get_center()
+			var along := centre.dot(forward)
+			var under := Vector3.DOWN * box.size.y * 0.2
+			grip = centre + forward * (lerpf(t_min, t_max, 0.30) - along) + under
+			fore = centre + forward * (lerpf(t_min, t_max, 0.62) - along) + under
+
+	_arms.call("reach", grip, fore, art.pose)
+
+
+## The bounds of every mesh under [param node], in this view model's own space.
+func _bounds_here(node: Node) -> AABB:
+	var out := AABB()
+	var seeded := false
+	for mi: MeshInstance3D in _meshes(node):
+		if mi.mesh == null:
+			continue
+		var to_here := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != self:
+			if walk is Node3D:
+				to_here = (walk as Node3D).transform * to_here
+			walk = walk.get_parent()
+		var b := to_here * mi.mesh.get_aabb()
+		out = b if not seeded else out.merge(b)
+		seeded = true
+	return out
 
 
 ## Removes whatever is in hand.
@@ -329,6 +400,7 @@ func _process(delta: float) -> void:
 	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched)
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
+	_apply_hands_lens()
 	# Through a scope the weapon is not drawn at all: the scope IS the view, and a barrel
 	# across the bottom of it is a weapon held in front of the eye that should be at it.
 	# The arms are the view model's own child rather than the animated one's (they follow
@@ -338,6 +410,23 @@ func _process(delta: float) -> void:
 	_animated.visible = not scoped
 	if _arms != null:
 		_arms.visible = not scoped
+
+
+## The scale that draws the hands at [member hands_fov]. See there.
+func _apply_hands_lens() -> void:
+	# Only under a camera: the scale is in the camera's own space, and a view model hung
+	# anywhere else is in some other space where this would be a distortion, not a lens.
+	var camera := get_parent() as Camera3D
+	var k := lens_scale(camera.fov, hands_fov) if camera != null else 1.0
+	scale = Vector3(k, k, 1.0)
+
+
+## How much X and Y are scaled to draw at [param hands] degrees under a [param camera]-degree
+## lens. 1 when either is not a usable field of view.
+static func lens_scale(camera: float, hands: float) -> float:
+	if hands <= 1.0 or hands >= 179.0 or camera <= 1.0 or camera >= 179.0:
+		return 1.0
+	return tan(deg_to_rad(camera) * 0.5) / tan(deg_to_rad(hands) * 0.5)
 
 
 # --- Aiming -----------------------------------------------------------------

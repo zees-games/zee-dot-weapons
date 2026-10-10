@@ -65,6 +65,17 @@ var _right: Node3D = null
 var _pose: StringName = &"rifle"
 var _built: bool = false
 
+## How thick a forearm is drawn, in metres, when the arms reach for a weapon.
+##
+## [b]Set apart from the length, which is the whole point of reaching.[/b] [member arm_scale]
+## scaled both, so a box long enough to get from below the screen to the grip was a slab as
+## thick as the gun was long, and in every pose it covered the weapon it held.
+@export_range(0.02, 0.2, 0.005) var forearm_width: float = 0.07
+
+var _reach_grip := Vector3.ZERO
+var _reach_muzzle := Vector3.ZERO
+var _reaching := false
+
 
 # --- Building ---------------------------------------------------------------
 
@@ -125,6 +136,111 @@ func build() -> DotResult:
 	return DotResult.success(null)
 
 
+## Points each arm from a shoulder below the screen to its hand on the weapon: the right
+## hand on [param grip], the left on [param fore] (both in the view model's space, which is
+## this node's parent's).
+##
+## [b]Why the arms reach rather than take a pose.[/b] [method set_pose]'s placements are
+## numbers written for where each pose class put a weapon. A weapon whose own art moved it
+## (most of them shift along their length) was held a hand's width from its grip, and when
+## the poses were moved the arms stayed where they were, across the gun. Reaching makes
+## the hands meet the weapon wherever its art puts it.
+func reach(grip: Vector3, fore: Vector3, pose: StringName) -> void:
+	_pose = pose
+	_reach_grip = grip
+	_reach_muzzle = fore
+	_reaching = true
+
+	if not _built:
+		return
+
+	var hands := _hands_for(pose, grip, fore)
+
+	if _right != null:
+		_right.transform = _span(_right, hands["right_shoulder"], hands["right"])
+
+	if _left != null:
+		_left.transform = _span(_left, hands["left_shoulder"], hands["left"])
+		# One hand on a knife or a grenade: the other has nothing to hold, and a forearm
+		# raised at nothing in the corner of the screen read as a loose box in every render.
+		_left.visible = not (pose in [&"melee", &"thrown"])
+
+
+## Where each shoulder is and where each hand goes, for a weapon held at [param grip].
+##
+## The shoulders are below the bottom of the screen and in front of the near plane (a
+## shoulder behind it is sliced, and the cut face draws as a pale slab), so an arm enters
+## from the bottom edge and only its forearm is seen. Two-handed poses put the left hand on
+## the fore-end; a pistol cups the right hand; a melee weapon or a throwable has one hand.
+static func _hands_for(pose: StringName, grip: Vector3, fore: Vector3) -> Dictionary:
+	var right := grip
+	var left: Vector3
+
+	match pose:
+		&"pistol":
+			left = grip + Vector3(-0.03, -0.035, -0.01)
+		&"melee", &"thrown":
+			left = Vector3(-0.17, -0.23, -0.36)
+		_:
+			left = fore
+
+	return {
+		"right": right,
+		"right_shoulder": Vector3(right.x + 0.08, -0.44, minf(right.z + 0.24, -0.09)),
+		"left": left,
+		"left_shoulder": Vector3(minf(left.x - 0.05, -0.05), -0.46, minf(left.z + 0.26, -0.09)),
+	}
+
+
+## The transform that stretches [param arm] from [param shoulder] to [param hand], at
+## [member forearm_width], measured from the arm's own mesh rather than from a number about
+## it: its top end is the shoulder, its bottom end the hand.
+func _span(arm: Node3D, shoulder: Vector3, hand: Vector3) -> Transform3D:
+	var box := _local_bounds(arm)
+	var length := maxf(box.size.y, 0.001)
+	var down := shoulder - hand
+
+	if down.length() < 0.001:
+		return arm.transform
+
+	# Y runs hand -> shoulder over the mesh's height; X and Z are its width, squared off
+	# against the camera's back axis (or its right, for an arm pointing straight back).
+	var y_col := down / length
+	var axis := down.normalized()
+	var side := axis.cross(Vector3.BACK)
+	if side.length() < 0.01:
+		side = axis.cross(Vector3.RIGHT)
+	side = side.normalized()
+	var depth := side.cross(axis).normalized()
+	var x_col := side * (forearm_width / maxf(box.size.x, 0.001))
+	var z_col := depth * (forearm_width / maxf(box.size.z, 0.001))
+	var basis := Basis(x_col, y_col, z_col)
+	var centre := box.get_center()
+
+	# The mesh's top face (its shoulder end) on the shoulder, centred in X and Z.
+	var origin := shoulder + arm_offset - basis * Vector3(centre.x, box.end.y, centre.z)
+	return Transform3D(basis, origin)
+
+
+## The arm's own bounds, in its local space, from the meshes under it.
+static func _local_bounds(arm: Node3D) -> AABB:
+	var out := AABB()
+	var seeded := false
+	var meshes: Array[MeshInstance3D] = []
+	if arm is MeshInstance3D:
+		meshes.append(arm as MeshInstance3D)
+	for child in arm.find_children("*", "MeshInstance3D", true, false):
+		meshes.append(child as MeshInstance3D)
+	for mi in meshes:
+		if mi.mesh == null:
+			continue
+		var to_arm := Transform3D.IDENTITY if mi == arm else arm.global_transform.affine_inverse() * mi.global_transform if arm.is_inside_tree() else mi.transform
+		var b := to_arm * mi.mesh.get_aabb()
+		out = b if not seeded else out.merge(b)
+		seeded = true
+	return out if seeded else AABB(Vector3(-0.2, -1.0, -0.2), Vector3(0.4, 1.0, 0.4))
+
+
 ## How the arms are held. Unknown names fall back to the rifle pose.
 func set_pose(pose: StringName) -> void:
 	_pose = pose
@@ -132,9 +248,15 @@ func set_pose(pose: StringName) -> void:
 	if not _built:
 		return
 
+	# A weapon the view model told us where to hold wins over the pose's fixed numbers.
+	if _reaching:
+		reach(_reach_grip, _reach_muzzle, pose)
+		return
+
 	var placement := _placement_for(pose)
 
 	if _left != null:
+		_left.visible = true
 		_left.transform = _arm_transform(placement["left"], placement["left_rotation"])
 
 	if _right != null:

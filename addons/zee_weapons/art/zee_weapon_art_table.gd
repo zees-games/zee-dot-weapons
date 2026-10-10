@@ -70,15 +70,15 @@ const POSE_THROWN := &"thrown"
 static func pose_offset(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
-			return Vector3(0.11, -0.15, -0.42)
+			return Vector3(0.17, -0.19, -0.42)
 		POSE_HEAVY:
-			return Vector3(0.13, -0.17, -0.58)
+			return Vector3(0.21, -0.23, -0.58)
 		POSE_MELEE:
-			return Vector3(0.17, -0.11, -0.50)
+			return Vector3(0.23, -0.16, -0.50)
 		POSE_THROWN:
-			return Vector3(0.11, -0.15, -0.36)
+			return Vector3(0.17, -0.19, -0.36)
 		_:
-			return Vector3(0.12, -0.16, -0.48)
+			return Vector3(0.19, -0.21, -0.48)
 
 
 ## How much a weapon of each pose is shrunk to stand in for a narrower field of view.
