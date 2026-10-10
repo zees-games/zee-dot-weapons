@@ -479,8 +479,18 @@ static func validate() -> DotResult:
 				String(id)
 			)
 
+	# Another pack's art is that pack's to check; this is about entries written in this file.
+	var sourced := {}
+
+	for name: StringName in _sources:
+		var source: Callable = _sources[name]
+		if source.is_valid():
+			for art: ZeeWeaponArt in source.call():
+				if art != null:
+					sourced[art.id] = true
+
 	for id: StringName in built.keys():
-		if not ZeeWeaponIds.all().has(id):
+		if not ZeeWeaponIds.all().has(id) and not sourced.has(id):
 			return DotResult.fail(
 				DotError.CODE_INVALID,
 				"Art for '%s', which is not a weapon in this pack." % String(id),

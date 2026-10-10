@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 191
+const CHECKS := 192
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -132,6 +132,7 @@ func _other_packs() -> void:
 		ZeeWeaponPack.weapons().size() == before + 1)
 	_check("the pistol is still this pack's pistol", (table[&"pistol"] as DotWeaponDef).display_name == ZeeWeaponPack.pistol().display_name)
 	_check("its art is in the table", ZeeWeaponArtTable.get_art(&"test_sidearm") != null)
+	_check("and the table still validates with it there", ZeeWeaponArtTable.validate().ok)
 	_check("and it sounds like the class it asked for",
 		ZeeWeaponSound.class_for(&"test_sidearm", DotWeaponOutcome.KIND_SHOT) == ZeeWeaponSound.MAGNUM)
 

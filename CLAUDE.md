@@ -134,7 +134,7 @@ A four-bit counter *inside* the snapshot cannot do any of those. A watcher who m
 
 ## A second pack adds to this one
 
-Every rig's default catalogue is `ZeeWeaponPack.catalogue()`, and every world model, figure and loot table in a game asks `ZeeWeaponArtTable` for art, so a second pack (game-zombie-zone asked for one, 2026-10-10) had two bad choices: be handed to every one of those by each game, or fork this one. `ZeeWeaponPack.add_source`, `ZeeWeaponArtTable.add_source` and `ZeeWeaponSound.set_class` are the third: a pack registers a callable once, in its own install, and `weapons()` / `all()` append what it returns. **This pack's ids win**: a source bringing `pistol` loses it with a WARN, because changing what "pistol" means on a server that had it is a change nobody asked for. The sources are statics, so they outlive a game in a shell that loads the next; a game installs a pack when it loads and removes it when it goes, as with `ZeeModelCache.set_asset_root`. The suite's "another pack adds to this one" registers a source with a new id and a clashing one and checks both rules and the removal.
+Every rig's default catalogue is `ZeeWeaponPack.catalogue()`, and every world model, figure and loot table in a game asks `ZeeWeaponArtTable` for art, so a second pack (game-zombie-zone asked for one, 2026-10-10) had two bad choices: be handed to every one of those by each game, or fork this one. `ZeeWeaponPack.add_source`, `ZeeWeaponArtTable.add_source` and `ZeeWeaponSound.set_class` are the third: a pack registers a callable once, in its own install, and `weapons()` / `all()` append what it returns. **This pack's ids win**: a source bringing `pistol` loses it with a WARN, because changing what "pistol" means on a server that had it is a change nobody asked for. The sources are statics, so they outlive a game in a shell that loads the next; a game installs a pack when it loads and removes it when it goes, as with `ZeeModelCache.set_asset_root`. The suite's "another pack adds to this one" registers a source with a new id and a clashing one and checks both rules, that `ZeeWeaponArtTable.validate()` (which refuses art for an id this pack does not define) still passes with another pack's art in the table, and the removal.
 
 ## Validating
 
@@ -149,7 +149,7 @@ done
 timeout 300 godot --headless --path . res://examples/zee_selftest.tscn
 ```
 
-**20 sections, 191 checks.** The suite counts both, and the second is the one that catches what the first cannot: a script error aborts the section it is in, and the section counter is already satisfied because the section announced itself on the way in.
+**20 sections, 192 checks.** The suite counts both, and the second is the one that catches what the first cannot: a script error aborts the section it is in, and the section counter is already satisfied because the section announced itself on the way in.
 
 ### And then look at it, because the suite cannot
 
