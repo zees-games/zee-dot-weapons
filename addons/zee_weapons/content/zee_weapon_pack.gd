@@ -67,7 +67,7 @@ static func catalogue(damage: Dictionary = {}) -> DotWeaponCatalogue:
 static func weapons(types: Dictionary = {}) -> Array[DotWeaponDef]:
 	var t := types if not types.is_empty() else ZeeWeaponDamage.table()
 
-	return [
+	var out: Array[DotWeaponDef] = [
 		fists(t), knife(t), shiv(t), hatchet(t), mallet(t), pickaxe(t), spade(t),
 		pistol(t), revolver(t), machine_pistol(t), derringer(t),
 		smg(t), carbine(t), rifle(t), bullpup(t), battle_rifle(t), burst_rifle(t),
@@ -75,6 +75,77 @@ static func weapons(types: Dictionary = {}) -> Array[DotWeaponDef]:
 		sniper(t), minigun(t), launcher(t), beamer(t), charge_rifle(t),
 		frag(t), sticky(t),
 	]
+
+	return _with_sources(out, t)
+
+
+# --- Other packs ------------------------------------------------------------
+#
+# [b]A second pack adds to this one rather than replacing it.[/b] Every rig, world model
+# and loot table in a game asks this file for "the weapons" (a rig's default catalogue is
+# [method catalogue]), so a pack that wanted its weapons usable had either to be handed to
+# every one of those by the game, or to be here. Here is one line in the pack's own
+# install and nothing in any game. The art goes the same way, through
+# [method ZeeWeaponArtTable.add_source].
+#
+# [b]This pack's own weapons win an id.[/b] A source that brings an id already taken
+# (by this pack or by a source added earlier) loses it, with a WARN, rather than quietly
+# changing what "pistol" means on a server that had it.
+
+const CHANNEL := "zee.pack"
+
+## name -> Callable(types: Dictionary) -> Array[DotWeaponDef], in the order added.
+static var _sources: Dictionary = {}
+
+
+## Adds another pack's weapons after this one's, under [param name]. Adding the same name
+## again replaces that source.
+static func add_source(name: StringName, source: Callable) -> void:
+	_sources[name] = source
+
+
+static func remove_source(name: StringName) -> void:
+	_sources.erase(name)
+
+
+static func source_names() -> PackedStringArray:
+	var out := PackedStringArray()
+
+	for name: StringName in _sources:
+		out.append(String(name))
+
+	return out
+
+
+static func _with_sources(own: Array[DotWeaponDef], types: Dictionary) -> Array[DotWeaponDef]:
+	if _sources.is_empty():
+		return own
+
+	var taken := {}
+
+	for def in own:
+		taken[def.id] = true
+
+	for name: StringName in _sources:
+		var source: Callable = _sources[name]
+
+		if not source.is_valid():
+			continue
+
+		for def: DotWeaponDef in source.call(types):
+			if def == null:
+				continue
+
+			if taken.has(def.id):
+				DotLog.warn(CHANNEL, "a weapon pack brought an id that is already taken", {
+					"pack": String(name), "id": String(def.id),
+				})
+				continue
+
+			taken[def.id] = true
+			own.append(def)
+
+	return own
 
 
 ## Weapons by id, for a module holding an id that needs the row.

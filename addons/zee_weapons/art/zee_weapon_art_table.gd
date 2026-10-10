@@ -141,7 +141,7 @@ static func table() -> Dictionary:
 
 
 static func all() -> Array[ZeeWeaponArt]:
-	return [
+	var out: Array[ZeeWeaponArt] = [
 		fists(), knife(), shiv(), hatchet(), mallet(), pickaxe(), spade(),
 		pistol(), revolver(), machine_pistol(), derringer(),
 		smg(), carbine(), rifle(), bullpup(), battle_rifle(), burst_rifle(),
@@ -149,6 +149,39 @@ static func all() -> Array[ZeeWeaponArt]:
 		sniper(), minigun(), launcher(), beamer(), charge_rifle(),
 		frag(), sticky(),
 	]
+
+	var taken := {}
+
+	for art in out:
+		taken[art.id] = true
+
+	# Another pack's art, after this one's; the same rule as [method ZeeWeaponPack.add_source].
+	for name: StringName in _sources:
+		var source: Callable = _sources[name]
+
+		if not source.is_valid():
+			continue
+
+		for art: ZeeWeaponArt in source.call():
+			if art != null and not taken.has(art.id):
+				taken[art.id] = true
+				out.append(art)
+
+	return out
+
+
+## name -> Callable() -> Array[ZeeWeaponArt].
+static var _sources: Dictionary = {}
+
+
+## Adds another pack's art under [param name], beside its weapons
+## ([method ZeeWeaponPack.add_source]).
+static func add_source(name: StringName, source: Callable) -> void:
+	_sources[name] = source
+
+
+static func remove_source(name: StringName) -> void:
+	_sources.erase(name)
 
 
 ## One weapon's art, or null.

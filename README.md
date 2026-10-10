@@ -100,6 +100,17 @@ Ammunition is only sent to the weapon's owner, since exact magazine counts would
 ### Rollback
 `rig.snapshot()` and `rig.restore()` save and restore the arsenal, the bash cooldown, the charge and the previous command's buttons. Wrap a reconciliation replay in `rig.begin_replay()` / `rig.end_replay()` so the simulation runs again without drawing anything twice.
 
+### Adding a second weapon pack
+Another pack adds its weapons to this one instead of replacing it, so every rig, world model and loot table in a game gets them with no change to the game:
+
+```gdscript
+ZeeWeaponPack.add_source(&"my_pack", func(types: Dictionary) -> Array[DotWeaponDef]: return MyPack.weapons(types))
+ZeeWeaponArtTable.add_source(&"my_pack", func() -> Array[ZeeWeaponArt]: return MyPack.art())
+ZeeWeaponSound.set_class(&"my_rifle", ZeeWeaponSound.RIFLE)
+```
+
+An id this pack already has stays this pack's (the other one is skipped, with a warning). `remove_source(&"my_pack")` takes them out again. [zed-dot-weapons](https://github.com/gamemann/zed-dot-weapons) is a pack that does this.
+
 ## Requirements
 Godot **4.7**, plus three addons: [dot-core](https://github.com/modcommunity/dot-core), [dot-combat](https://github.com/modcommunity/dot-combat) and [dot-weapon](https://github.com/modcommunity/dot-weapon). dot-net, dot-player, dot-player-controller and dot-player-char are optional and are used if present.
 

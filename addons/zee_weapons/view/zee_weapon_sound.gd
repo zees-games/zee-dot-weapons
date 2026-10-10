@@ -182,6 +182,15 @@ const WEAPONS := {
 static var _baked: Dictionary = {}
 static var _overrides: Dictionary = {}
 
+## Another pack's weapons, by id -> class ([method set_class]).
+static var _classes: Dictionary = {}
+
+
+## Says which class [param id] sounds like: how a second pack's weapons get a report of
+## their own instead of the fallback's.
+static func set_class(id: StringName, sound_class: StringName) -> void:
+	_classes[id] = sound_class
+
 
 ## The class [param id]'s use of [param kind] sounds like.
 ##
@@ -198,6 +207,9 @@ static func class_for(id: StringName, kind: StringName) -> StringName:
 
 	if WEAPONS.has(id):
 		return WEAPONS[id]
+
+	if _classes.has(id):
+		return _classes[id]
 
 	return LAUNCHER if kind == DotWeaponOutcome.KIND_SPAWN else RIFLE
 

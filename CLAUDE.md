@@ -132,6 +132,10 @@ A four-bit counter *inside* the snapshot cannot do any of those. A watcher who m
 
 `ZeeWeaponArtTable` and `ZeeViewArms` name `res://assets/…`, and a game delivered as a dot-cloud pack has its vendored copy under `res://dot_cloud/<id>/<version>/assets/…` instead, while the client shell carries this addon and no art. Every weapon then loads invisible, with one WARN each. `ZeeModelCache.set_asset_root(root)` rewrites `res://assets/` paths under `root` at the one place every model is loaded; the table is untouched, because it must read the same in a game that builds the art in. A game sets it when it loads (game-playground: `PlaygroundPaths.root()`) and puts `res://` back when it goes, because a static outlives one game in a shell that loads the next. Found by game-playground on 2026-10-03; mg-smash-copter vendors the art the same way and sets it in `ScClient` since 2026-10-03 (mg-smash-copter eebb467). `zee_selftest`'s art section asserts `resolve` and that `scene()` loads through it (armed). A shell exported before this method existed cannot load a game that calls it.
 
+## A second pack adds to this one
+
+Every rig's default catalogue is `ZeeWeaponPack.catalogue()`, and every world model, figure and loot table in a game asks `ZeeWeaponArtTable` for art, so a second pack (game-zombie-zone asked for one, 2026-10-10) had two bad choices: be handed to every one of those by each game, or fork this one. `ZeeWeaponPack.add_source`, `ZeeWeaponArtTable.add_source` and `ZeeWeaponSound.set_class` are the third: a pack registers a callable once, in its own install, and `weapons()` / `all()` append what it returns. **This pack's ids win**: a source bringing `pistol` loses it with a WARN, because changing what "pistol" means on a server that had it is a change nobody asked for. The sources are statics, so they outlive a game in a shell that loads the next; a game installs a pack when it loads and removes it when it goes, as with `ZeeModelCache.set_asset_root`. The suite's "another pack adds to this one" registers a source with a new id and a clashing one and checks both rules and the removal.
+
 ## Validating
 
 ```bash
@@ -145,7 +149,7 @@ done
 timeout 300 godot --headless --path . res://examples/zee_selftest.tscn
 ```
 
-**19 sections, 183 checks.** The suite counts both, and the second is the one that catches what the first cannot: a script error aborts the section it is in, and the section counter is already satisfied because the section announced itself on the way in.
+**20 sections, 191 checks.** The suite counts both, and the second is the one that catches what the first cannot: a script error aborts the section it is in, and the section counter is already satisfied because the section announced itself on the way in.
 
 ### And then look at it, because the suite cannot
 
