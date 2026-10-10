@@ -175,7 +175,8 @@ static var _sources: Dictionary = {}
 
 
 ## Adds another pack's art under [param name], beside its weapons
-## ([method ZeeWeaponPack.add_source]).
+## ([method ZeeWeaponPack.add_source], whose rule applies: a static method's Callable, never
+## a lambda, or the process aborts at exit).
 static func add_source(name: StringName, source: Callable) -> void:
 	_sources[name] = source
 

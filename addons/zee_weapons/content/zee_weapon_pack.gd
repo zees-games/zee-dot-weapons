@@ -100,6 +100,12 @@ static var _sources: Dictionary = {}
 
 ## Adds another pack's weapons after this one's, under [param name]. Adding the same name
 ## again replaces that source.
+##
+## [b]Pass a static method's Callable (`Callable(MyPack, &"weapons")`), never a lambda.[/b]
+## This is a static variable, which the engine clears after it has freed the scripts at exit,
+## and a lambda held here outlives the script it was written in: the process aborts on the way
+## out (`double free or corruption`, exit 134) after everything else has passed. Measured with
+## zed-dot-weapons, three runs of each, every lambda run aborting and every static one clean.
 static func add_source(name: StringName, source: Callable) -> void:
 	_sources[name] = source
 
