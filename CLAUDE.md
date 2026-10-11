@@ -1,6 +1,6 @@
 # zee-dot-weapons
 
-A weapons pack on top of dot-weapon: twenty-seven weapons (blasters, melee, grenades, fists) as one catalogue a server validates, plus the half dot-weapon deliberately refuses: a first-person view model with arms, a third-person world model, procedural animation, tracers, flashes, baked sounds, and the replicated fields that let a watcher see somebody else's gun move. Ships its CC0 art. On `gamemann`, like the games, not `modcommunity` (`origin` is `git@github.com:gamemann/zee-dot-weapons.git`).
+A weapons pack on top of dot-weapon: twenty-seven weapons (blasters, melee, grenades, fists) as one catalogue a server validates, plus the half dot-weapon deliberately refuses: a first-person view model with arms, a third-person world model, procedural animation, tracers, flashes, baked sounds, and the replicated fields that let a watcher see somebody else's gun move. Ships its CC0 art. On `zees-games`, like the games, not `modcommunity` (`origin` is `git@github.com:zees-games/zee-dot-weapons.git`).
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-weapon/CLAUDE.md). This file is only what is specific to this repository. **The detail is in [docs/](docs/README.md).**
 
