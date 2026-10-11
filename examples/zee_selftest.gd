@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 205
+const CHECKS := 212
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -49,6 +49,7 @@ func _ready() -> void:
 	_rig()
 	_rig_carrier()
 	_rig_rollback()
+	_tick_rate()
 	_view_models()
 	_aim()
 	_effects()
@@ -1372,6 +1373,75 @@ static func _wav_peak(wav: AudioStreamWAV) -> float:
 	for i in range(0, wav.data.size() - 1, 2):
 		peak = maxi(peak, absi(wav.data.decode_s16(i)))
 	return float(peak) / 32767.0
+
+
+## The pack is written at 64 Hz; on a 128 Hz server it must take the same wall-clock time.
+##
+## [b]Before dot-weapon honoured authored_tick_rate, every zee weapon fired, reloaded and
+## deployed twice as fast in the 128 Hz sandbox[/b], and the only part anybody had patched
+## was the grenade fuse, by hand, in that game. These compare a second at each rate.
+func _tick_rate() -> void:
+	_begin("the pack keeps its timing at 128 Hz")
+
+	var unstamped := 0
+	for def in ZeeWeaponPack.weapons():
+		if def.authored_tick_rate != ZeeWeaponPack.TICK_RATE:
+			unstamped += 1
+	_check("every row says it was written at %d Hz" % ZeeWeaponPack.TICK_RATE, unstamped == 0)
+
+	var shots: Array[int] = []
+	var bashes: Array[int] = []
+	var reload_seconds: Array[float] = []
+	var deploy_fraction: Array[float] = []
+
+	for rate: int in [64, 128]:
+		var rig := _make_rig()
+		rig.tick_rate = rate
+		rig.setup()
+		rig.give(ZeeWeaponIds.SMG)
+		_check_quiet("the arsenal runs at the rig's rate", rig.arsenal.tick_rate == rate)
+
+		# Two seconds idle, so nothing is still deploying, then one second on the trigger.
+		_run_rig(rig, 0, rate * 2, 0)
+		shots.append(_run_rig(rig, rate * 2, rate * 3, DotWeaponCommand.BUTTON_ATTACK))
+
+		var def := rig.current_def()
+		reload_seconds.append(float(rig.arsenal.ticks_for(def, def.reload_ticks)) / float(rate))
+
+		# The alt-fire pressed on every other tick for two seconds: the rig's own cooldown,
+		# which the arsenal never sees, decides how many land.
+		var count: Array[int] = [0]
+		rig.bashed.connect(func(_o: DotWeaponOutcome) -> void: count[0] += 1)
+		var from := rate * 4
+		for tick in range(from, from + rate * 2):
+			var command := DotWeaponCommand.new()
+			command.buttons = DotWeaponCommand.BUTTON_ALT if (tick - from) % 2 == 0 else 0
+			var ctx := DotWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
+			ctx.authority = true
+			rig.simulate_tick(command, tick, ctx)
+		bashes.append(count[0])
+
+		# A quarter of a second into a switch, the drawn picture is as far along at either rate.
+		rig.give(ZeeWeaponIds.PISTOL)
+		var at := rate * 7
+		var cmd := DotWeaponCommand.new()
+		cmd.slot = ZeeWeaponIds.SLOT_SIDEARM
+		rig.simulate_tick(cmd, at, DotWeaponContext.make(1, at, Vector3.ZERO, Vector3.FORWARD))
+		_run_rig(rig, at + 1, at + rate / 8, 0)
+		deploy_fraction.append(rig._deploy_fraction(at + rate / 8 - 1))
+
+		_cleanup(rig)
+
+	_check("a second of fire is as many shots at 128 Hz as at 64 (%d, %d)" % [shots[0], shots[1]],
+		shots[0] > 1 and shots[0] == shots[1])
+	_check("a reload takes the same time (%.3f s, %.3f s)" % [reload_seconds[0], reload_seconds[1]],
+		absf(reload_seconds[0] - reload_seconds[1]) < 1.0 / 64.0)
+	_check("the bash cools down in the same time (%d, %d bashes)" % [bashes[0], bashes[1]],
+		bashes[0] > 1 and bashes[0] == bashes[1])
+	_check("the holster is drawn as far along after the same time (%.2f, %.2f)" % [deploy_fraction[0], deploy_fraction[1]],
+		absf(deploy_fraction[0] - deploy_fraction[1]) < 0.1)
+
+	_end()
 
 
 func _make_rig() -> ZeeWeaponRig:

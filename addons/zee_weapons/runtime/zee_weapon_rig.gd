@@ -65,7 +65,14 @@ enum Role {
 ## resolving its own damage.
 @export var authority: bool = false
 
-@export_range(1, 240, 1) var tick_rate: int = 64
+## The rate the carrier's world runs at, handed to the arsenal, which scales every row
+## written at another rate to it. Forwarded on every assignment, not only at [method setup],
+## because a client learns its server's rate after its rig may already exist.
+@export_range(1, 240, 1) var tick_rate: int = 64:
+	set(value):
+		tick_rate = value
+		if arsenal != null:
+			arsenal.tick_rate = value
 
 @export_group("Content")
 
@@ -421,7 +428,9 @@ func _advance_bash(
 	var outcome := _bash.use(context)
 
 	if outcome.used:
-		_bash_ready_tick = tick + maxi(1, outcome.cooldown_ticks)
+		# The bash's cooldown is in the row's ticks, like any outcome's; the arsenal does not
+		# see this outcome, so the rig scales it by the same rule the arsenal would.
+		_bash_ready_tick = tick + maxi(1, arsenal.ticks_for(def, outcome.cooldown_ticks))
 
 	return outcome
 
@@ -566,7 +575,7 @@ func _charge_fraction(tick: int, def: DotWeaponDef) -> float:
 	if _charge_started < 0 or def == null or not def.is_charged():
 		return 0.0
 
-	return def.charge_at(tick - _charge_started)
+	return arsenal.charge_for(def, tick - _charge_started)
 
 
 ## Tracks a charged weapon's draw, so the view model can pull the weapon back.
@@ -601,7 +610,7 @@ func _notice_holster(tick: int) -> void:
 		var carried := arsenal.current()
 		_switch_started = tick
 		_switch_deploying = false
-		_switch_ticks = maxi(1, carried.def.holster_ticks if carried != null else 1)
+		_switch_ticks = maxi(1, arsenal.ticks_for(carried.def, carried.def.holster_ticks) if carried != null else 1)
 
 	_was_switching = switching
 
@@ -628,8 +637,11 @@ func _on_reload_started(slot: int) -> void:
 	_reload_started = _last_tick
 	_reload_ticks = maxi(
 		1,
-		carried.def.reload_ticks if not carried.def.reload_per_round
-		else carried.def.reload_start_ticks
+		arsenal.ticks_for(
+			carried.def,
+			carried.def.reload_ticks if not carried.def.reload_per_round
+			else carried.def.reload_start_ticks
+		)
 	)
 
 
@@ -662,7 +674,7 @@ func _on_switched(_from: int, to: int) -> void:
 
 	_switch_started = _last_tick
 	_switch_deploying = true
-	_switch_ticks = maxi(1, carried.def.deploy_ticks if carried != null else 1)
+	_switch_ticks = maxi(1, arsenal.ticks_for(carried.def, carried.def.deploy_ticks) if carried != null else 1)
 
 
 # --- Context ----------------------------------------------------------------

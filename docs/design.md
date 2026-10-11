@@ -20,7 +20,11 @@ The roles were assigned from measurements, not filenames: the two widest short m
 
 ## Durations are ticks
 
-Every duration in `ZeeWeaponPack` is in ticks, converted once at the top (`rpm_ticks`), and the table is tuned for `ZeeWeaponPack.TICK_RATE`, 64. Nothing in the pack, the rig or dot-weapon's arsenal scales a duration by the running tick rate, so on a 128 Hz server every weapon fires, reloads and deploys twice as fast in wall-clock time. That is open ([CLAUDE.md](../CLAUDE.md#not-here-yet)).
+Every duration in `ZeeWeaponPack` is in ticks, converted once at the top (`rpm_ticks`, `sec_ticks`), and the table is tuned for `ZeeWeaponPack.TICK_RATE`, 64. Every builder (`_gun`, `_melee`, `_thrown`) stamps `DotWeaponDef.authored_tick_rate = TICK_RATE` on its row, and dot-weapon's arsenal scales each count to the rate it runs at (see dot-weapon's [design](../../dot-weapon/docs/design.md#ticks-never-seconds)). A weapon therefore fires, reloads and deploys in the same wall-clock time at 128 Hz as at 64, and a grenade's fuse leaves the behaviour in the running rate's ticks, so a game flies it as given.
+
+Two things outside the arsenal read a duration, and both go through it: the rig's presentation (deploy, holster and reload fractions, the charge pull-back) uses `arsenal.ticks_for` and `charge_for`, and the bash, which the rig runs itself, scales its `bash_cooldown_ticks` through `ticks_for` too. Reading a raw field there draws a reload that ends halfway through its animation at 128 Hz.
+
+`bloom_recovery` is written per tick at 64 (`x / TICK_RATE`), and the hitscan behaviour scales it per tick to the running rate. Before the field existed, the sandbox at 128 Hz ran every zee weapon at double speed and had patched only grenade fuses by hand.
 
 ## The alt-fire is not a fork
 

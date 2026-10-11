@@ -47,7 +47,7 @@ Short forms; the reasoning is in the linked file.
 
 - Simulation never touches art: a headless build never reaches `ZeeModelCache`. [design](docs/design.md#the-one-idea)
 - `ZeeWeaponArtTable` is the only file with a filename; weapons are named by role. [design](docs/design.md#weapons-are-named-by-role-never-by-model)
-- Durations are ticks at `ZeeWeaponPack.TICK_RATE` (64), through `rpm_ticks`; never seconds. [design](docs/design.md#durations-are-ticks)
+- Durations are ticks at `ZeeWeaponPack.TICK_RATE` (64), through `rpm_ticks`; never seconds. Every builder sets `authored_tick_rate = TICK_RATE`, and the arsenal scales to the running rate; the rig reads a duration only through `arsenal.ticks_for` / `charge_for`, never the raw field. [design](docs/design.md#durations-are-ticks)
 - The bash is the rig's own state machine; dot-weapon is not forked. [design](docs/design.md#the-alt-fire-is-not-a-fork)
 - The previous command's buttons and the bash cooldown are in the rig's snapshot. [design](docs/design.md#what-the-rig-counts-and-why)
 - The holster is seen by `is_switching()` going true; `switched` fires between holster and deploy. [design](docs/design.md#what-the-rig-counts-and-why)
@@ -85,6 +85,5 @@ Short forms; the reasoning is in the linked file.
 
 ## Not here yet
 
-- **Nothing scales by tick rate.** The pack is authored in 64 Hz ticks and neither `ZeeWeaponRig` nor dot-weapon's arsenal rescales a duration, so on a 128 Hz server (game-playground) every weapon fires, reloads and deploys twice as fast. Open; queued as `playground-zee-tickrate-1`, to be fixed in the arsenal rather than per game. [design](docs/design.md#durations-are-ticks)
 - **No recorded sounds.** Every report is baked; `ZeeWeaponSound.set_stream` takes a recording per weapon when there is one to vendor. [shot-fx](docs/shot-fx.md#sounds-are-baked)
 - **Client shells.** A game calling `set_asset_root`, `view_punch` or the reaching arms needs a client shell built with a zee-dot-weapons that has them, or the zee pack delivered as an addon release; a game calls newer methods through `has_method`.

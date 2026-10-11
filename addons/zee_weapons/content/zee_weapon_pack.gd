@@ -25,11 +25,14 @@ extends RefCounted
 
 ## The tick rate everything below is tuned for.
 ##
-## Every duration below is a count of ticks at this rate, and nothing rescales it: not the
-## pack, not [ZeeWeaponRig], and not DotWeaponArsenal, whose [code]tick_rate[/code] is read
-## by nothing. So a server at another rate runs these weapons at another speed — at 128 Hz
-## each fires, reloads and deploys in half the wall-clock time. That is open, not intended
-## (queue item `playground-zee-tickrate-1`, to scale in the arsenal for every pack).
+## Every duration below is a count of ticks at this rate, and every row says so in
+## [member DotWeaponDef.authored_tick_rate]. dot-weapon's arsenal scales each count to the
+## rate it runs at, so a weapon fires, reloads and deploys in the same wall-clock time on
+## a 128 Hz server as on a 64 Hz one. Without that field the rows ran at double speed at
+## 128 Hz, and the one game at that rate had patched only its grenade fuses by hand.
+##
+## [b]Set on the row by every builder below, not afterwards in [method weapons][/b], so a
+## game that builds one weapon on its own ([code]ZeeWeaponPack.rifle()[/code]) gets it too.
 const TICK_RATE := 64
 
 const HITSCAN := "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
@@ -856,6 +859,7 @@ static func _gun(
 	interval: int
 ) -> DotWeaponDef:
 	var def := DotWeaponDef.new()
+	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = HITSCAN
@@ -885,6 +889,7 @@ static func _melee(
 	rays: int
 ) -> DotWeaponDef:
 	var def := DotWeaponDef.new()
+	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = MELEE
@@ -921,6 +926,7 @@ static func _thrown(
 	t: Dictionary, id: StringName, name: String, fuse_seconds: float
 ) -> DotWeaponDef:
 	var def := DotWeaponDef.new()
+	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = THROWN
