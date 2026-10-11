@@ -109,6 +109,16 @@ extends Resource
 ## Seconds from hip to full aim (and back).
 @export_range(0.01, 1.0, 0.01) var aim_time: float = 0.16
 
+@export_group("Motion")
+
+## The draw, as [ZeeWeaponPose] keys ([t, position, rotation degrees] from holstered at 0 to
+## in hand at 1). Empty takes [constant ZeeWeaponPose.DRAW_KEYS].
+@export var draw_keys: Array = []
+
+## The reload, as [ZeeWeaponPose] keys over its fraction. Empty takes the pose's
+## ([method ZeeWeaponArtTable.reload_keys]).
+@export var reload_keys: Array = []
+
 @export_group("Third person")
 
 ## Where the weapon sits relative to the character's hand attachment point.

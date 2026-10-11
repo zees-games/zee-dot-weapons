@@ -116,6 +116,14 @@ var _grip_axis := Vector3.UP
 var _fore_axis := Vector3.FORWARD
 var _grip_radius := 0.0
 
+## Where the magazine sits at rest, in the Aim node's space (the well), or NAN-free zero
+## with [member _has_well] false when the weapon has none.
+var _well := Vector3.ZERO
+var _has_well := false
+
+## The last reload fraction handed in, for the hand that fetches the magazine.
+var _reload_fraction: float = 0.0
+
 ## Where the muzzle sits in the weapon's own space, measured when the model was built.
 var _muzzle := Vector3.ZERO
 
@@ -268,6 +276,11 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_id = art.id
 	_pose.weight = art.weight
 	_pose.feel = maxf(0.0, feel)
+	_pose.tunables.draw_keys = art.draw_keys if not art.draw_keys.is_empty() \
+		else ZeeWeaponPose.DRAW_KEYS
+	_pose.tunables.reload_keys = art.reload_keys if not art.reload_keys.is_empty() \
+		else ZeeWeaponArtTable.reload_keys(art.pose)
+	_reload_fraction = 0.0
 
 	_holder.transform = art.view_transform()
 	# The kick turns about the hand. The holder's origin is where the art puts the weapon
@@ -379,6 +392,9 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					grip_axis = (up + forward * 0.3).normalized()
 					radius = box.size.x * 0.3
 
+	_has_well = art.has_magazine() and _weapon != null
+	_well = to_aim * art.magazine_transform().origin
+
 	_grip_at = to_aim * grip
 	_fore_at = to_aim * fore
 	_grip_axis = (to_aim.basis * grip_axis).normalized()
@@ -419,14 +435,38 @@ func _place_hands() -> void:
 		return
 	var aim := _aim_node.transform if _aim_node != null else Transform3D.IDENTITY
 	var pose := _art.pose if _art.has_model() else &"fists"
+	var fore := aim * _support_hand()
 	# A game's own arms may answer the older three-argument reach; they get no axes.
 	if _arms.get_method_argument_count("reach") >= 6:
 		_arms.call(
-			"reach", aim * _grip_at, aim * _fore_at, pose,
+			"reach", aim * _grip_at, fore, pose,
 			aim.basis * _grip_axis, aim.basis * _fore_axis, _grip_radius
 		)
 	else:
-		_arms.call("reach", aim * _grip_at, aim * _fore_at, pose)
+		_arms.call("reach", aim * _grip_at, fore, pose)
+
+
+## Where the support hand is this frame: on the fore-end, or, through a reload of a weapon with
+## a magazine, to the well, down with the old magazine and out of sight, back up with the next
+## one, and back to the fore-end. Keys in the same shape as the gun's, so the two agree.
+func _support_hand() -> Vector3:
+	var f := _reload_fraction
+	if not _has_well or f <= 0.0 or f >= 1.0:
+		return _fore_at
+	var below := _well + Vector3(0.0, -0.24, 0.08)
+	var keys := [
+		[0.0, _fore_at, Vector3.ZERO],
+		[0.08, _fore_at, Vector3.ZERO],
+		[0.16, _well + Vector3(0.0, -0.03, 0.0), Vector3.ZERO],
+		[0.30, below, Vector3.ZERO],
+		[0.40, below + Vector3(0.0, -0.04, 0.0), Vector3.ZERO],
+		[0.50, _well + Vector3(0.0, -0.08, 0.0), Vector3.ZERO],
+		[0.58, _well + Vector3(0.0, -0.035, 0.0), Vector3.ZERO],
+		[0.64, _well + Vector3(0.0, -0.03, 0.0), Vector3.ZERO],
+		[0.78, _fore_at, Vector3.ZERO],
+		[1.0, _fore_at, Vector3.ZERO],
+	]
+	return ZeeWeaponPose.sample_keys(keys, f)[0]
 
 
 ## Removes whatever is in hand.
@@ -492,8 +532,9 @@ func on_deploy(fraction: float) -> void:
 ##
 ## The magazine is animated from the same number, so a game driving one drives both.
 func on_reload(fraction: float) -> void:
-	_pose.set_reload(_reload_curve(fraction))
-	_animate_magazine(fraction)
+	_reload_fraction = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
+	_pose.set_reload(_reload_fraction)
+	_animate_magazine(_reload_fraction)
 
 
 ## A charged weapon's draw, 0 to 1.
@@ -665,23 +706,6 @@ func _look_delta() -> Vector2:
 
 # --- Internals --------------------------------------------------------------
 
-## Where in the reload the weapon is at its lowest.
-##
-## [b]A curve rather than the raw fraction[/b], because a reload that tips further and
-## further over for two and a half seconds and then snaps upright is the single most
-## obviously wrong thing a view model can do. This goes down, holds, and comes back.
-static func _reload_curve(fraction: float) -> float:
-	var f := clampf(fraction, 0.0, 1.0)
-
-	if f < 0.25:
-		return f / 0.25
-
-	if f > 0.75:
-		return maxf(0.0, (1.0 - f) / 0.25)
-
-	return 1.0
-
-
 ## Drops the magazine out and slides a fresh one in, if there is one to animate.
 func _animate_magazine(fraction: float) -> void:
 	if _magazine == null or _art == null:
@@ -690,16 +714,21 @@ func _animate_magazine(fraction: float) -> void:
 	var f := clampf(fraction, 0.0, 1.0)
 	var rest := _art.magazine_transform()
 
-	# Out in the first third, absent through the middle, back in over the last third.
-	# The middle is where the hand would be fetching the next one, and a magazine
-	# visible throughout is a reload that reads as the gun shaking.
+	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*): out while the gun rolls onto
+	# its side (0.10-0.28), absent while the hand fetches the next one, up into the well with
+	# the hand (0.48-0.58) and seated by the jolt at 0.60. A magazine visible throughout is a
+	# reload that reads as the gun shaking.
 	var drop := 0.0
-	if f < 0.34:
-		drop = f / 0.34
-	elif f < 0.62:
+	if f < 0.10:
+		drop = 0.0
+	elif f < 0.28:
+		drop = (f - 0.10) / 0.18
+	elif f < 0.48:
 		drop = 1.0
+	elif f < 0.58:
+		drop = 1.0 - (f - 0.48) / 0.10
 	else:
-		drop = maxf(0.0, (1.0 - f) / 0.38)
+		drop = 0.0
 
 	_magazine.visible = drop < 0.98
 	_magazine.transform = Transform3D(

@@ -100,17 +100,13 @@ class Tunables extends RefCounted:
 	## lying about where the next shot lands.
 	var camera_share: float = 0.3
 
-	## Metres the weapon drops when fully holstered.
-	var holster_drop: float = 0.35
+	## The draw, as keys from fully holstered (0) to in hand (1). See [method sample_keys].
+	## The holster plays the same keys backwards. Replaced per weapon by the view model from
+	## [member ZeeWeaponArt.draw_keys].
+	var draw_keys: Array = ZeeWeaponPose.DRAW_KEYS
 
-	## Degrees it rolls away as it goes down.
-	var holster_roll: float = 55.0
-
-	## Metres it drops at the deepest point of a reload.
-	var reload_drop: float = 0.12
-
-	## Degrees it tips over at the deepest point of a reload.
-	var reload_tip: float = 32.0
+	## The reload, as keys over its fraction, 0 to 1. Empty is no reload motion.
+	var reload_keys: Array = ZeeWeaponPose.RELOAD_KEYS_RIFLE
 
 	## Metres it is pulled back at full charge.
 	var charge_pull: float = 0.06
@@ -120,6 +116,117 @@ class Tunables extends RefCounted:
 
 	## How quickly a landing dip recovers, per second.
 	var landing_response: float = 8.0
+
+
+# --- Authored motion --------------------------------------------------------
+#
+# [b]Keys, not springs, for the two things a hand does on purpose.[/b] Sway, bob and kick are
+# reactions and a spring is the right model for a reaction. A draw and a reload are actions:
+# they have a shape somebody chose (the gun comes up and settles past its mark, rolls onto
+# its side to show the magazine well, jolts when the new one seats, racks), and a spring or a
+# single eased number can only ever produce "goes down and comes back". The reload this
+# replaced was exactly that, and pitched the barrel 32 degrees at the sky.
+#
+# Each key is [t, position in metres, rotation in degrees (pitch up, yaw muzzle-left, roll
+# counter-clockwise)], applied about the grip ([member pivot]) on top of the hip hold. Read
+# through a Catmull-Rom curve, so motion carries through a key instead of stopping on it.
+
+## Out of the holster: up from below, rolled away, settling just past the mark.
+const DRAW_KEYS := [
+	[0.0, Vector3(0.03, -0.30, 0.06), Vector3(-35.0, -12.0, 50.0)],
+	[0.35, Vector3(0.015, -0.10, 0.03), Vector3(-12.0, -6.0, 18.0)],
+	[0.70, Vector3(0.0, 0.006, 0.0), Vector3(3.0, 0.0, -4.0)],
+	[0.86, Vector3(0.0, -0.002, 0.0), Vector3(-0.8, 0.0, 1.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A long gun: rolled onto its side and dipped so the magazine well faces the eye while the
+## old magazine drops (0.10-0.28), held while the hand fetches the next, a jolt as it seats
+## (0.55-0.60), rolled back, and a rack (0.84-0.90).
+const RELOAD_KEYS_RIFLE := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.10, Vector3(-0.02, -0.03, 0.01), Vector3(8.0, 8.0, -28.0)],
+	[0.20, Vector3(-0.03, -0.045, 0.015), Vector3(12.0, 10.0, -40.0)],
+	[0.42, Vector3(-0.035, -0.05, 0.015), Vector3(10.0, 12.0, -42.0)],
+	[0.55, Vector3(-0.03, -0.042, 0.01), Vector3(14.0, 10.0, -38.0)],
+	[0.60, Vector3(-0.03, -0.03, 0.01), Vector3(9.0, 10.0, -35.0)],
+	[0.74, Vector3(-0.01, -0.02, 0.0), Vector3(4.0, 4.0, -14.0)],
+	[0.84, Vector3(0.0, -0.012, 0.025), Vector3(-3.0, 2.0, -4.0)],
+	[0.90, Vector3(0.0, -0.008, -0.006), Vector3(2.0, 0.0, 0.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A pistol: tipped muzzle-up and turned in, so the grip's foot (the magazine well) comes to
+## the other hand; a smaller roll; the slide racked at the end.
+const RELOAD_KEYS_PISTOL := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.12, Vector3(-0.03, -0.01, 0.01), Vector3(20.0, 14.0, -18.0)],
+	[0.45, Vector3(-0.035, -0.012, 0.012), Vector3(24.0, 16.0, -22.0)],
+	[0.56, Vector3(-0.03, -0.02, 0.01), Vector3(26.0, 14.0, -20.0)],
+	[0.62, Vector3(-0.03, -0.004, 0.01), Vector3(18.0, 14.0, -18.0)],
+	[0.78, Vector3(-0.01, -0.01, 0.0), Vector3(6.0, 5.0, -6.0)],
+	[0.87, Vector3(0.0, -0.006, 0.02), Vector3(-2.0, 2.0, 0.0)],
+	[0.93, Vector3(0.0, -0.004, -0.004), Vector3(1.5, 0.0, 0.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A heavy weapon: lower and slower to roll, heaved back up at the end.
+const RELOAD_KEYS_HEAVY := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.14, Vector3(-0.02, -0.06, 0.02), Vector3(4.0, 6.0, -20.0)],
+	[0.45, Vector3(-0.03, -0.075, 0.025), Vector3(6.0, 9.0, -30.0)],
+	[0.58, Vector3(-0.03, -0.07, 0.02), Vector3(9.0, 9.0, -28.0)],
+	[0.63, Vector3(-0.03, -0.055, 0.02), Vector3(5.0, 8.0, -26.0)],
+	[0.80, Vector3(-0.01, -0.03, 0.0), Vector3(2.0, 3.0, -10.0)],
+	[0.90, Vector3(0.0, 0.006, 0.0), Vector3(-2.0, 0.0, 1.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+
+## Samples [param keys] at [param t]: returns [position, rotation in degrees]. Nothing it is
+## handed can make it return a non-finite value; empty or malformed keys sample as rest.
+##
+## [b]Catmull-Rom with the tangents scaled to each span[/b] (keys are not evenly spaced), and
+## zero at the two ends, so a motion starts and finishes at rest and runs through the keys
+## in between rather than stopping at each, which is what made eased-per-segment curves read
+## as a robot.
+static func sample_keys(keys: Array, t: float) -> Array:
+	var rest := [Vector3.ZERO, Vector3.ZERO]
+	if keys.size() < 2 or not is_finite(t):
+		return rest
+
+	var f := clampf(t, 0.0, 1.0)
+	var i := 0
+	while i < keys.size() - 2 and f > float(keys[i + 1][0]):
+		i += 1
+
+	var k0: Array = keys[maxi(i - 1, 0)]
+	var k1: Array = keys[i]
+	var k2: Array = keys[i + 1]
+	var k3: Array = keys[mini(i + 2, keys.size() - 1)]
+	var t1 := float(k1[0])
+	var t2 := float(k2[0])
+	var span := t2 - t1
+	if span <= 0.0001:
+		return [k2[1], k2[2]]
+	var u := clampf((f - t1) / span, 0.0, 1.0)
+
+	var out := []
+	for field in [1, 2]:
+		var p1: Vector3 = k1[field]
+		var p2: Vector3 = k2[field]
+		var m1 := Vector3.ZERO
+		var m2 := Vector3.ZERO
+		if i > 0:
+			m1 = (p2 - (k0[field] as Vector3)) / maxf(t2 - float(k0[0]), 0.0001) * span
+		if i + 2 < keys.size():
+			m2 = ((k3[field] as Vector3) - p1) / maxf(float(k3[0]) - t1, 0.0001) * span
+		var u2 := u * u
+		var u3 := u2 * u
+		var v := p1 * (2.0 * u3 - 3.0 * u2 + 1.0) + m1 * (u3 - 2.0 * u2 + u) \
+			+ p2 * (-2.0 * u3 + 3.0 * u2) + m2 * (u3 - u2)
+		out.append(v if v.is_finite() else Vector3.ZERO)
+	return out
 
 
 # --- Configuration ----------------------------------------------------------
@@ -172,7 +279,7 @@ var _rng := RandomNumberGenerator.new()
 ## 0 fully holstered, 1 fully deployed.
 var _deploy: float = 1.0
 
-## 0 not reloading, 1 at the deepest point.
+## How far through a reload, 0 to 1. 0 and 1 are both at rest.
 var _reload: float = 0.0
 
 ## 0 to 1, a charged weapon's draw.
@@ -296,12 +403,12 @@ func set_deploy(fraction: float) -> void:
 	_deploy = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else _deploy
 
 
-## How far into a reload, 0 to 1.
 ## How far into aiming, 0 to 1. The view model eases it; the pose only applies it.
 func set_aim(fraction: float) -> void:
 	_aim = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
 
 
+## How far through a reload, 0 to 1: the raw fraction, which the reload keys shape.
 func set_reload(fraction: float) -> void:
 	_reload = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else _reload
 
@@ -340,17 +447,24 @@ func offset() -> Transform3D:
 
 	var position := Vector3(
 		_sway.x * steady,
-		_sway.y * steady - _landing - holstered * tunables.holster_drop - _reload * tunables.reload_drop,
+		_sway.y * steady - _landing,
 		_kick + _charge * tunables.charge_pull
 	)
 
 	position += _bob_offset() * steady
 	position += aim_shift * _aim
 
-	var basis := Basis.from_euler(Vector3(
-		deg_to_rad(_reload * tunables.reload_tip),
-		0.0,
-		deg_to_rad(_roll + holstered * tunables.holster_roll)
+	var basis := Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(_roll)))
+
+	# The authored half: the draw and the reload, both turned about the grip like the kick.
+	# A rotation about this transform's origin is a rotation about the camera, which swings
+	# the whole gun across the screen rather than turning it in the hand.
+	var drawn := sample_keys(tunables.draw_keys, _deploy) if holstered > 0.0 else [Vector3.ZERO, Vector3.ZERO]
+	var reloaded := sample_keys(tunables.reload_keys, _reload) if _reload > 0.0 else [Vector3.ZERO, Vector3.ZERO]
+	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3)
+	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3)
+	var hand := Basis.from_euler(Vector3(
+		deg_to_rad(acted.x), deg_to_rad(acted.y), deg_to_rad(acted.z)
 	))
 
 	# The kick turns about the grip, inside everything else: sway and bob carry the
@@ -361,7 +475,7 @@ func offset() -> Transform3D:
 		deg_to_rad(_kick_rotation.z)
 	))
 	var about_grip := Transform3D(Basis.IDENTITY, pivot) \
-		* Transform3D(kick, Vector3.ZERO) \
+		* Transform3D(hand * kick, Vector3.ZERO) \
 		* Transform3D(Basis.IDENTITY, -pivot)
 
 	return Transform3D(basis, position) * about_grip
@@ -386,13 +500,18 @@ func _advance_sway(step: float, look_delta: Vector2) -> void:
 	rate.y = clampf(rate.y, -1.0, 1.0)
 
 	var scale := tunables.sway_amount * maxf(0.1, weight) * maxf(0.0, feel)
-	# Negated: the weapon lags the turn, so turning right leaves it behind on the left.
-	var target := Vector2(-rate.x * scale, -rate.y * scale)
+	# The weapon lags the turn, so turning right leaves it behind on the left. Yaw is
+	# positive to the LEFT (the controller's Basis(UP, yaw)), so a right turn is a negative
+	# rate and the lag is that same sign on X: this was negated, and the contact sheet's
+	# "turning right" frame showed the gun leading the turn. Pitch is up-positive, so a look
+	# up leaves the weapon low: negated.
+	var target := Vector2(rate.x * scale, -rate.y * scale)
 
 	var follow := _smoothing(step, tunables.sway_response)
 	_sway = _sway.lerp(target, follow)
+	# Rolls into the turn: clockwise (negative) turning right, which is a negative rate.
 	_roll = lerpf(
-		_roll, -rate.x * tunables.sway_roll * maxf(0.1, weight) * maxf(0.0, feel), follow
+		_roll, rate.x * tunables.sway_roll * maxf(0.1, weight) * maxf(0.0, feel), follow
 	)
 
 
@@ -429,9 +548,14 @@ func _bob_offset() -> Vector3:
 
 	# A figure of eight: the lateral term runs at half the vertical's frequency, which
 	# is what a walk cycle does — two footfalls per left-right sway.
+	#
+	# [b]sin squared, not |sin|.[/b] |sin| has the same period and a corner at every footfall:
+	# the weapon's vertical speed reverses in one frame, which at 144 fps is a 5 mm jolt per
+	# step, found by the suite's jolt check. sin squared turns over smoothly.
+	var s := sin(phase)
 	return Vector3(
 		sin(phase * 0.5) * scale * tunables.bob_lateral,
-		absf(sin(phase)) * scale - scale * 0.5,
+		s * s * scale - scale * 0.5,
 		0.0
 	)
 

@@ -128,6 +128,20 @@ static func pose_scale(pose: StringName) -> float:
 			return 0.60
 
 
+## The reload keys a weapon of each pose uses unless its art names its own. Melee and
+## throwables do not reload, so they have none.
+static func reload_keys(pose: StringName) -> Array:
+	match pose:
+		POSE_PISTOL:
+			return ZeeWeaponPose.RELOAD_KEYS_PISTOL
+		POSE_HEAVY:
+			return ZeeWeaponPose.RELOAD_KEYS_HEAVY
+		POSE_MELEE, POSE_THROWN:
+			return []
+		_:
+			return ZeeWeaponPose.RELOAD_KEYS_RIFLE
+
+
 ## How much a weapon of each pose sways, before its own [member ZeeWeaponArt.weight].
 static func pose_weight(pose: StringName) -> float:
 	match pose:

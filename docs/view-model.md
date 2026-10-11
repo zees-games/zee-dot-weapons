@@ -35,6 +35,20 @@ The blasters point along **+Z** and Godot's forward is **-Z**. The melee models 
 - A game whose camera culls layer 20 does not see the hands; set `view_layer` to a layer it draws, or 0 for none (and no key light).
 - Unshaded materials were the other option and are wrong: a flat gun reads as a sticker over the screen.
 
+## Authored motion: the draw and the reload are keys, the reactions are springs
+
+Sway, bob and kick are reactions, and a spring is the right model of a reaction. A draw and a reload are actions with a shape somebody chose, and a spring or one eased number can only ever produce "goes down and comes back". The reload this replaced was that: `reload_tip` pitched the barrel 32 degrees nose-up, which read as the gun flipping at the sky.
+
+- **Keys** (`ZeeWeaponPose.DRAW_KEYS`, `RELOAD_KEYS_RIFLE` / `_PISTOL` / `_HEAVY`) are `[t, position m, rotation deg (pitch up, yaw muzzle-left, roll counter-clockwise)]`, read by `sample_keys` through a Catmull-Rom curve with span-scaled tangents and zero tangents at the ends: motion carries through a key instead of stopping on it (an ease per segment reads as a robot), and starts and ends at rest. Malformed keys or a NaN sample as rest.
+- **A reload rolls onto its side and dips** so the magazine well faces the eye while the magazine drops (0.10-0.28), holds while the hand fetches the next (the support hand goes to the well, down out of frame and back, `_support_hand`), jolts as it seats (0.55-0.60), rolls back and racks (0.84-0.90). The magazine's own timing in `_animate_magazine` is cut to the same fractions; change one, change both.
+- **Every authored rotation turns about the grip** (`pivot`), like the kick: about the transform's origin it is about the camera, which swings the whole gun across the screen.
+- **Per weapon**: `ZeeWeaponArt.draw_keys` / `reload_keys`; empty takes `DRAW_KEYS` and the pose's (`ZeeWeaponArtTable.reload_keys`). Melee and throwables have none. The view model hands the pose the raw reload fraction now; the keys shape it.
+- **The holster plays the draw keys backwards**, because the rig hands a deploy fraction that falls.
+
+**The suite checks for jolts, not speed** ("never jolts"): a draw and a reload at 144 fps while walking and turning, measuring the change in each frame's movement. A fast smooth motion changes speed a little a frame; a corner in a curve changes it at once. It found the bob's `|sin|`, a corner at every footfall (5 mm a frame at 144 fps); the bob is `sin²` now.
+
+**The sway lags the turn.** The controller's yaw is positive to the left, so a right turn is a negative rate, and the sway had the sign that made the gun lead the turn (the sheet's "turning right" frame); the suite now asserts the gun goes left on a right turn.
+
 ## Recoil
 
 Each of these is its own line in `ZeeWeaponPose`:

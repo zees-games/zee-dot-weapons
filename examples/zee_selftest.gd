@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 192
+const CHECKS := 199
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -591,6 +591,60 @@ func _pose_stability() -> void:
 
 	var apart := (slow.offset().origin - fast.offset().origin).length()
 	_check("sway lands in the same place at 60 fps and at 144", apart < 0.005)
+
+	# Turning right (yaw falling: the controller's yaw is positive to the left) leaves the
+	# weapon behind on the left. It led the turn until the contact sheet showed it.
+	var turning := ZeeWeaponPose.make(1.0)
+	for i in range(12):
+		turning.advance(1.0 / 60.0, Vector2(-3.0, 0.0), 0.0, true)
+	_check("turning right leaves the weapon behind, to the left (x %.3f)" % turning.offset().origin.x,
+		turning.offset().origin.x < -0.005)
+
+	# The authored keys start and finish at rest, and read through no NaN.
+	_check("a reload's keys are at rest at 0 and at 1",
+		ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 0.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 1.0)[1].length() < 0.0001)
+	_check("the draw's keys are at rest in hand",
+		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
+	var odd: Vector3 = ZeeWeaponPose.sample_keys([[0.0, Vector3.ONE, Vector3.ONE]], NAN)[0]
+	_check("malformed keys sample as rest", odd == Vector3.ZERO)
+
+	# [b]No jitter.[/b] A whole draw and reload at 144 fps while walking and turning (a kick is
+	# meant to be fast, and the recoil sections hold it): no frame may move the weapon further than a smooth motion of that size could,
+	# and every key is a curve, so no frame jumps. A step in a key table or a spring that
+	# rings shows here as one frame far bigger than the frames either side of it.
+	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY]:
+		var smooth := ZeeWeaponPose.make(1.0)
+		smooth.pivot = Vector3(0.19, -0.23, -0.40)
+		smooth.tunables.reload_keys = keys
+		var dt := 1.0 / 144.0
+		smooth.set_deploy(0.0)
+		var last := smooth.offset()
+		var last_step := Vector3.ZERO
+		var last_turn := 0.0
+		var worst_move := 0.0
+		var worst_turn := 0.0
+		var frames := 720
+		for i in range(frames):
+			var t := float(i) / float(frames)
+			smooth.set_deploy(clampf(t * 4.0, 0.0, 1.0))
+			smooth.set_reload(clampf((t - 0.3) * 2.0, 0.0, 1.0))
+			smooth.advance(dt, Vector2(-0.6, 0.1), 5.0, true)
+			var now := smooth.offset()
+			# The change in the frame's movement, not the movement: a fast smooth motion
+			# changes speed a little each frame, a jolt changes it all at once.
+			var step := now.origin - last.origin
+			var turn := rad_to_deg(
+				now.basis.get_rotation_quaternion().angle_to(last.basis.get_rotation_quaternion())
+			)
+			if i > 1:
+				worst_move = maxf(worst_move, (step - last_step).length())
+				worst_turn = maxf(worst_turn, absf(turn - last_turn))
+			last_step = step
+			last_turn = turn
+			last = now
+		_check("a draw and reload at 144 fps never jolts (worst %.5f m, %.3f deg a frame on a frame)" % [worst_move, worst_turn],
+			worst_move < 0.0015 and worst_turn < 0.3 and last.origin.is_finite())
 
 	_end()
 

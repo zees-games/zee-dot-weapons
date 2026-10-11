@@ -26,7 +26,7 @@ True of every game on the pack: the rig decided the use, the server resolved the
 
 ## "Doesn't look like a production shooter" (2026-10-10)
 
-Christian's clip of arena put six things side by side with a production shooter's view model: the rifle pointed straight down the view so only its back face showed; it sat almost centred; the arms were unlit pale slabs with no hand; the gun flipped bright and dark walking through shade; the reload pitched the barrel 32 degrees at the sky; and every weapon moved by the same springs. None of it was reachable by the suite (192 checks, all green throughout). The contact sheet (`tools/screenshot.sh --sheet`) was built first so that each fix could be seen beside the one before; it also found that the arms did not move with the gun at all (a draw slid the rifle out of two hands holding nothing), and that the turning sway led the turn instead of lagging it.
+Christian's clip of arena put six things side by side with a production shooter's view model: the rifle pointed straight down the view so only its back face showed; it sat almost centred; the arms were unlit pale slabs with no hand; the gun flipped bright and dark walking through shade; the reload pitched the barrel 32 degrees at the sky; and every weapon moved by the same springs. None of it was reachable by the suite (192 checks, all green throughout). The contact sheet (`tools/screenshot.sh --sheet`) was built first so that each fix could be seen beside the one before; it also found that the arms did not move with the gun at all (a draw slid the rifle out of two hands holding nothing), and that the turning sway led the turn instead of lagging it. The suite's new jolt check then found the bob's `|sin|` corner at every footfall.
 
 ## Found in a game
 
