@@ -68,12 +68,34 @@ signal model_ready(id: StringName, weapon: Node3D)
 		visible_model = value
 		visible = value
 
+@export_group("Light")
+
+## The render layer (1 to 20) every mesh of the view model and its arms is drawn on, and the
+## only one [member view_light_energy]'s light reaches. 0 leaves the meshes on the default
+## layer and builds no light. A game whose camera culls this layer does not see its hands.
+@export_range(0, 20) var view_layer: int = 20
+
+## The energy of the view model's own key light, a directional light that turns with the
+## camera and lights nothing but the view model. 0 builds none.
+##
+## [b]Why the hands carry a light.[/b] The world's sun is fixed in the world, so turning
+## round puts it behind the gun and leaves the gun lit by the ambient alone, flat and dark;
+## turning back, bright. A key light from over the shoulder keeps the side the hold shows
+## lit and shaded the same way whichever way the player faces. The world's lights still
+## reach the view model too, so it is not lifted out of the place it is in.
+@export_range(0.0, 4.0, 0.05) var view_light_energy: float = 0.3
+
+## Where that light comes from, as Euler degrees of the light's own rotation in the camera's
+## space: above, behind and to the left, so it rakes across the right side the hold shows.
+@export var view_light_rotation: Vector3 = Vector3(-38.0, -32.0, 0.0)
+
 @export_group("Feel")
 
 ## Scales sway, bob and kick for everything this rig draws.
 @export_range(0.0, 3.0, 0.05) var feel: float = 1.0
 
 var _arms: ZeeViewArms = null
+var _light: DirectionalLight3D = null
 var _animated: Node3D = null
 var _aim_node: Node3D = null
 var _holder: Node3D = null
@@ -168,6 +190,7 @@ func _build_structure() -> void:
 	if show_arms:
 		_build_arms()
 
+	_build_light()
 	_built = true
 
 
@@ -180,6 +203,7 @@ func _build_arms() -> void:
 			return
 
 	_arms = ZeeViewArms.new()
+	_arms.view_layer = view_layer
 	_arms.name = "Arms"
 	_arms.skin = arm_skin
 	# [b]Under Animated, so the hands move with the gun.[/b] They were the view model's own
@@ -199,6 +223,23 @@ func _build_arms() -> void:
 			CHANNEL, "no first-person hands; drawing the weapon alone",
 			{"why": res.error.message}
 		)
+
+
+## The view model's own key light. See [member view_light_energy].
+func _build_light() -> void:
+	if view_light_energy <= 0.0 or view_layer <= 0:
+		return
+
+	_light = DirectionalLight3D.new()
+	_light.name = "ViewLight"
+	_light.light_energy = view_light_energy
+	_light.light_cull_mask = 1 << (view_layer - 1)
+	# A light for one object a metre from the eye casts nothing worth a shadow map, and it
+	# must not draw a second sun in the sky.
+	_light.shadow_enabled = false
+	_light.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY
+	_light.rotation_degrees = view_light_rotation
+	add_child(_light)
 
 
 # --- Weapons ----------------------------------------------------------------
@@ -682,6 +723,16 @@ func _set_on_top(root: Node) -> void:
 			material = (source as StandardMaterial3D).duplicate() \
 				if source is StandardMaterial3D else StandardMaterial3D.new()
 			mesh.material_override = material
+
+		# [b]A view model receives no shadow either.[/b] It is drawn where the camera is,
+		# so the world's shadow map darkens it whenever the player's head is in shade: the
+		# gun flipped bright and dark walking along a wall, which no real hand does. Lit,
+		# not flat: the sun, the ambient and the view's own key light all still shade it.
+		if material is BaseMaterial3D:
+			(material as BaseMaterial3D).disable_receive_shadows = true
+
+		if view_layer > 0:
+			mesh.layers = 1 << (view_layer - 1)
 
 
 func _meshes(node: Node) -> Array[MeshInstance3D]:

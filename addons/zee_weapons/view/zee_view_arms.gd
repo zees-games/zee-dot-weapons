@@ -60,6 +60,10 @@ const ARM_RIGHT := "arm-right"
 ## Nudge applied to both arms after the pose, for a game with a different camera height.
 @export var arm_offset: Vector3 = Vector3.ZERO
 
+## The render layer the arms are drawn on (1 to 20), set by [ZeeViewModel] to its own so its
+## key light reaches them. 0 leaves them on the default layer.
+var view_layer: int = 0
+
 var _left: Node3D = null
 var _right: Node3D = null
 var _pose: StringName = &"rifle"
@@ -437,6 +441,13 @@ func _set_on_top(root: Node) -> void:
 			material = (source as StandardMaterial3D).duplicate() \
 				if source is StandardMaterial3D else StandardMaterial3D.new()
 			mesh.material_override = material
+
+		# Receives no world shadow, for ZeeViewModel._set_on_top's reason.
+		if material is BaseMaterial3D:
+			(material as BaseMaterial3D).disable_receive_shadows = true
+
+		if view_layer > 0:
+			mesh.layers = 1 << (view_layer - 1)
 
 
 func _meshes(node: Node) -> Array[MeshInstance3D]:

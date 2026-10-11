@@ -26,6 +26,15 @@ The blasters point along **+Z** and Godot's forward is **-Z**. The melee models 
 - **The recoil spring is critically damped and solved in closed form.** Explicit Euler adds energy every step (a spring that grows over seconds of held fire, which reads as tuning). Semi-implicit Euler is unstable past w·dt ≈ 2, which a 10 fps frame is, and under critical damping bled about a third of every kick in its first step. The suite holds the trigger for thirty seconds, and asserts the climb drawn at 144 fps and at 30 is the climb asked for.
 - The view model and the arms cast no shadow; the world model does (`ZeeWorldModel.cast_shadow`).
 
+## Light: no world shadow, and a key light of its own
+
+**The view model receives no shadow** (`disable_receive_shadows` on every duplicated material, the arms' too). It is drawn where the camera is, so the world's shadow map darkened it whenever the player's head was in shade, and the gun flipped bright and dark walking along a wall. The sheet's "in shade" frame stands the player under a roof and must look like the hip frame.
+
+**It carries its own key light** (`ZeeViewModel.view_light_energy`, 0.3): a `DirectionalLight3D` under the view model, so it turns with the camera, raking from above, behind and left across the right side the hold shows. Its `light_cull_mask` is `view_layer` (20) and every view-model and arm mesh is drawn on that layer alone, so it lights nothing in the world; it has no shadow and `SKY_MODE_LIGHT_ONLY`, so it draws no second sun. Without it, turning away from the sun left the gun lit by the ambient alone, flat. The world's lights still reach the view model (their masks include every layer), so it stays in the place it is in. At 0.55 the gun and arms washed out to white under the range's sun; 0.3 keeps the faces distinct.
+
+- A game whose camera culls layer 20 does not see the hands; set `view_layer` to a layer it draws, or 0 for none (and no key light).
+- Unshaded materials were the other option and are wrong: a flat gun reads as a sticker over the screen.
+
 ## Recoil
 
 Each of these is its own line in `ZeeWeaponPose`:

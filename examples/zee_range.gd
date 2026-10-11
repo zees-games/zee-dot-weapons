@@ -532,7 +532,7 @@ func _capture_shot() -> void:
 ## [b]Why a sheet and not a screenshot.[/b] A view model is motion, and one frame of it at
 ## rest says nothing about the reload, the kick or the sway, which are where every
 ## complaint about this pack's hands came from (a reload that pointed the gun at the sky,
-## a kick nobody could see). Sixteen frames on one image are a review a person can do in
+## a kick nobody could see). Eighteen frames on one image are a review a person can do in
 ## a glance, and the same sixteen every time, so a before and an after can be laid side by
 ## side.
 const SHEET_FRAMES := [
@@ -544,6 +544,7 @@ const SHEET_FRAMES := [
 	["reload 90%", "reload:0.9"],
 	["walking", "walk"], ["turning right", "turn"],
 	["draw 30%", "deploy:0.3"], ["draw 70%", "deploy:0.7"],
+	["in shade", "shade"], ["aimed, fire 4", "aimfire:4"],
 ]
 
 ## The fixed step the sheet advances the view model by: 60 frames a second, so "fire 4"
@@ -592,6 +593,7 @@ func _run_sheet(prefix: String) -> void:
 	for i in range(30):
 		await RenderingServer.frame_post_draw
 
+	var roof: Node3D = null
 	for n in range(SHEET_FRAMES.size()):
 		if not only.is_empty() and not only.has(float(n)):
 			continue
@@ -627,6 +629,16 @@ func _run_sheet(prefix: String) -> void:
 			"deploy":
 				_view.on_deploy(arg)
 				_sheet_steps(2)
+			"shade":
+				# A roof between the sun and the player: the view model must look exactly as
+				# it does in the open, because the world's shadow map is not its business.
+				roof = _sheet_roof()
+				_sheet_steps(30)
+			"aimfire":
+				_view.aim(true)
+				_sheet_steps(40)
+				_view.on_fired(recoil)
+				_sheet_steps(int(arg))
 
 		var weapon := String(def.id) if def != null else "?"
 		_readout.text = "%s  ·  %s" % [weapon, label]
@@ -636,9 +648,28 @@ func _run_sheet(prefix: String) -> void:
 		var err := get_viewport().get_texture().get_image().save_png(path)
 		if err != OK:
 			printerr("could not save %s: %s" % [path, error_string(err)])
+		if roof != null:
+			roof.queue_free()
+			roof = null
 
 	print("sheet: %d frames at %s_NN.png" % [SHEET_FRAMES.size(), prefix])
 	get_tree().quit()
+
+
+## A slab over the player on the sun's side, so the player stands in its shadow.
+func _sheet_roof() -> Node3D:
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	var toward := sun.global_transform.basis.z.normalized() if sun != null else Vector3.UP
+	var body := StaticBody3D.new()
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(5.0, 0.2, 5.0)
+	mesh.mesh = box
+	mesh.material_override = _material(Color(0.3, 0.3, 0.32))
+	body.add_child(mesh)
+	$World.add_child(body)
+	body.global_position = _camera.global_position + toward * 3.0
+	return body
 
 
 ## Back to rest between frames, so each one shows only what its own step did.

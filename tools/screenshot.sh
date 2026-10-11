@@ -10,8 +10,9 @@
 #   tools/screenshot.sh --sheet --all              # a contact sheet for every weapon
 #   SHEET_DIR=/tmp/before tools/screenshot.sh --sheet rifle   # somewhere else
 #
-# A contact sheet is sixteen frames of one weapon on one image: hip, aimed, fire frames
-# 1/2/4/8/14, reload at 0/25/50/75/90%, walking, turning, and the draw at 30/70%. The view
+# A contact sheet is eighteen frames of one weapon on one image: hip, aimed, fire frames
+# 1/2/4/8/14, reload at 0/25/50/75/90%, walking, turning, the draw at 30/70%, standing in a
+# roof's shadow, and aimed four frames after a shot. The view
 # model is stepped at a fixed 60 fps by the range (`--sheet`), so the same frame is the same
 # picture every run, and a before and an after can be compared side by side.
 #
@@ -115,7 +116,7 @@ ALL_IDS="fists knife shiv hatchet mallet pickaxe spade \
          sniper minigun launcher beamer charge_rifle frag sticky"
 
 # One weapon's sheet: the range saves the frames itself (exact frames, not a scrot of
-# whatever the clock caught) and quits; ffmpeg tiles them four by four.
+# whatever the clock caught) and quits; ffmpeg tiles them three across.
 sheet() {
     local weapon="$1" dir="${SHEET_DIR:-screenshots}"
     local disp=$((90 + RANDOM % 8))
@@ -132,7 +133,7 @@ sheet() {
         -- --weapon "$weapon" --sheet "$tmp/f" ${EXTRA:-} >"$tmp/log" 2>&1
     kill "$xpid" 2>/dev/null
 
-    if [ ! -s "$tmp/f_15.png" ]; then
+    if [ ! -s "$tmp/f_17.png" ]; then
         echo "sheet failed for $weapon:" >&2
         tail -20 "$tmp/log" >&2
         rm -rf "$tmp"
@@ -141,7 +142,7 @@ sheet() {
     grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
 
     ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \
-        -vf "scale=480:-1,tile=4x4:padding=4:color=black" -frames:v 1 \
+        -vf "scale=640:-1,tile=3x6:padding=4:color=black" -frames:v 1 \
         "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
     rm -rf "$tmp"
 }

@@ -36,7 +36,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-we
 
 - `./game.sh test` parses everything and runs `zee_selftest`; read its stderr even when it exits 0. [testing](docs/testing.md)
 - `tools/screenshot.sh <weapon>`, `--all`, `--rack`; `EXTRA="--aim"` for the scope, `EXTRA="--no-arms 1"` for the weapon alone. Not `--headless` (a black PNG). [testing](docs/testing.md#look-at-it-because-the-suite-cannot)
-- `tools/screenshot.sh --sheet rifle pistol knife` (or `--sheet --all`): a 16-frame contact sheet per weapon (hip, aim, fire, reload, walk, turn, draw) at a fixed 60 fps step. Review every view-model change on it. [testing](docs/testing.md#look-at-it-because-the-suite-cannot)
+- `tools/screenshot.sh --sheet rifle pistol knife` (or `--sheet --all`): an 18-frame contact sheet per weapon (hip, aim, fire, reload, walk, turn, draw, shade) at a fixed 60 fps step. Review every view-model change on it. [testing](docs/testing.md#look-at-it-because-the-suite-cannot)
 - `zee_range -- --weapon smg --fire --capture <prefix>` saves a slowed flip-book of one shot. [shot-fx](docs/shot-fx.md#seeing-a-shot-on-a-machine-with-no-hands)
 
 ## Rules that bite
@@ -72,7 +72,7 @@ Short forms; the reasoning is in the linked file.
 - Hip poses sit low and right (`ZeeWeaponArtTable.pose_offset`), off the crosshair, canted right-side-up and muzzle-in (`pose_rotation`, model space); aim is its own transform (`aim_offset` + `aim_rotation`) through the `Aim` node; the arms are under `Animated`, not `Aim`, and reach every frame. [view-model](docs/view-model.md#where-the-weapon-is-held)
 - Arms reach for hands measured off the weapon's bounds (30% / 62% along the barrel); thickness is `forearm_width`, never `arm_scale`. [view-model](docs/view-model.md#the-arms)
 - Every shoulder is in front of the near plane (a clip plane slices, it does not hide). [view-model](docs/view-model.md#the-arms)
-- The view model and arms cast no shadow. [view-model](docs/view-model.md#presentation-is-never-part-of-the-netcode-contract)
+- The view model and arms cast no shadow and receive none (`disable_receive_shadows`); they are lit by the world plus their own camera-turning key light on `view_layer` (20) only. [view-model](docs/view-model.md#light-no-world-shadow-and-a-key-light-of-its-own)
 
 **Shots**
 
