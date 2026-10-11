@@ -192,12 +192,14 @@ func _pack() -> void:
 	_check("the whole catalogue validates: %s" % _why(res), res.ok)
 	_check("twenty-seven rows", catalogue.size() == 27)
 
-	# The check that catches an id added to one file and not the other.
+	# The check that catches an id added to one file and not the other. ids() is in text
+	# order, so this sorts by text too: sort() on StringNames orders them by where each was
+	# interned, which differs per process (it passed only while ids() made the same mistake).
 	var ids := catalogue.ids()
 	var named := ZeeWeaponIds.all()
-	named.sort()
+	named.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	_check(
-		"the catalogue and ZeeWeaponIds name exactly the same weapons",
+		"the catalogue and ZeeWeaponIds name exactly the same weapons, in text order",
 		ids == named
 	)
 
