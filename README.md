@@ -1,4 +1,4 @@
-This is a weapons pack to demonstrate the capabilities of the [**Dot collection**](https://moddingcommunity.com/co/4-dot-assets) built on-top of [Godot 4](https://godotengine.org/) and [TMC's gaming platform](https://moddingcommunity.com/play). It adds twenty-seven ready-made weapons on top of [dot-weapon](https://github.com/modcommunity/dot-weapon) (blasters, melee weapons, grenades and fists), along with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. The games in the Dot collection, such as [game-arena](https://github.com/gamemann/game-arena), use it.
+This is a weapons pack to demonstrate the capabilities of the [**Dot collection**](https://moddingcommunity.com/co/4-dot-assets) built on-top of [Godot 4](https://godotengine.org/) and [TMC's gaming platform](https://moddingcommunity.com/play). It adds twenty-seven ready-made weapons on top of [dot-weapon](https://github.com/modcommunity/dot-weapon) (blasters, melee weapons, grenades and fists), along with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. The games in the Dot collection, such as [game-arena](https://github.com/zees-games/game-arena), use it.
 
 **This pack and the assets under it are COMPLETELY OPEN SOURCE**. You are free to use, modify, and distribute them under the terms of the MIT license, and the art it ships is CC0, which asks for even less. The only thing not open source is the back-end web infrastructure. So if you opt into using your own authentication backend instead of integrating with TMC, you will need to build and integrate your own back-end infrastructure.
 
@@ -109,7 +109,7 @@ ZeeWeaponArtTable.add_source(&"my_pack", Callable(MyPack, &"art"))
 ZeeWeaponSound.set_class(&"my_rifle", ZeeWeaponSound.RIFLE)
 ```
 
-Pass static methods as above, not lambdas: a lambda kept by zee outlives its script and the game crashes as it quits. An id this pack already has stays this pack's (the other one is skipped, with a warning). `remove_source(&"my_pack")` takes them out again. [zed-dot-weapons](https://github.com/gamemann/zed-dot-weapons) is a pack that does this.
+Pass static methods as above, not lambdas: a lambda kept by zee outlives its script and the game crashes as it quits. An id this pack already has stays this pack's (the other one is skipped, with a warning). `remove_source(&"my_pack")` takes them out again. [zed-dot-weapons](https://github.com/zees-games/zed-dot-weapons) is a pack that does this.
 
 ## Requirements
 Godot **4.7**, plus three addons: [dot-core](https://github.com/modcommunity/dot-core), [dot-combat](https://github.com/modcommunity/dot-combat) and [dot-weapon](https://github.com/modcommunity/dot-weapon). dot-net, dot-player, dot-player-controller and dot-player-char are optional and are used if present.
