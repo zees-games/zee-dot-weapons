@@ -51,6 +51,16 @@ class Tunables extends RefCounted:
 	## player walks into a wall, and slides rather than steps when they slow down.
 	var bob_per_metre: float = 0.55
 
+	## The most bob cycles a second, however fast the carrier moves: a cadence, not a speed.
+	##
+	## [b]Without it the bob became a buzz.[/b] Per metre alone, a carrier at 9 m/s (a fast
+	## shooter's run) bobbed 10 footfalls a second, 1.1 cm up and down: a weapon vibrating
+	## rather than carried, 2.3 mm of change in each frame's movement at 144 fps where a
+	## walk's is a tenth of that (game-arena's `headless_feel`). A runner's legs speed up
+	## to about three steps a second and then take longer strides, so the distance a cycle
+	## covers grows past this rate instead. 1.5 cycles is three footfalls a second.
+	var bob_max_rate: float = 1.5
+
 	## How quickly the bob amplitude follows speed, per second.
 	var bob_response: float = 7.0
 
@@ -541,7 +551,10 @@ func _advance_bob(step: float, speed: float, on_floor: bool, crouched: bool) -> 
 	# the instant the player stops rather than easing out over half a step, and a player
 	# walking into a wall does not bob at all.
 	if on_floor:
-		_bob_distance += ground * step
+		var cadence := ground
+		if tunables.bob_max_rate > 0.0 and tunables.bob_per_metre > 0.0:
+			cadence = minf(ground, tunables.bob_max_rate / tunables.bob_per_metre)
+		_bob_distance += cadence * step
 
 	_bob_distance = fposmod(_bob_distance, 1000.0)
 

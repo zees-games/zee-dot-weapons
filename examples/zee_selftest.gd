@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 212
+const CHECKS := 213
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -660,6 +660,25 @@ func _pose_stability() -> void:
 			last = now
 		_check("a draw and reload at 144 fps never jolts (worst %.5f m, %.3f deg a frame on a frame)" % [worst_move, worst_turn],
 			worst_move < 0.0015 and worst_turn < 0.3 and last.origin.is_finite())
+
+	# [b]A run bobs at a cadence, a walk per metre.[/b] Per metre alone, a 9 m/s run bobbed
+	# ten footfalls a second and the weapon buzzed (game-arena's `headless_feel`, 2.3 mm of
+	# change in a frame's movement at 144 fps). Footfalls are the bob's high points.
+	var cadence := func(speed: float) -> float:
+		var walker := ZeeWeaponPose.make(1.0)
+		var heights: Array[float] = []
+		for i in range(144 * 4):
+			walker.advance(1.0 / 144.0, Vector2.ZERO, speed, true)
+			heights.append(walker.offset().origin.y)
+		var peaks := 0
+		for i in range(144 * 2, heights.size() - 1):
+			if heights[i] > heights[i - 1] and heights[i] >= heights[i + 1]:
+				peaks += 1
+		return float(peaks) / 2.0
+	var run: float = cadence.call(9.0)
+	var walk: float = cadence.call(2.0)
+	_check("a 9 m/s run bobs at most three and a half footfalls a second (%.1f), a 2 m/s walk by its pace (%.1f)" % [run, walk],
+		run <= 3.5 and run >= 2.0 and walk > 1.5 and walk < run)
 
 	_end()
 

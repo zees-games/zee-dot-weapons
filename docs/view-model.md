@@ -49,6 +49,8 @@ Sway, bob and kick are reactions, and a spring is the right model of a reaction.
 
 **The suite checks for jolts, not speed** ("never jolts"): a draw and a reload at 144 fps while walking and turning, measuring the change in each frame's movement. A fast smooth motion changes speed a little a frame; a corner in a curve changes it at once. It found the bob's `|sin|`, a corner at every footfall (5 mm a frame at 144 fps); the bob is `sin²` now.
 
+**The bob is a cadence at a run, not a distance** (2026-10-11): `bob_per_metre` drives the phase up to `bob_max_rate` cycles a second (1.5, three footfalls), and past that a faster carrier takes longer strides. Per metre alone, game-arena's 9 m/s run bobbed ten footfalls a second, 1.1 cm up and down: a weapon buzzing, 2.3 to 3.0 mm of change in a frame's movement at 144 fps where a walk's is a tenth of that (game-arena's `headless_feel`, p99 2.98 mm before, 0.19 after). The suite's "a 9 m/s run bobs at most three and a half footfalls a second" holds it.
+
 **The sway lags the turn.** The controller's yaw is positive to the left, so a right turn is a negative rate, and the sway had the sign that made the gun lead the turn (the sheet's "turning right" frame); the suite now asserts the gun goes left on a right turn.
 
 ## Recoil
