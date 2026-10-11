@@ -10,7 +10,7 @@ This pack, along with every asset it is built on, was built initially with **Cla
 I intend on reviewing code, testing, and editing documentation regularly. If you're interested in helping out, please let me know!
 
 ## What is in it
-Art is Kenney's **Blaster Kit**, with the melee weapons from the Weapon Pack and Survival Kit and the first-person hands from the Blocky Characters. All of it is CC0 and included, so there is nothing to download.
+Art is Kenney's **Blaster Kit**, with the melee weapons from the Weapon Pack and Survival Kit. The first-person hands are gloves built from boxes in code; the Blocky Characters' arms are still there as the other hand style. All of it is CC0 and included, so there is nothing to download.
 
 ![the whole pack](docs/rack.png)
 
@@ -33,7 +33,7 @@ dot-weapon decides when a weapon fires, reloads and switches, but it doesn't dra
 | --- | --- |
 | `ZeeWeaponPack` | The twenty-seven weapons, tuned in ticks and checked as one document. A dedicated server can validate them at boot without any art installed. |
 | `ZeeWeaponArtTable` | The only file that knows a filename. Weapons are named by role, so swapping the art means editing this one table. |
-| `ZeeViewModel` | The weapon in your own hands: arms, magazine, attachments, sway, bob, recoil, deploy, reload and charge. `aim(held)` brings it to the centre of the screen and reports a zoom for the camera (`aim_fov_scale()`). The sniper and marksman rifle get a scope (`ZeeScopeOverlay`). Aiming is set per weapon in the art table (`aim_enabled`, `aim_zoom`, `aim_scoped`, `aim_offset`, `aim_time`) and only changes what is drawn, never what the server simulates. |
+| `ZeeViewModel` | The weapon in your own hands: gloved hands that close round the grip, magazine, attachments, sway, bob, recoil, a keyed draw and a reload that rolls the gun onto its side, and charge. It receives no world shadow and carries its own key light. `aim(held)` brings it to the centre of the screen and reports a zoom for the camera (`aim_fov_scale()`). The sniper and marksman rifle get a scope (`ZeeScopeOverlay`). Aiming is set per weapon in the art table (`aim_enabled`, `aim_zoom`, `aim_scoped`, `aim_offset`, `aim_time`) and only changes what is drawn, never what the server simulates. |
 | `ZeeWorldModel` | The weapon in somebody else's hands, attached to their character's hand. |
 | `ZeeWeaponPose` | The animation maths, with no nodes in it, so the test suite can check the springs settle and nothing produces `NaN`. |
 | `ZeeShotFx` | What a shot looks and sounds like: a tracer, a muzzle flash with a light, a spark and a puff where it lands, and the sound. Never built on a server. |
