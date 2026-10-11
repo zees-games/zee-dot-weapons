@@ -25,9 +25,11 @@ extends RefCounted
 
 ## The tick rate everything below is tuned for.
 ##
-## A game running at another rate is not broken: the durations are ticks either way, so
-## a 128 Hz server simply runs the same weapons at twice the resolution. What it must
-## not do is reinterpret them as seconds.
+## Every duration below is a count of ticks at this rate, and nothing rescales it: not the
+## pack, not [ZeeWeaponRig], and not DotWeaponArsenal, whose [code]tick_rate[/code] is read
+## by nothing. So a server at another rate runs these weapons at another speed — at 128 Hz
+## each fires, reloads and deploys in half the wall-clock time. That is open, not intended
+## (queue item `playground-zee-tickrate-1`, to scale in the arsenal for every pack).
 const TICK_RATE := 64
 
 const HITSCAN := "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
