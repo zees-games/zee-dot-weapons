@@ -394,6 +394,13 @@ func on_reset() -> void:
 # --- The frame --------------------------------------------------------------
 
 func _process(delta: float) -> void:
+	advance(delta)
+
+
+## One frame of the view model, [param delta] seconds long. [method _process] calls it; a
+## tool that freezes processing (the range's contact sheet) calls it with a fixed step so
+## that "fire frame 4" is the same picture on every machine.
+func advance(delta: float) -> void:
 	if Engine.is_editor_hint() or not _built:
 		return
 

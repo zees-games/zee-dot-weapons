@@ -36,6 +36,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-we
 
 - `./game.sh test` parses everything and runs `zee_selftest`; read its stderr even when it exits 0. [testing](docs/testing.md)
 - `tools/screenshot.sh <weapon>`, `--all`, `--rack`; `EXTRA="--aim"` for the scope, `EXTRA="--no-arms 1"` for the weapon alone. Not `--headless` (a black PNG). [testing](docs/testing.md#look-at-it-because-the-suite-cannot)
+- `tools/screenshot.sh --sheet rifle pistol knife` (or `--sheet --all`): a 16-frame contact sheet per weapon (hip, aim, fire, reload, walk, turn, draw) at a fixed 60 fps step. Review every view-model change on it. [testing](docs/testing.md#look-at-it-because-the-suite-cannot)
 - `zee_range -- --weapon smg --fire --capture <prefix>` saves a slowed flip-book of one shot. [shot-fx](docs/shot-fx.md#seeing-a-shot-on-a-machine-with-no-hands)
 
 ## Rules that bite

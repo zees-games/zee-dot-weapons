@@ -6,6 +6,14 @@
 #   tools/screenshot.sh sniper shots/sniper.png --wait 16
 #   tools/screenshot.sh --all                      # one frame per weapon
 #   tools/screenshot.sh --rack docs/rack.png       # all of them, muzzle pips shown
+#   tools/screenshot.sh --sheet rifle pistol knife # screenshots/sheet_<id>.png, 16 frames each
+#   tools/screenshot.sh --sheet --all              # a contact sheet for every weapon
+#   SHEET_DIR=/tmp/before tools/screenshot.sh --sheet rifle   # somewhere else
+#
+# A contact sheet is sixteen frames of one weapon on one image: hip, aimed, fire frames
+# 1/2/4/8/14, reload at 0/25/50/75/90%, walking, turning, and the draw at 30/70%. The view
+# model is stepped at a fixed 60 fps by the range (`--sheet`), so the same frame is the same
+# picture every run, and a before and an after can be compared side by side.
 #
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
 #
@@ -40,6 +48,8 @@ SIZE="1280x720"
 WAIT=14
 ALL=0
 RACK=0
+SHEET=0
+WEAPONS=()
 WEAPON=""
 OUT=""
 
@@ -47,11 +57,13 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --all)  ALL=1; shift ;;
         --rack) RACK=1; shift ;;
+        --sheet) SHEET=1; shift ;;
         --wait) WAIT="$2"; shift 2 ;;
         --size) SIZE="$2"; shift 2 ;;
-        -h|--help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*) echo "unknown option: $1" >&2; exit 2 ;;
-        *)  if [ -z "$WEAPON" ]; then WEAPON="$1"; else OUT="$1"; fi; shift ;;
+        *)  WEAPONS+=("$1")
+            if [ -z "$WEAPON" ]; then WEAPON="$1"; else OUT="$1"; fi; shift ;;
     esac
 done
 
@@ -96,6 +108,55 @@ shoot() {
     rm -f "$log"
 }
 
+ALL_IDS="fists knife shiv hatchet mallet pickaxe spade \
+         pistol revolver machine_pistol derringer \
+         smg carbine rifle bullpup battle_rifle burst_rifle \
+         shotgun drum_shotgun marksman \
+         sniper minigun launcher beamer charge_rifle frag sticky"
+
+# One weapon's sheet: the range saves the frames itself (exact frames, not a scrot of
+# whatever the clock caught) and quits; ffmpeg tiles them four by four.
+sheet() {
+    local weapon="$1" dir="${SHEET_DIR:-screenshots}"
+    local disp=$((90 + RANDOM % 8))
+    local tmp; tmp="$(mktemp -d)"
+    mkdir -p "$dir"
+    # The sheets are not assets: without this the next --import imports every frame.
+    [ "$dir" = "screenshots" ] && touch screenshots/.gdignore
+
+    Xvfb ":$disp" -screen 0 "${SIZE}x24" >/dev/null 2>&1 &
+    local xpid=$!
+    sleep 2
+    DISPLAY=":$disp" LIBGL_ALWAYS_SOFTWARE=1 timeout 120 godot --path . \
+        --resolution "$SIZE" --rendering-driver opengl3 res://examples/zee_range.tscn \
+        -- --weapon "$weapon" --sheet "$tmp/f" ${EXTRA:-} >"$tmp/log" 2>&1
+    kill "$xpid" 2>/dev/null
+
+    if [ ! -s "$tmp/f_15.png" ]; then
+        echo "sheet failed for $weapon:" >&2
+        tail -20 "$tmp/log" >&2
+        rm -rf "$tmp"
+        return 1
+    fi
+    grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
+
+    ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \
+        -vf "scale=480:-1,tile=4x4:padding=4:color=black" -frames:v 1 \
+        "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
+    rm -rf "$tmp"
+}
+
+if [ $SHEET -eq 1 ]; then
+    if [ $ALL -eq 1 ]; then
+        WEAPONS=($ALL_IDS)
+    elif [ ${#WEAPONS[@]} -eq 0 ]; then
+        WEAPONS=(rifle pistol knife)
+    fi
+    status=0
+    for w in "${WEAPONS[@]}"; do sheet "$w" || status=1; done
+    exit $status
+fi
+
 if [ $RACK -eq 1 ]; then
     # The rack takes no weapon, so a lone positional argument is the output path rather
     # than a weapon id. Without this, `--rack docs/rack.png` silently wrote the default.
@@ -106,11 +167,7 @@ if [ $RACK -eq 1 ]; then
 fi
 
 if [ $ALL -eq 1 ]; then
-    for w in fists knife shiv hatchet mallet pickaxe spade \
-             pistol revolver machine_pistol derringer \
-             smg carbine rifle bullpup battle_rifle burst_rifle \
-             shotgun drum_shotgun marksman \
-             sniper minigun launcher beamer charge_rifle frag sticky; do
+    for w in $ALL_IDS; do
         shoot "$w" "screenshots/$w.png"
     done
     exit 0
