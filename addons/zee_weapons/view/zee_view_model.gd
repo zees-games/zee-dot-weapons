@@ -111,6 +111,11 @@ var _id: StringName = &""
 var _grip_at := Vector3.ZERO
 var _fore_at := Vector3.ZERO
 
+## The axis of what each hand holds (a pistol grip, a fore-end, a handle), in the same space.
+var _grip_axis := Vector3.UP
+var _fore_axis := Vector3.FORWARD
+var _grip_radius := 0.0
+
 ## Where the muzzle sits in the weapon's own space, measured when the model was built.
 var _muzzle := Vector3.ZERO
 
@@ -317,23 +322,31 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	return DotResult.success(null)
 
 
-## Puts the hands on this weapon, measured from the weapon itself: the right hand 30% of
-## the way from its back end to its front along the barrel, the left at 62%, both just under
-## the middle of it. Duck-typed, because a game may hang its own arms here.
+## Puts the hands on this weapon, measured from the weapon itself, in the holder's (the
+## model's own) space: a blaster's right hand round its grip under the body 30% of the way
+## from the back, the left round the fore-end at 62%; a melee weapon's hand round its handle;
+## a grenade's round its middle. Each hand also gets the axis of what it is holding, so a
+## gripping hand can wrap round it.
 ##
 ## [b]Measured, because the holder's origin is not the grip for every weapon.[/b] The long
 ## ones are slid back along their length in the art table, and a right hand put on the
 ## origin closed on air a hand's length in front of the stock.
+##
+## [b]In the model's own space, not the view's.[/b] The hold is canted thirty degrees, so the
+## view's "down" is no longer under the gun, and a view-space bounding box of a canted gun is
+## a box round a diagonal: a hand put "under the middle" of it closed on air beside the gun.
 func _reach_for(art: ZeeWeaponArt) -> void:
-	if _arms == null or not _arms.has_method("reach"):
-		return
-
-	var forward := (_holder.transform.basis * Vector3.FORWARD).normalized()
-	var grip := _holder.transform.origin
-	var fore := grip + forward * 0.2
+	var to_aim := _holder.transform
+	var forward := art.model_forward.normalized()
+	var up := Vector3.UP if absf(forward.dot(Vector3.UP)) < 0.9 else Vector3.BACK
+	var grip := Vector3.ZERO
+	var fore := forward * 0.4
+	var grip_axis := up
+	var fore_axis := forward
+	var radius := 0.0
 
 	if _weapon != null:
-		var box := _bounds_here(_weapon)
+		var box := _bounds_in(_holder, _weapon)
 		if box.size != Vector3.ZERO:
 			var t_min := INF
 			var t_max := -INF
@@ -342,14 +355,60 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 				t_min = minf(t_min, t)
 				t_max = maxf(t_max, t)
 			var centre := box.get_center()
-			var along := centre.dot(forward)
-			var under := Vector3.DOWN * box.size.y * 0.2
-			grip = centre + forward * (lerpf(t_min, t_max, 0.30) - along) + under
-			fore = centre + forward * (lerpf(t_min, t_max, 0.62) - along) + under
+			var on_axis := centre - forward * centre.dot(forward)
+			match art.pose:
+				&"melee":
+					# Round the handle, a hand's width up from its butt (the origin).
+					grip = forward * minf(0.055, (t_max - t_min) * 0.3)
+					grip_axis = forward
+					radius = minf(box.size.x, box.size.z) * 0.38
+				&"thrown":
+					grip = centre
+					grip_axis = forward
+					radius = minf(box.size.x, box.size.z) * 0.4
+				_:
+					# Under the body: the grip and fore-end are below the bore, so the hands
+					# sit a third and a half of the way up from the bottom of the model.
+					var low := box.position.y
+					var tall := box.size.y
+					grip = on_axis + forward * lerpf(t_min, t_max, 0.30)
+					grip.y = low + tall * 0.30
+					fore = on_axis + forward * lerpf(t_min, t_max, 0.62)
+					fore.y = low + tall * 0.45
+					# A pistol grip rakes: its top is forward of its bottom.
+					grip_axis = (up + forward * 0.3).normalized()
+					radius = box.size.x * 0.3
 
-	_grip_at = grip
-	_fore_at = fore
+	_grip_at = to_aim * grip
+	_fore_at = to_aim * fore
+	_grip_axis = (to_aim.basis * grip_axis).normalized()
+	_fore_axis = (to_aim.basis * fore_axis).normalized()
+	if _weapon == null:
+		# Bare fists, raised: closed round nothing, knuckles forward, leaning in a little.
+		_grip_axis = Vector3(-0.35, 1.0, -0.25).normalized()
+		_fore_axis = Vector3(0.35, 1.0, -0.25).normalized()
+	# In the view's metres: the holder's scale is the art's view_scale.
+	_grip_radius = radius * art.view_scale
 	_place_hands()
+
+
+## The bounds of every mesh under [param node], in [param space]'s own coordinates.
+func _bounds_in(space: Node3D, node: Node) -> AABB:
+	var out := AABB()
+	var seeded := false
+	for mi: MeshInstance3D in _meshes(node):
+		if mi.mesh == null:
+			continue
+		var to_space := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != space:
+			if walk is Node3D:
+				to_space = (walk as Node3D).transform * to_space
+			walk = walk.get_parent()
+		var b := to_space * mi.mesh.get_aabb()
+		out = b if not seeded else out.merge(b)
+		seeded = true
+	return out
 
 
 ## Puts the hands where the weapon's grip and fore-end are this frame: through the Aim
@@ -359,27 +418,15 @@ func _place_hands() -> void:
 	if _arms == null or _art == null or not _arms.has_method("reach"):
 		return
 	var aim := _aim_node.transform if _aim_node != null else Transform3D.IDENTITY
-	_arms.call("reach", aim * _grip_at, aim * _fore_at, _art.pose)
-
-
-## The bounds of every mesh under [param node], in the Aim node's space (where the holder
-## and the arms are), so the pose this frame happens to be in does not move the hands.
-func _bounds_here(node: Node) -> AABB:
-	var out := AABB()
-	var seeded := false
-	for mi: MeshInstance3D in _meshes(node):
-		if mi.mesh == null:
-			continue
-		var to_here := Transform3D.IDENTITY
-		var walk: Node = mi
-		while walk != null and walk != _aim_node and walk != self:
-			if walk is Node3D:
-				to_here = (walk as Node3D).transform * to_here
-			walk = walk.get_parent()
-		var b := to_here * mi.mesh.get_aabb()
-		out = b if not seeded else out.merge(b)
-		seeded = true
-	return out
+	var pose := _art.pose if _art.has_model() else &"fists"
+	# A game's own arms may answer the older three-argument reach; they get no axes.
+	if _arms.get_method_argument_count("reach") >= 6:
+		_arms.call(
+			"reach", aim * _grip_at, aim * _fore_at, pose,
+			aim.basis * _grip_axis, aim.basis * _fore_axis, _grip_radius
+		)
+	else:
+		_arms.call("reach", aim * _grip_at, aim * _fore_at, pose)
 
 
 ## Removes whatever is in hand.

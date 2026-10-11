@@ -74,7 +74,7 @@ static func pose_offset(pose: StringName) -> Vector3:
 		POSE_HEAVY:
 			return Vector3(0.20, -0.25, -0.48)
 		POSE_MELEE:
-			return Vector3(0.23, -0.16, -0.50)
+			return Vector3(0.22, -0.25, -0.40)
 		POSE_THROWN:
 			return Vector3(0.17, -0.19, -0.36)
 		_:
@@ -121,7 +121,7 @@ static func pose_scale(pose: StringName) -> float:
 		# had it. Held slightly above life size is what a first-person blade looks like in
 		# every game that ships one.
 		POSE_MELEE:
-			return 1.10
+			return 1.20
 		POSE_THROWN:
 			return 0.75
 		_:
@@ -447,15 +447,17 @@ static func _melee(id: StringName, model: String) -> ZeeWeaponArt:
 	art.view_offset = pose_offset(POSE_MELEE)
 	art.view_scale = pose_scale(POSE_MELEE)
 	art.weight = pose_weight(POSE_MELEE)
-	# Carried at an angle rather than pointed straight ahead: a blade aimed at the
-	# centre of the screen covers the crosshair.
 	# [b]Carried across the view, not pointed down it.[/b] `model_forward` turns the blade
 	# onto Godot's forward, which for a gun is exactly right and for a knife means the
 	# blade points directly away from the eye — so it draws as its own cross-section, a
 	# small disc floating above the hands, which is what the first melee render was.
 	# Pitching it up and yawing it inward puts its length across the screen where it can
 	# be seen, and keeps it off the crosshair.
-	art.view_rotation = Vector3(-72.0, -34.0, 0.0)
+	# [b]Held in a fist, blade up and leaning in, its flat to the eye[/b] (model space: pitch
+	# the blade up off the view axis, yaw spins the flat round to face the camera, roll leans
+	# it toward the crosshair). It lay across the view between two planks before the hands
+	# could close; a hand round the handle is what makes it read as held.
+	art.view_rotation = Vector3(70.0, 80.0, 40.0)
 	art.aim_enabled = false
 	# [b]No world rotation, and the temptation to add one is the trap.[/b] These models
 	# stand on their handle along +Y, so it is natural to write a -90 here to lay them

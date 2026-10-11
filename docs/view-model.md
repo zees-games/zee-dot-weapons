@@ -74,6 +74,16 @@ Each of these is its own line in `ZeeWeaponPose`:
 
 ## The arms
 
+**Gloved hands, by default** (`ZeeViewArms.style = &"gloves"`). The character kit's arms are a box each with no hand on the end, and beside a production shooter's they read as two pale slabs reaching for the gun (and with the knife, two planks with the blade floating between them). A glove is a dozen boxes merged into one mesh in code: a ring of finger segments and a thumb closed round a cylinder of `GRIP_RADIUS` along its +Y, the back of the hand +X, the forearm leaving +Z. A six-sided sleeve and a cuff are stretched from the heel of the palm to the shoulder. `glove_color` and `sleeve_color` are a game's to set; `style = &"model"` keeps the old lifted arms.
+
+- **The view model hands each hand the axis of what it holds** (`reach(grip, fore, pose, grip_axis, fore_axis, grip_radius)`): a blaster's raked pistol grip and its barrel for the fore-end, a melee weapon's handle, a grenade's long axis. A game's own arms with the old three-argument `reach` still work (`get_method_argument_count`).
+- **The hands are measured in the model's own space**, not the view's: the hold is canted, so a view-space "under the middle" of a canted gun's box is beside the gun.
+- **The left hand is the right one mirrored**: its basis has a negative determinant, which the renderer draws with its faces flipped.
+- **A glove is sized to its grip within 0.6 to 1.2** (`grip_radius / GRIP_RADIUS`). Sized to the real radius it was a giant's hand: the weapons are drawn at half size (`pose_scale`), the hands are not.
+- **The wrist bends at the heel of the palm.** The cuff runs from the heel toward the real shoulder; carried out along the hand's own square-on axis it put a box out sideways under a knife held blade-up.
+- **Bare fists and grenades are held with the forearm square to the fist** (the shoulder is found from the hand); a knife is not, since a blade-up knife held square throws the forearm across the screen.
+- **An empty fist has a core** inside the finger ring, or the camera looks through the hole.
+
 **The arms reach** (`ZeeViewArms.reach`): each arm is stretched from a shoulder below the screen to its hand, and the hands are measured off the weapon's own bounds along the barrel (right hand 30% from the back, left 62%). A knife or a grenade has one hand. Fixed per-pose placements held any weapon slid along its length in the art table a hand's width off its grip.
 
 - **Thickness is `forearm_width` (7 cm), set apart from the length.** `arm_scale` scales both (the box is 0.4 wide in its own units), so an arm long enough to reach was a slab across the gun. At 0.36 the render was two cream slabs with the rifle somewhere behind them.

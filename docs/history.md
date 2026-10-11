@@ -24,6 +24,10 @@ True of every game on the pack: the rig decided the use, the server resolved the
 - A sniper tracer as a yellow fleck; the first muzzle flash as a pale square a tenth of the screen across.
 - The hands held under each game's own lens: a smaller gun drifting to the middle, or a bigger one, magnified on an aim zoom; the rifle almost on the crosshair with its top toward the eye.
 
+## "Doesn't look like a production shooter" (2026-10-10)
+
+Christian's clip of arena put six things side by side with a production shooter's view model: the rifle pointed straight down the view so only its back face showed; it sat almost centred; the arms were unlit pale slabs with no hand; the gun flipped bright and dark walking through shade; the reload pitched the barrel 32 degrees at the sky; and every weapon moved by the same springs. None of it was reachable by the suite (192 checks, all green throughout). The contact sheet (`tools/screenshot.sh --sheet`) was built first so that each fix could be seen beside the one before; it also found that the arms did not move with the gun at all (a draw slid the rifle out of two hands holding nothing), and that the turning sway led the turn instead of lagging it.
+
 ## Found in a game
 
 - **Every weapon in a delivered game loaded invisible**, one WARN each: the art was under the pack's mount and the table named `res://assets/`. Found by game-playground; `set_asset_root` is the fix.

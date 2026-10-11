@@ -70,7 +70,7 @@ Short forms; the reasoning is in the linked file.
 - Aiming changes nothing simulated; the zoom is the game's (`external_fov_scale`); a scope hides the weapon and the arms. [view-model](docs/view-model.md#aiming-is-presentation-and-the-game-decides-the-button)
 - The hands are drawn at `hands_fov` (90) under any camera, by scaling X and Y only, and only under a `Camera3D`. [view-model](docs/view-model.md#the-hands-have-a-lens-of-their-own)
 - Hip poses sit low and right (`ZeeWeaponArtTable.pose_offset`), off the crosshair, canted right-side-up and muzzle-in (`pose_rotation`, model space); aim is its own transform (`aim_offset` + `aim_rotation`) through the `Aim` node; the arms are under `Animated`, not `Aim`, and reach every frame. [view-model](docs/view-model.md#where-the-weapon-is-held)
-- Arms reach for hands measured off the weapon's bounds (30% / 62% along the barrel); thickness is `forearm_width`, never `arm_scale`. [view-model](docs/view-model.md#the-arms)
+- Arms are gloved hands built in code (`style = &"gloves"`) closing round the grip axis they are handed; hands are measured in the model's own space (30% / 62% along the barrel, under the bore); gloves sized 0.6-1.2 to the grip; thickness is `forearm_width`, never `arm_scale`. [view-model](docs/view-model.md#the-arms)
 - Every shoulder is in front of the near plane (a clip plane slices, it does not hide). [view-model](docs/view-model.md#the-arms)
 - The view model and arms cast no shadow and receive none (`disable_receive_shadows`); they are lit by the world plus their own camera-turning key light on `view_layer` (20) only. [view-model](docs/view-model.md#light-no-world-shadow-and-a-key-light-of-its-own)
 

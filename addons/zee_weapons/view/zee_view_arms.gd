@@ -27,9 +27,27 @@ const CHANNEL := "zee.arms"
 const ARM_LEFT := "arm-left"
 const ARM_RIGHT := "arm-right"
 
+@export_group("Style")
+
+## What the arms are made of. [code]&"gloves"[/code] (the default) builds gloved hands that
+## close round what they hold and faceted sleeves, in code; [code]&"model"[/code] lifts the two
+## arm boxes out of [member model_path], the way this pack's first hands were made.
+##
+## [b]Why gloves are the default.[/b] The character kit's arms are a box each with no hand
+## at the end: two pale slabs reaching for the gun, which is what a production shooter's
+## hands were compared with and found wanting. A gloved fist round the grip is what reads as
+## holding something, and it is a dozen boxes, which needs no model and no licence.
+@export var style: StringName = &"gloves"
+
+## The glove's colour (the hands).
+@export var glove_color: Color = Color(0.27, 0.27, 0.3)
+
+## The sleeve's colour (the forearms). A game hands in its team or the player's colour.
+@export var sleeve_color: Color = Color(0.22, 0.32, 0.44)
+
 @export_group("Model")
 
-## The character the arms come from.
+## The character the arms come from, for [code]style = &"model"[/code].
 @export_file("*.glb", "*.gltf", "*.tscn", "*.scn") var model_path: String = \
 	"res://assets/arms/character-a.glb"
 
@@ -78,6 +96,9 @@ var _built: bool = false
 
 var _reach_grip := Vector3.ZERO
 var _reach_muzzle := Vector3.ZERO
+var _reach_grip_axis := Vector3.UP
+var _reach_fore_axis := Vector3.FORWARD
+var _reach_radius := 0.0
 var _reaching := false
 
 
@@ -91,6 +112,14 @@ var _reaching := false
 ## because it is also not something anybody meant.
 func build() -> DotResult:
 	if _built:
+		return DotResult.success(null)
+
+	if style == &"gloves":
+		_right = _build_glove_arm("arm-right")
+		_left = _build_glove_arm("arm-left")
+		_set_on_top(self)
+		_built = true
+		set_pose(_pose)
 		return DotResult.success(null)
 
 	var model := ZeeModelCache.instantiate(model_path)
@@ -149,16 +178,39 @@ func build() -> DotResult:
 ## (most of them shift along their length) was held a hand's width from its grip, and when
 ## the poses were moved the arms stayed where they were, across the gun. Reaching makes
 ## the hands meet the weapon wherever its art puts it.
-func reach(grip: Vector3, fore: Vector3, pose: StringName) -> void:
+func reach(
+	grip: Vector3, fore: Vector3, pose: StringName,
+	grip_axis: Vector3 = Vector3.UP, fore_axis: Vector3 = Vector3.FORWARD,
+	grip_radius: float = 0.0
+) -> void:
 	_pose = pose
 	_reach_grip = grip
 	_reach_muzzle = fore
+	_reach_grip_axis = grip_axis
+	_reach_fore_axis = fore_axis
+	_reach_radius = grip_radius
 	_reaching = true
 
 	if not _built:
 		return
 
 	var hands := _hands_for(pose, grip, fore)
+
+	if style == &"gloves":
+		# A hand closes round what it holds: scaled so its grip is the measured radius, within
+		# what still reads as a hand next to the others. The weapons are drawn at about half
+		# size (ZeeWeaponArtTable.pose_scale) and a full-size glove beside one is a giant's.
+		var size := clampf(grip_radius / GRIP_RADIUS, 0.6, 1.2) if grip_radius > 0.0 else 1.0
+		# One-handed things are held with the forearm square to them (a hammer grip), so the
+		# shoulder is found from the hand rather than the hand bent to a fixed shoulder: bent,
+		# the wrist kinked at a right angle under a knife held blade-up.
+		var square := pose in [&"thrown", &"fists"]
+		_glove(_right, hands["right_shoulder"], hands["right"], grip_axis, false, size, square)
+		# The left hand on a pistol cups the right one, holding what it holds.
+		var left_axis := grip_axis if pose == &"pistol" else fore_axis
+		_glove(_left, hands["left_shoulder"], hands["left"], left_axis, true, size, square)
+		_left.visible = not (pose in [&"melee", &"thrown"])
+		return
 
 	if _right != null:
 		_right.transform = _span(_right, hands["right_shoulder"], hands["right"])
@@ -185,6 +237,9 @@ static func _hands_for(pose: StringName, grip: Vector3, fore: Vector3) -> Dictio
 			left = grip + Vector3(-0.03, -0.035, -0.01)
 		&"melee", &"thrown":
 			left = Vector3(-0.17, -0.23, -0.36)
+		&"fists":
+			# Bare hands: two fists up, either side of the centre.
+			left = Vector3(-right.x * 0.85, right.y, right.z - 0.04)
 		_:
 			left = fore
 
@@ -254,7 +309,7 @@ func set_pose(pose: StringName) -> void:
 
 	# A weapon the view model told us where to hold wins over the pose's fixed numbers.
 	if _reaching:
-		reach(_reach_grip, _reach_muzzle, pose)
+		reach(_reach_grip, _reach_muzzle, pose, _reach_grip_axis, _reach_fore_axis, _reach_radius)
 		return
 
 	var placement := _placement_for(pose)
@@ -275,6 +330,171 @@ func current_pose() -> StringName:
 
 func has_arms() -> bool:
 	return _left != null or _right != null
+
+
+# --- Gloves -----------------------------------------------------------------
+
+## Radius of what a gloved hand closes round, in metres: a grip, a fore-end, a handle.
+const GRIP_RADIUS := 0.017
+
+## One arm: a gloved hand (never stretched) and a faceted sleeve stretched from the wrist to
+## the shoulder.
+func _build_glove_arm(arm_name: String) -> Node3D:
+	var arm := Node3D.new()
+	arm.name = arm_name
+	add_child(arm)
+
+	var hand := MeshInstance3D.new()
+	hand.name = "Hand"
+	hand.mesh = _glove_mesh()
+	hand.material_override = _flat(glove_color, 0.85)
+	arm.add_child(hand)
+
+	var sleeve := MeshInstance3D.new()
+	sleeve.name = "Sleeve"
+	var tube := CylinderMesh.new()
+	# Six sides, so the sleeve is shaded in facets the way the blocky world is, rather than
+	# a smooth tube that reads as plastic.
+	tube.radial_segments = 6
+	tube.rings = 1
+	tube.height = 1.0
+	tube.top_radius = 0.5
+	tube.bottom_radius = 0.42
+	sleeve.mesh = tube
+	sleeve.material_override = _flat(sleeve_color, 0.9)
+	arm.add_child(sleeve)
+
+	var cuff := MeshInstance3D.new()
+	cuff.name = "Cuff"
+	var ring := CylinderMesh.new()
+	ring.radial_segments = 6
+	ring.rings = 1
+	ring.height = 1.0
+	ring.top_radius = 0.5
+	ring.bottom_radius = 0.5
+	cuff.mesh = ring
+	cuff.material_override = _flat(glove_color.lightened(0.12), 0.85)
+	arm.add_child(cuff)
+	return arm
+
+
+## A gloved fist closed round a cylinder of [constant GRIP_RADIUS] along +Y, at the origin.
+## The forearm leaves along +Z and the back of the hand faces +X; the index finger is the +Y
+## end, so a pistol grip's top and a fore-end's muzzle end are +Y.
+##
+## [b]Boxes, merged into one mesh.[/b] Twelve boxes in a ring are a blocky fist in the
+## world's own blocky style, built in code with no model to license; one surface is one draw.
+static var _glove_cache: ArrayMesh = null
+
+static func _glove_mesh() -> ArrayMesh:
+	if _glove_cache != null:
+		return _glove_cache
+
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var r := GRIP_RADIUS
+	var add := func(size: Vector3, at: Vector3, turn_y: float = 0.0, turn_x: float = 0.0) -> void:
+		var box := BoxMesh.new()
+		box.size = size
+		var basis := Basis(Vector3.UP, deg_to_rad(turn_y)) * Basis(Vector3.RIGHT, deg_to_rad(turn_x))
+		st.append_from(box, 0, Transform3D(basis, at))
+
+	# A core inside the ring: hidden by whatever the hand holds, and what an empty fist shows
+	# instead of a hole straight through it.
+	add.call(Vector3(r * 1.6, 0.078, r * 1.6), Vector3.ZERO)
+	# The back of the hand: a slab on the +X side running back to the wrist.
+	add.call(Vector3(0.026, 0.084, 0.085), Vector3(r + 0.016, 0.0, 0.03))
+	# The heel of the palm, filling between the back and the wrist on the near side.
+	add.call(Vector3(0.03, 0.07, 0.04), Vector3(r * 0.4, -0.004, r + 0.026))
+	# Four fingers as one band in three segments, wrapping from the knuckles (+X) round the
+	# far side (-Z) to the palm side (-X). Each segment is turned to its place on the ring.
+	var ring := r + 0.012
+	# Overlapping, so no light shows between them at the outside of the ring.
+	for step: Array in [[20.0, 0.04], [62.0, 0.04], [104.0, 0.04], [146.0, 0.038], [186.0, 0.03]]:
+		var phi: float = step[0]
+		var at := Vector3(cos(deg_to_rad(phi)) * ring, 0.0, -sin(deg_to_rad(phi)) * ring)
+		add.call(Vector3(0.022, 0.08, float(step[1])), at, phi)
+	# Knuckle ridge.
+	add.call(Vector3(0.016, 0.086, 0.02), Vector3(r + 0.03, 0.0, -0.006))
+	# The thumb, from the heel round the near side (+Z) to the far (-X), at the index end.
+	for step: Array in [[-40.0, 0.036], [-90.0, 0.036], [-140.0, 0.03]]:
+		var phi: float = step[0]
+		var at := Vector3(cos(deg_to_rad(phi)) * ring, 0.028, -sin(deg_to_rad(phi)) * ring)
+		add.call(Vector3(0.021, 0.022, float(step[1])), at, phi)
+	# No wrist here: the cuff is a tube from the heel of the palm toward the real shoulder, so
+	# a hand turned on its wrist bends there instead of carrying a box out sideways.
+
+	st.generate_normals()
+	_glove_cache = st.commit()
+	return _glove_cache
+
+
+## Places one gloved arm: the hand at [param hand] closed round [param axis], the sleeve from
+## its wrist to [param shoulder]. [param mirror] draws the left hand as the right one's mirror.
+func _glove(
+	arm: Node3D, shoulder: Vector3, hand: Vector3, axis: Vector3, mirror: bool,
+	size: float = 1.0, square: bool = false
+) -> void:
+	if arm == null:
+		return
+
+	var y := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var toward := shoulder - hand
+	if toward.length() < 0.001:
+		toward = Vector3.BACK
+	# The forearm direction, made square to what the hand holds.
+	var z := toward - y * toward.dot(y)
+	if z.length() < 0.001:
+		z = y.cross(Vector3.RIGHT)
+	z = z.normalized()
+	var x := y.cross(z)
+	if square:
+		# The forearm straight back from the fist, as long as the reach was, and never
+		# behind the near plane (a sliced sleeve draws its cut face).
+		shoulder = hand + z * toward.length()
+		shoulder.z = minf(shoulder.z, -0.09)
+	if mirror:
+		# A mirror image of the right hand is a left hand; the renderer handles a basis with
+		# a negative determinant by flipping the faces it culls.
+		x = -x
+
+	arm.transform = Transform3D.IDENTITY
+	var hand_node := arm.get_node("Hand") as Node3D
+	hand_node.transform = Transform3D(Basis(x, y, z).scaled(Vector3.ONE * size), hand + arm_offset)
+
+	# The wrist leaves the heel of the palm toward the shoulder itself (not the hand's own
+	# square-on direction), so the bend is at the wrist; the cuff covers the joint, and the
+	# sleeve runs on to the shoulder, forearm_width across.
+	var heel := hand + Basis(x, y, z).scaled(Vector3.ONE * size) * Vector3(GRIP_RADIUS * 0.4, 0.0, GRIP_RADIUS + 0.03) + arm_offset
+	var out := (shoulder + arm_offset - heel).normalized()
+	var cuff_end := heel + out * 0.05 * size
+	_tube(arm.get_node("Cuff") as Node3D, heel - out * 0.012 * size, cuff_end, forearm_width * 0.85 * size)
+	_tube(arm.get_node("Sleeve") as Node3D, cuff_end - out * 0.005, shoulder + arm_offset, forearm_width)
+
+
+## Stretches a unit cylinder (height 1 along Y, radius 0.5) between [param from] and [param to].
+static func _tube(node: Node3D, from: Vector3, to: Vector3, width: float) -> void:
+	var along := to - from
+	var length := along.length()
+	if length < 0.001:
+		node.visible = false
+		return
+	node.visible = true
+	var y := along / length
+	var side := y.cross(Vector3.BACK)
+	if side.length() < 0.01:
+		side = y.cross(Vector3.RIGHT)
+	side = side.normalized()
+	var depth := side.cross(y).normalized()
+	# The cylinder's top (+Y, the wider end) at the shoulder.
+	node.transform = Transform3D(Basis(side * width, y * length, depth * width), (from + to) * 0.5)
+
+
+static func _flat(colour: Color, roughness: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = colour
+	m.roughness = roughness
+	return m
 
 
 # --- Poses ------------------------------------------------------------------
