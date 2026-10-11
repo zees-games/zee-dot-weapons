@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 199
+const CHECKS := 201
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -288,15 +288,23 @@ func _art() -> void:
 func _orientation() -> void:
 	_begin("orientation")
 
-	# Every blaster in the kit points along +Z and Godot's forward is -Z. Getting this
-	# wrong fires out of the stock, which looks exactly like a netcode problem.
+	# Every blaster in the kit points along -Z, Godot's own forward. The table said +Z for
+	# as long as the pack existed and every blaster was drawn stock-first; the rack could
+	# not tell, because their bounds are symmetric along their length.
 	var blaster := ZeeWeaponArtTable.rifle()
 	var pointed := blaster.orientation() * blaster.model_forward.normalized()
 
 	_check(
-		"a blaster's +Z barrel ends up pointing along Godot's -Z",
-		pointed.is_equal_approx(Vector3.FORWARD)
+		"a blaster's -Z barrel stays pointing along Godot's -Z",
+		pointed.is_equal_approx(Vector3.FORWARD) and blaster.model_forward == Vector3.FORWARD
 	)
+
+	# The one blaster whose bounds are not symmetric says which end is which: blaster-e's
+	# mesh runs from its origin back along +Z, and its stock is the heavy end. Its grip, the
+	# lowest part of it, is in the back half: so the muzzle is the -Z end.
+	var long_box := ZeeModelCache.bounds(ZeeWeaponArtTable.sniper().model_path)
+	_check("the sniper's mesh runs back (+Z) from a muzzle at its origin (%.2f..%.2f)" % [long_box.position.z, long_box.end.z],
+		long_box.position.z > -0.05 and long_box.end.z > 1.2)
 
 	# The melee models stand upright on their handle instead.
 	var knife := ZeeWeaponArtTable.knife()
@@ -332,17 +340,21 @@ func _orientation() -> void:
 func _muzzles() -> void:
 	_begin("muzzles")
 
-	# blaster-e is the one model in the kit whose origin is at the stock rather than at
-	# its centre, so a hand-written offset correct for the other seventeen puts its
-	# muzzle somewhere behind the player's ear. Measuring cannot get that wrong.
+	# blaster-e is the one model in the kit whose origin is not at its centre: it is at the
+	# muzzle, so a hand-written offset correct for the other seventeen puts its muzzle
+	# somewhere behind the player's ear. Measuring cannot get that wrong.
 	var sniper := ZeeWeaponArtTable.sniper()
 	var long := ZeeModelCache.muzzle_distance(
 		sniper.model_path, sniper.model_forward
 	)
 
 	_check(
-		"the off-centre model measures its full 1.39 m rather than half of it",
-		long > 1.2 and long < 1.6
+		"the off-centre model measures its muzzle at its own origin, not 1.39 m off (%.3f)" % long,
+		long < 0.05
+	)
+	_check(
+		"and its stock end, the other way, is the full 1.39 m",
+		ZeeModelCache.muzzle_distance(sniper.model_path, -sniper.model_forward) > 1.2
 	)
 
 	# A centred model measures about half its length, which is the other half of the

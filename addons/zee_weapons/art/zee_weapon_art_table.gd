@@ -82,8 +82,8 @@ static func pose_offset(pose: StringName) -> Vector3:
 
 
 ## How a blaster of each pose is turned at the hip, in degrees (pitch, yaw, roll) in the
-## model's own space: yaw positive brings the muzzle in toward the crosshair, roll negative
-## cants the weapon's right side up toward the eye.
+## model's own space (a blaster's is the view's: it points -Z): yaw positive brings the muzzle
+## in toward the crosshair, roll positive cants the weapon's right side up toward the eye.
 ##
 ## [b]Canted and turned, because pointed straight down the view it is drawn end-on.[/b] A
 ## weapon below and right of the eye, pointing where the eye points, shows the camera its
@@ -95,11 +95,11 @@ static func pose_offset(pose: StringName) -> Vector3:
 static func pose_rotation(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
-			return Vector3(0.0, 8.0, -22.0)
+			return Vector3(0.0, 8.0, 22.0)
 		POSE_HEAVY:
-			return Vector3(0.0, 8.0, -24.0)
+			return Vector3(0.0, 8.0, 24.0)
 		_:
-			return Vector3(0.0, 10.0, -30.0)
+			return Vector3(0.0, 10.0, 30.0)
 
 
 ## How much a weapon of each pose is shrunk to stand in for a narrower field of view.
@@ -286,7 +286,7 @@ static func spade() -> ZeeWeaponArt:
 
 static func pistol() -> ZeeWeaponArt:
 	return _blaster(ZeeWeaponIds.PISTOL, "blaster-k", POSE_PISTOL).with_magazine(
-		CLIP_SMALL, Vector3(0.0, -0.09, -0.02)
+		CLIP_SMALL, Vector3(0.0, -0.09, 0.02)
 	)
 
 
@@ -298,9 +298,11 @@ static func revolver() -> ZeeWeaponArt:
 static func machine_pistol() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.MACHINE_PISTOL, "blaster-c", POSE_PISTOL)
 	art.with_magazine(CLIP_SMALL, Vector3(0.0, -0.09, 0.0))
-	# The silencer's origin is at its own front tip and its body runs backwards, so it
-	# is placed a silencer-length in front of the barrel rather than at it.
-	art.with_attachment(SILENCER_SMALL, Vector3(0.0, 0.0, 0.482))
+	# The silencer's origin is its back end and its body runs forward (-Z) from there, so
+	# its origin goes on the muzzle: the model's -Z end, 0.238 m out. It was at +0.482,
+	# a silencer-length behind the stock, placed by eye while every blaster was drawn
+	# backwards (docs/history.md).
+	art.with_attachment(SILENCER_SMALL, Vector3(0.0, 0.0, -0.238))
 	return art
 
 
@@ -313,7 +315,7 @@ static func derringer() -> ZeeWeaponArt:
 
 static func smg() -> ZeeWeaponArt:
 	return _blaster(ZeeWeaponIds.SMG, "blaster-i", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.14, 0.02)
+		CLIP_LARGE, Vector3(0.0, -0.14, -0.02)
 	)
 
 
@@ -332,7 +334,8 @@ static func rifle() -> ZeeWeaponArt:
 ## Rear-heavy: this is the one model whose bulk sits behind the grip.
 static func bullpup() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.BULLPUP, "blaster-r", POSE_RIFLE)
-	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.15, -0.14))
+	# Behind the grip (+Z, toward the shoulder), which is what makes it a bullpup.
+	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.15, 0.14))
 	art.with_attachment(SCOPE_SMALL, Vector3(0.0, 0.24, 0.08))
 	return art
 
@@ -360,7 +363,7 @@ static func drum_shotgun() -> ZeeWeaponArt:
 
 static func marksman() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.MARKSMAN, "blaster-p", POSE_RIFLE)
-	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.16, -0.02))
+	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.16, 0.02))
 	art.with_attachment(SCOPE_SMALL, Vector3(0.0, 0.19, 0.06))
 	# A scope it carries, so a scope it looks through. Less zoom than the sniper's: it is
 	# the rifle for the middle distance, and a 4x view there loses the target sideways.
@@ -371,24 +374,21 @@ static func marksman() -> ZeeWeaponArt:
 
 # --- Heavies ----------------------------------------------------------------
 
-## The longest model at 1.39 m, and the only one whose origin sits at the stock rather
-## than at its centre — which is why the muzzle is measured rather than assumed.
+## The longest model at 1.39 m, and the only one whose origin is not at its centre: it is at
+## the muzzle, the mesh running 1.39 m back (+Z) to the stock. Which is why the muzzle is
+## measured rather than assumed.
 static func sniper() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.SNIPER, "blaster-e", POSE_HEAVY)
-	# [b]Pulled back along its own length, in both views, in the same direction — and
-	# scaled with the model.[/b] Its mesh origin is at the stock rather than at the
-	# middle, so left alone the whole weapon sits a metre out in front of wherever it is
-	# placed. Three things about this line were wrong before a render showed them:
-	# -Z is forward so the pull-back is +Z (the world offset had the sign flipped, which
-	# the rack showed as the sniper lying across the row in front of it); and the
-	# correction is a distance along a model that is drawn at 40% in first person, so a
-	# flat 0.42 pulled it four times too far and put the stock 16 cm from the eye.
-	# Along the weapon's own axis, which the hip hold turns away from the view's: the
-	# model-space step toward the stock, through the hold's own basis (which carries the
-	# scale, the cant and the yaw).
-	art.view_offset += art.view_transform().basis * Vector3(0.0, 0.0, -0.42)
-	art.aim_offset += art.aim_transform().basis * Vector3(0.0, 0.0, -0.42)
-	art.world_offset += Vector3(0.0, 0.0, 0.42 * art.world_scale)
+	# [b]Slid forward along its own length, in both views, and scaled with the model.[/b]
+	# Its origin is the muzzle, so left alone the whole rifle lies back past the hand into
+	# the player's face. 0.8 m back from the muzzle is the grip, and it goes on the hold.
+	# Along the hold's own basis (which carries the scale, the cant and the yaw), never the
+	# camera's Z: once the hold is turned the camera's Z is not the rifle's. This line has
+	# been wrong three times (a flipped sign, an unscaled distance, and the direction itself,
+	# while every blaster was drawn backwards); render the rack and the sheet after touching it.
+	art.view_offset += art.view_transform().basis * Vector3(0.0, 0.0, -0.8)
+	art.aim_offset += art.aim_transform().basis * Vector3(0.0, 0.0, -0.8)
+	art.world_offset += Vector3(0.0, 0.0, -0.8 * art.world_scale)
 	art.with_attachment(SCOPE_LARGE, Vector3(0.0, 0.20, 0.55))
 	art.weight = 1.8
 	art.aim_scoped = true
@@ -399,7 +399,8 @@ static func sniper() -> ZeeWeaponArt:
 
 static func minigun() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.MINIGUN, "blaster-f", POSE_HEAVY)
-	art.with_attachment(SILENCER_LARGE, Vector3(0.0, 0.0, 0.938))
+	# On the muzzle, the -Z end (see the machine pistol's).
+	art.with_attachment(SILENCER_LARGE, Vector3(0.0, 0.0, -0.655))
 	art.weight = 2.0
 	return art
 
@@ -441,10 +442,17 @@ static func sticky() -> ZeeWeaponArt:
 
 # --- Builders ---------------------------------------------------------------
 
-## A blaster: points along +Z, sits at its pose's offset, measures its own muzzle.
+## A blaster: points along -Z, Godot's own forward, sits at its pose's offset, measures its
+## own muzzle.
+##
+## [b]-Z, and for years the table said +Z.[/b] Seventeen of the eighteen meshes have
+## symmetric bounds along their length, so the rack's muzzle pip (the far end of the bounds
+## along model_forward) sat at whichever end it was told to, and every blaster was drawn
+## stock-first in both views, with its tracers leaving the stock. A side render with a
+## marker on +Z settled it: the marker is on the stock of all eighteen (docs/history.md).
 static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
 	var art := ZeeWeaponArt.make(id, BLASTERS + model + ".glb")
-	art.model_forward = Vector3.BACK
+	art.model_forward = Vector3.FORWARD
 	art.pose = pose
 	art.view_offset = pose_offset(pose)
 	art.view_scale = pose_scale(pose)

@@ -59,7 +59,7 @@ Short forms; the reasoning is in the linked file.
 **The view model** (every one found by rendering)
 
 - The muzzle is measured from the mesh's bounds (`muzzle_distance`), never authored; it is for effects only, never a shot's origin. [view-model](docs/view-model.md#the-muzzle-is-measured-never-written-down)
-- State `model_forward`, derive `orientation()`; never both. Blasters point +Z, melee and grenades +Y with the origin at the grip. [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
+- State `model_forward`, derive `orientation()`; never both. Blasters point **-Z** (Godot's forward; the table said +Z for years and drew them stock-first), melee and grenades +Y with the origin at the grip; settle an axis with a side render and a marker, never with the rack (symmetric bounds). [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
 - Handle the reversed vector before the general axis-angle case (`NaN` draws nothing). [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
 - A melee weapon carries no extra `world_rotation` of -90. [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
 - A per-model offset correction is scaled with the model. [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
