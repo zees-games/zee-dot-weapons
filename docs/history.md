@@ -32,6 +32,10 @@ Christian's clip of arena put six things side by side with a production shooter'
 
 `ZeeWeaponArtTable._blaster` said `model_forward = Vector3.BACK` (+Z), and the meshes point -Z. Every blaster in first person and in every carrier's hands was stock-first, with tracers and flashes leaving the stock and the silencers placed "in front of the barrel" on the stock. The rack, built to prove orientation, could not: seventeen meshes have symmetric bounds along their length, so the measured muzzle sits at whichever end the table names, and the rack showed the table agreeing with itself. Found by the contact sheet (the shotgun's two barrels at the near end), settled by a Blender side render with a marker on +Z. **A check that measures what it was told to measure proves nothing about the axis it was told.**
 
+## A silencer in front of the gun, and the flash behind it (2026-10-10)
+
+After the -Z fix the minigun's silencer went on "the muzzle", the -Z end of the mesh's bounds. A third-person render of a carrier (a figure facing -Z with a hand where game-arena puts one) showed it floating ahead of the barrel and below it, with the flash and the tracer starting in the gap. The -Z end of `blaster-f`'s bounds is the tip of a slanted brake 13 cm past the barrel's end (z -0.52), and its bore is 5.2 cm above the origin; the attachment sat at the origin's height. The muzzle the effects use was the bounds' end too, so with the silencer on, every shot started inside it. The silencer now slides over the brake at the bore's height, and the art names the muzzle as the silencer's far end (`muzzle_distance`, `muzzle_offset`); the machine pistol's got the same treatment (1.7 cm of height). The muzzle direction, the rifle and the sniper (slid -0.8 m) were right in the same render. **The bounds' end is where the mesh stops, not where the bore does; an attachment on a barrel is placed at the bore and moves the muzzle to its own end.**
+
 ## Found in a game
 
 - **Every weapon in a delivered game loaded invisible**, one WARN each: the art was under the pack's mount and the table named `res://assets/`. Found by game-playground; `set_asset_root` is the fix.

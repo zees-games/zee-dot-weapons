@@ -116,7 +116,7 @@ Each of these is its own line in `ZeeWeaponPose`:
 | Blaster axis | every one points **-Z**; the side render with a +Z marker is the proof, not the rack |
 | `blaster-e` | the only one whose mesh origin is not central: it is at the muzzle, the mesh running 1.39 m back along +Z; the grip is about 0.8 m back. It carries its own scope (an added one floated above it) |
 | Hip holds | rifle 0.19 / -0.23 / -0.40 at 0.60, yaw 10 roll 30; heavy 0.19 / -0.24 / -0.42 at 0.55, yaw 10 roll 26; pistol 0.15 / -0.19 / -0.36 at 0.55, yaw 8 roll 22; melee 0.22 / -0.25 / -0.40 at 1.2, (70, 80, 40); aim 0 / -0.135 / -0.46 straight |
-| Silencers | origin at their back end, body running -Z: the origin goes on the gun's -Z end |
+| Silencers | origin at their back end, body running -Z, centred on it: the origin goes on the barrel's end at the bore's height (`blaster-f`: z -0.52, y 0.052, not its bounds' end, which is a brake; `blaster-c`: z -0.238, y 0.017), and the art's `muzzle_distance` / `muzzle_offset` move the effects' muzzle to the silencer's far end (0.283 m and 0.244 m long) |
 | Blocky character | 2.7 m tall, 1.6 m wide: a stylised giant, not a person |
 | One arm | a 0.4 × 1.1 × 0.4 box, pivot at the shoulder, mesh hanging to `y = -1` |
 | Melee tools | 0.15 m to 0.35 m tall, origin at the butt of the handle, pointing +Y |

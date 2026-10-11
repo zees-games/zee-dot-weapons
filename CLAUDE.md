@@ -58,7 +58,7 @@ Short forms; the reasoning is in the linked file.
 
 **The view model** (every one found by rendering)
 
-- The muzzle is measured from the mesh's bounds (`muzzle_distance`), never authored; it is for effects only, never a shot's origin. [view-model](docs/view-model.md#the-muzzle-is-measured-never-written-down)
+- The muzzle is measured from the mesh's bounds (`muzzle_distance`), never authored; it is for effects only, never a shot's origin. An attachment on the barrel is the exception: it sits at the bore (which the bounds' end may not be) and the art names its far end as the muzzle. [history](docs/history.md#a-silencer-in-front-of-the-gun-and-the-flash-behind-it-2026-10-10) [view-model](docs/view-model.md#the-muzzle-is-measured-never-written-down)
 - State `model_forward`, derive `orientation()`; never both. Blasters point **-Z** (Godot's forward; the table said +Z for years and drew them stock-first), melee and grenades +Y with the origin at the grip; settle an axis with a side render and a marker, never with the rack (symmetric bounds). [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
 - Handle the reversed vector before the general axis-angle case (`NaN` draws nothing). [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)
 - A melee weapon carries no extra `world_rotation` of -90. [view-model](docs/view-model.md#orientation-and-the-three-ways-it-goes-wrong)

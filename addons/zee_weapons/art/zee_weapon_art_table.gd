@@ -304,8 +304,12 @@ static func machine_pistol() -> ZeeWeaponArt:
 	# The silencer's origin is its back end and its body runs forward (-Z) from there, so
 	# its origin goes on the muzzle: the model's -Z end, 0.238 m out. It was at +0.482,
 	# a silencer-length behind the stock, placed by eye while every blaster was drawn
-	# backwards (docs/history.md).
-	art.with_attachment(SILENCER_SMALL, Vector3(0.0, 0.0, -0.238))
+	# backwards (docs/history.md). At the bore's height (1.7 cm above the origin), and the
+	# muzzle the effects use is the silencer's far end (0.244 m long), or the flash and the
+	# tracers start inside it.
+	art.with_attachment(SILENCER_SMALL, Vector3(0.0, 0.017, -0.238))
+	art.muzzle_distance = 0.238 + 0.244
+	art.muzzle_offset = Vector3(0.0, 0.017, 0.0)
 	return art
 
 
@@ -402,8 +406,17 @@ static func sniper() -> ZeeWeaponArt:
 
 static func minigun() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.MINIGUN, "blaster-f", POSE_HEAVY)
-	# On the muzzle, the -Z end (see the machine pistol's).
-	art.with_attachment(SILENCER_LARGE, Vector3(0.0, 0.0, -0.655))
+	# On the muzzle (see the machine pistol's), but not on the -Z end of the bounds: that is
+	# the tip of a slanted brake that runs 13 cm past the barrel (which ends at z -0.52, its
+	# bore 5.2 cm above the origin). At the bounds' end and the origin's height the silencer
+	# floated in front of the gun, below the bore, with the flash in the gap; slid over the
+	# brake it sits on the barrel. The effects' muzzle is its far end (0.283 m long): written
+	# down, the one case ZeeWeaponArt.muzzle_distance allows, because the measurement covers
+	# the gun's mesh and not what is screwed onto it. Found by a third-person render
+	# (docs/history.md).
+	art.with_attachment(SILENCER_LARGE, Vector3(0.0, 0.052, -0.52))
+	art.muzzle_distance = 0.52 + 0.283
+	art.muzzle_offset = Vector3(0.0, 0.052, 0.0)
 	art.weight = 2.0
 	return art
 
