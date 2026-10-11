@@ -72,7 +72,7 @@ static func pose_offset(pose: StringName) -> Vector3:
 		POSE_PISTOL:
 			return Vector3(0.15, -0.19, -0.36)
 		POSE_HEAVY:
-			return Vector3(0.20, -0.25, -0.48)
+			return Vector3(0.19, -0.24, -0.42)
 		POSE_MELEE:
 			return Vector3(0.22, -0.25, -0.40)
 		POSE_THROWN:
@@ -97,7 +97,7 @@ static func pose_rotation(pose: StringName) -> Vector3:
 		POSE_PISTOL:
 			return Vector3(0.0, 8.0, 22.0)
 		POSE_HEAVY:
-			return Vector3(0.0, 8.0, 24.0)
+			return Vector3(0.0, 10.0, 26.0)
 		_:
 			return Vector3(0.0, 10.0, 30.0)
 
@@ -114,7 +114,7 @@ static func pose_scale(pose: StringName) -> float:
 		POSE_PISTOL:
 			return 0.55
 		POSE_HEAVY:
-			return 0.46
+			return 0.55
 		# [b]Melee is not shrunk the way the blasters are.[/b] A knife is 35 cm long against
 		# a rifle's 71, so the correction that puts a rifle at a third of the screen puts a
 		# knife at a sixth — behind the hand holding it, which is where the first render
@@ -292,7 +292,10 @@ static func pistol() -> ZeeWeaponArt:
 
 ## The widest short model in the kit. Width reads as a cylinder, so it is the revolver.
 static func revolver() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.REVOLVER, "blaster-o", POSE_PISTOL)
+	var art := _blaster(ZeeWeaponIds.REVOLVER, "blaster-o", POSE_PISTOL)
+	# The widest short model: at the pistol's scale it was a block filling the corner.
+	art.view_scale *= 0.85
+	return art
 
 
 static func machine_pistol() -> ZeeWeaponArt:
@@ -389,7 +392,7 @@ static func sniper() -> ZeeWeaponArt:
 	art.view_offset += art.view_transform().basis * Vector3(0.0, 0.0, -0.8)
 	art.aim_offset += art.aim_transform().basis * Vector3(0.0, 0.0, -0.8)
 	art.world_offset += Vector3(0.0, 0.0, -0.8 * art.world_scale)
-	art.with_attachment(SCOPE_LARGE, Vector3(0.0, 0.20, 0.55))
+	# No scope attachment: the mesh has its own, and the one added sat in the air above it.
 	art.weight = 1.8
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
@@ -458,6 +461,9 @@ static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeap
 	art.view_scale = pose_scale(pose)
 	art.weight = pose_weight(pose)
 	art.view_rotation = pose_rotation(pose)
+	# At the sight: centred, low enough that the eye looks along the top of the weapon rather
+	# than at the back of it (at -0.11 the stock filled the bottom of the screen as a block).
+	art.aim_offset = Vector3(0.0, -0.135, -0.46)
 	return art
 
 
