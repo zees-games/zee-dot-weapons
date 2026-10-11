@@ -55,6 +55,14 @@ Each of these is its own line in `ZeeWeaponPose`:
 
 **Hip poses sit low and right** (`ZeeWeaponArtTable.pose_offset`). A rifle 12 cm right and 16 down at 48 cm out sat almost on the crosshair with its top toward the eye.
 
+**And canted and turned** (`pose_rotation`: yaw +10 brings the muzzle in, roll -30 tilts the right side up; pistols and heavies a little less). A weapon below and right of the eye pointing where the eye points shows the camera its back face and a sliver of its left side, which is what this pack drew: a stub in the corner of the screen, beside a production shooter's rifle lying large across the lower right with its right side and top showing. Perspective already carries a straight barrel toward the centre; at this distance the right side does not face the eye at all until the cant is about thirty degrees (the face normal against the direction back to the camera). The rifle is at 0.6 scale and 0.40 m out, so its length runs from the bottom-right corner to just short of the crosshair.
+
+- **Rotations are in the model's own space**, before `orientation()` turns +Z onto -Z: positive yaw is muzzle-in and negative roll is right-side-up for a blaster. A sign written by intuition is the wrong one about half the time; render it.
+- **A correction along a weapon's length goes through the hold's basis**, not along the camera's Z (the sniper's pull-back): once the hold is turned, the camera's Z is no longer the weapon's.
+- **The aim hold is a transform of its own** (`aim_offset` plus `aim_rotation`, zero: straight down the sight), reached through the view model's `Aim` node by a slerp of the rotation and a lerp of the position. Moving only the position, as the pose's `aim_shift` did, brought the canted gun to the middle end-on and crooked; interpolating the bases component-wise shrinks the gun half way.
+- **The arms are not under `Aim`.** Carried rigidly to the sight, the shoulders went with the gun and the left arm lay across the screen. They are under `Animated` (so a kick, a reload and a draw carry them) and reach every frame for the grip and fore-end put through the `Aim` transform.
+- `--hold "x,y,z,pitch,yaw,roll,scale"` on the range's `--sheet` re-equips with that hold, for tuning without an edit per guess.
+
 ## The arms
 
 **The arms reach** (`ZeeViewArms.reach`): each arm is stretched from a shoulder below the screen to its hand, and the hands are measured off the weapon's own bounds along the barrel (right hand 30% from the back, left 62%). A knife or a grenade has one hand. Fixed per-pose placements held any weapon slid along its length in the art table a hand's width off its grip.

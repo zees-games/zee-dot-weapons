@@ -22,12 +22,13 @@ extends Node3D
 ## [b]Structure, and why it is four nodes deep.[/b]
 ## [codeblock]
 ## ZeeViewModel          at the camera, identity
-##   Arms                the hands, posed per weapon
-##   Animated            the pose's transform: sway, bob, kick, deploy
-##     Holder            the art's resting transform: offset, orientation, scale
-##       Weapon          the mesh, in its own +Z-forward space
-##       Magazine        a sibling, so a reload can animate it independently
-##       Attachment(s)   siblings too, in the same model space
+##   Animated            the pose's transform: sway, bob, kick, deploy, reload
+##     Arms              the hands: shoulders fixed, reaching every frame for the weapon
+##     Aim               hip to sight: the move from the art's hip hold to its aim hold
+##       Holder          the art's resting transform: offset, orientation, scale
+##         Weapon        the mesh, in its own +Z-forward space
+##         Magazine      a sibling, so a reload can animate it independently
+##         Attachment(s) siblings too, in the same model space
 ## [/codeblock]
 ## The split between Animated and Holder is what lets the art's placement and the frame's
 ## animation be authored independently: fold them together and every weapon's resting
@@ -74,6 +75,7 @@ signal model_ready(id: StringName, weapon: Node3D)
 
 var _arms: ZeeViewArms = null
 var _animated: Node3D = null
+var _aim_node: Node3D = null
 var _holder: Node3D = null
 var _weapon: Node3D = null
 var _magazine: Node3D = null
@@ -82,6 +84,10 @@ var _attachments: Array[Node3D] = []
 var _pose := ZeeWeaponPose.make()
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
+
+## Where the right and left hands go, in the Aim node's space, measured at equip.
+var _grip_at := Vector3.ZERO
+var _fore_at := Vector3.ZERO
 
 ## Where the muzzle sits in the weapon's own space, measured when the model was built.
 var _muzzle := Vector3.ZERO
@@ -147,9 +153,17 @@ func _build_structure() -> void:
 	_animated.name = "Animated"
 	add_child(_animated)
 
+	# [b]Aim is a node of its own, because the aim hold is turned as well as moved.[/b] The hip
+	# hold is canted and turned to show the weapon's side; the aim hold is straight down the
+	# sight. Moving only the position (as the pose's aim_shift did) brought a canted gun to
+	# the middle of the screen end-on.
+	_aim_node = Node3D.new()
+	_aim_node.name = "Aim"
+	_animated.add_child(_aim_node)
+
 	_holder = Node3D.new()
 	_holder.name = "Holder"
-	_animated.add_child(_holder)
+	_aim_node.add_child(_holder)
 
 	if show_arms:
 		_build_arms()
@@ -168,7 +182,13 @@ func _build_arms() -> void:
 	_arms = ZeeViewArms.new()
 	_arms.name = "Arms"
 	_arms.skin = arm_skin
-	add_child(_arms)
+	# [b]Under Animated, so the hands move with the gun.[/b] They were the view model's own
+	# child, and every reload, draw and kick moved the gun out of hands that stayed where
+	# they were: the contact sheet's draw frames had the rifle sliding away from two
+	# forearms holding nothing. [b]Not under Aim[/b]: carried rigidly to the sight, the
+	# shoulders went with the gun and the left arm lay across the screen. They reach for the
+	# aimed hands every frame instead (_place_hands).
+	_animated.add_child(_arms)
 
 	var res := _arms.build()
 
@@ -207,10 +227,11 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	# The kick turns about the hand. The holder's origin is where the art puts the weapon
 	# in the hand, so it is the grip, measured once per weapon rather than written down.
 	_pose.pivot = _holder.transform.origin
-	# Aim moves the whole animated rig by the difference between the art's two places, so
-	# the holder arrives exactly at aim_offset. A new weapon starts at the hip.
-	_pose.aim_shift = art.aim_offset - art.view_offset
+	# Aim is the Aim node's (see _apply_aim), not a shift in the pose. A new weapon starts at
+	# the hip.
+	_pose.aim_shift = Vector3.ZERO
 	_aim_fraction = 0.0
+	_aim_node.transform = Transform3D.IDENTITY
 
 	if _arms != null:
 		_arms.set_pose(art.pose)
@@ -285,10 +306,23 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 			grip = centre + forward * (lerpf(t_min, t_max, 0.30) - along) + under
 			fore = centre + forward * (lerpf(t_min, t_max, 0.62) - along) + under
 
-	_arms.call("reach", grip, fore, art.pose)
+	_grip_at = grip
+	_fore_at = fore
+	_place_hands()
 
 
-## The bounds of every mesh under [param node], in this view model's own space.
+## Puts the hands where the weapon's grip and fore-end are this frame: through the Aim
+## node, so the hands come up to the sight with the gun while the shoulders stay below the
+## screen. Cheap (two transforms), so it runs every frame.
+func _place_hands() -> void:
+	if _arms == null or _art == null or not _arms.has_method("reach"):
+		return
+	var aim := _aim_node.transform if _aim_node != null else Transform3D.IDENTITY
+	_arms.call("reach", aim * _grip_at, aim * _fore_at, _art.pose)
+
+
+## The bounds of every mesh under [param node], in the Aim node's space (where the holder
+## and the arms are), so the pose this frame happens to be in does not move the hands.
 func _bounds_here(node: Node) -> AABB:
 	var out := AABB()
 	var seeded := false
@@ -297,7 +331,7 @@ func _bounds_here(node: Node) -> AABB:
 			continue
 		var to_here := Transform3D.IDENTITY
 		var walk: Node = mi
-		while walk != null and walk != self:
+		while walk != null and walk != _aim_node and walk != self:
 			if walk is Node3D:
 				to_here = (walk as Node3D).transform * to_here
 			walk = walk.get_parent()
@@ -407,12 +441,13 @@ func advance(delta: float) -> void:
 	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched)
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
+	_place_hands()
 	_apply_hands_lens()
 	# Through a scope the weapon is not drawn at all: the scope IS the view, and a barrel
 	# across the bottom of it is a weapon held in front of the eye that should be at it.
-	# The arms are the view model's own child rather than the animated one's (they follow
-	# the pose through set_pose), so they are hidden with it here or they are drawn across
-	# the bottom of the scope.
+	# The built arms are under Animated and go with it; a game's own arms (arms_ref) may live
+	# anywhere, so they are hidden by name too, or they are drawn across the bottom of the
+	# scope.
 	var scoped := is_scoped()
 	_animated.visible = not scoped
 	if _arms != null:
@@ -474,6 +509,36 @@ func _advance_aim(delta: float) -> void:
 	var time := _art.aim_time if _art != null else 0.16
 	_aim_fraction = move_toward(_aim_fraction, target, delta / maxf(time, 0.01))
 	_pose.set_aim(_ease(_aim_fraction))
+	_apply_aim(_ease(_aim_fraction))
+
+
+## Moves and turns the Aim node so the holder sits [param f] of the way from the art's hip
+## hold to its aim hold, and tells the pose where the grip now is so a kick still turns
+## about it.
+##
+## [b]The rotation is slerped, the position lerped.[/b] Interpolating the two transforms'
+## bases component by component would shrink the weapon half way (the average of two
+## rotations is not a rotation).
+func _apply_aim(f: float) -> void:
+	if _art == null or _aim_node == null:
+		return
+
+	var hip := _art.view_transform()
+
+	if f <= 0.0:
+		_aim_node.transform = Transform3D.IDENTITY
+		_pose.pivot = hip.origin
+		return
+
+	var sight := _art.aim_transform()
+	var turn := hip.basis.get_rotation_quaternion().slerp(
+		sight.basis.get_rotation_quaternion(), f
+	)
+	var now := Transform3D(
+		Basis(turn).scaled(Vector3.ONE * _art.view_scale), hip.origin.lerp(sight.origin, f)
+	)
+	_aim_node.transform = now * hip.affine_inverse()
+	_pose.pivot = now.origin
 
 
 ## Smoothstep, so the weapon leaves the hip and arrives at the eye gently rather than at

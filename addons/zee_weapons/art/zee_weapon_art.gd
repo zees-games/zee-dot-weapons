@@ -101,6 +101,11 @@ extends Resource
 ## weapon's top lines up under the crosshair. Tuned per pose like the resting place.
 @export var aim_offset: Vector3 = Vector3(0.0, -0.11, -0.42)
 
+## The weapon's rotation at full aim, in place of [member view_rotation]: straight down the
+## sight, so zero. The hip hold is canted and turned to show the weapon's side, and a gun
+## brought to the eye still canted is drawn end-on and crooked.
+@export var aim_rotation: Vector3 = Vector3.ZERO
+
 ## Seconds from hip to full aim (and back).
 @export_range(0.01, 1.0, 0.01) var aim_time: float = 0.16
 
@@ -169,6 +174,11 @@ func view_transform() -> Transform3D:
 ## The third-person transform, relative to the hand it hangs off.
 func world_transform() -> Transform3D:
 	return _transform(world_offset, world_rotation, world_scale)
+
+
+## The first-person transform at full aim.
+func aim_transform() -> Transform3D:
+	return _transform(aim_offset, aim_rotation, view_scale)
 
 
 func magazine_transform() -> Transform3D:

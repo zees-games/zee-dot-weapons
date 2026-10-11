@@ -570,11 +570,31 @@ func _run_sheet(prefix: String) -> void:
 	if def != null and def.tuning != null and "recoil_pitch" in def.tuning:
 		recoil = Vector2(def.tuning.get("recoil_pitch"), def.tuning.get("recoil_yaw"))
 
+	# `--hold "x,y,z,pitch,yaw,roll,scale"` re-equips the weapon with that first-person
+	# placement instead of the table's: the knob for tuning a hold without an edit and a
+	# re-import per guess. The numbers that look right then go into ZeeWeaponArtTable.
+	var hold := _argument("--hold")
+	if hold != "" and def != null:
+		var art: ZeeWeaponArt = ZeeWeaponArtTable.get_art(def.id).duplicate(true)
+		var v := hold.split_floats(",")
+		if v.size() >= 3:
+			art.view_offset = Vector3(v[0], v[1], v[2])
+		if v.size() >= 6:
+			art.view_rotation = Vector3(v[3], v[4], v[5])
+		if v.size() >= 7:
+			art.view_scale = v[6]
+		_view.equip(art)
+
+	# `--frames 0,2,9` renders only those frames of the sheet.
+	var only := _argument("--frames").split_floats(",") if _argument("--frames") != "" else PackedFloat64Array()
+
 	# A second to let the art load and the first frames settle.
 	for i in range(30):
 		await RenderingServer.frame_post_draw
 
 	for n in range(SHEET_FRAMES.size()):
+		if not only.is_empty() and not only.has(float(n)):
+			continue
 		var label: String = SHEET_FRAMES[n][0]
 		var step: String = SHEET_FRAMES[n][1]
 		_sheet_reset()

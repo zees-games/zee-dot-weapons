@@ -70,15 +70,36 @@ const POSE_THROWN := &"thrown"
 static func pose_offset(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
-			return Vector3(0.17, -0.19, -0.42)
+			return Vector3(0.15, -0.19, -0.36)
 		POSE_HEAVY:
-			return Vector3(0.21, -0.23, -0.58)
+			return Vector3(0.20, -0.25, -0.48)
 		POSE_MELEE:
 			return Vector3(0.23, -0.16, -0.50)
 		POSE_THROWN:
 			return Vector3(0.17, -0.19, -0.36)
 		_:
-			return Vector3(0.19, -0.21, -0.48)
+			return Vector3(0.19, -0.23, -0.40)
+
+
+## How a blaster of each pose is turned at the hip, in degrees (pitch, yaw, roll) in the
+## model's own space: yaw positive brings the muzzle in toward the crosshair, roll negative
+## cants the weapon's right side up toward the eye.
+##
+## [b]Canted and turned, because pointed straight down the view it is drawn end-on.[/b] A
+## weapon below and right of the eye, pointing where the eye points, shows the camera its
+## back face and a sliver of its left side: a stub in the corner, which is what this pack
+## drew until the contact sheet put it beside a production shooter's. Perspective already
+## carries a straight barrel toward the screen's centre; the yaw adds to that, and the cant
+## is what turns the right side (the side with the detail) toward the eye. At this distance a
+## right side needs about thirty degrees of cant before it faces the camera at all.
+static func pose_rotation(pose: StringName) -> Vector3:
+	match pose:
+		POSE_PISTOL:
+			return Vector3(0.0, 8.0, -22.0)
+		POSE_HEAVY:
+			return Vector3(0.0, 8.0, -24.0)
+		_:
+			return Vector3(0.0, 10.0, -30.0)
 
 
 ## How much a weapon of each pose is shrunk to stand in for a narrower field of view.
@@ -91,9 +112,9 @@ static func pose_offset(pose: StringName) -> Vector3:
 static func pose_scale(pose: StringName) -> float:
 	match pose:
 		POSE_PISTOL:
-			return 0.52
+			return 0.55
 		POSE_HEAVY:
-			return 0.40
+			return 0.46
 		# [b]Melee is not shrunk the way the blasters are.[/b] A knife is 35 cm long against
 		# a rifle's 71, so the correction that puts a rifle at a third of the screen puts a
 		# knife at a sixth — behind the hand holding it, which is where the first render
@@ -104,7 +125,7 @@ static func pose_scale(pose: StringName) -> float:
 		POSE_THROWN:
 			return 0.75
 		_:
-			return 0.48
+			return 0.60
 
 
 ## How much a weapon of each pose sways, before its own [member ZeeWeaponArt.weight].
@@ -348,7 +369,11 @@ static func sniper() -> ZeeWeaponArt:
 	# the rack showed as the sniper lying across the row in front of it); and the
 	# correction is a distance along a model that is drawn at 40% in first person, so a
 	# flat 0.42 pulled it four times too far and put the stock 16 cm from the eye.
-	art.view_offset += Vector3(0.0, 0.0, 0.42 * art.view_scale)
+	# Along the weapon's own axis, which the hip hold turns away from the view's: the
+	# model-space step toward the stock, through the hold's own basis (which carries the
+	# scale, the cant and the yaw).
+	art.view_offset += art.view_transform().basis * Vector3(0.0, 0.0, -0.42)
+	art.aim_offset += art.aim_transform().basis * Vector3(0.0, 0.0, -0.42)
 	art.world_offset += Vector3(0.0, 0.0, 0.42 * art.world_scale)
 	art.with_attachment(SCOPE_LARGE, Vector3(0.0, 0.20, 0.55))
 	art.weight = 1.8
@@ -410,9 +435,7 @@ static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeap
 	art.view_offset = pose_offset(pose)
 	art.view_scale = pose_scale(pose)
 	art.weight = pose_weight(pose)
-	# Held slightly muzzle-in and nose-down, which is what stops a long weapon from
-	# looking like it is glued to the edge of the screen.
-	art.view_rotation = Vector3(-2.0, -4.0, 0.0)
+	art.view_rotation = pose_rotation(pose)
 	return art
 
 

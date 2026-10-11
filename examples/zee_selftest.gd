@@ -1082,8 +1082,9 @@ func _aim() -> void:
 	step.call(0.4)
 	_check("a rifle zooms a little and is not scoped (%.2f)" % view.aim_fov_scale(),
 		absf(view.aim_fov_scale() - rifle.aim_zoom) < 0.001 and not view.is_scoped())
-	var holder := view.get_node("Animated/Holder") as Node3D
-	var at := animated.transform.origin + holder.transform.origin
+	var aim_node := view.get_node("Animated/Aim") as Node3D
+	var holder := view.get_node("Animated/Aim/Holder") as Node3D
+	var at := (animated.transform * aim_node.transform * holder.transform).origin
 	_check("and arrives centred at its aim_offset (%.3f m off)" % at.distance_to(rifle.aim_offset),
 		at.distance_to(rifle.aim_offset) < 0.01)
 
