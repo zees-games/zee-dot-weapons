@@ -106,6 +106,18 @@ extends Resource
 ## brought to the eye still canted is drawn end-on and crooked.
 @export var aim_rotation: Vector3 = Vector3.ZERO
 
+## Whether aiming looks along an iron sight measured from the mesh and built on it (a notch
+## at the rear, a ring round a post at the front; see `view/zee_iron_sight.gd`). When the
+## view model can measure one, it replaces [member aim_offset] and [member aim_rotation]:
+## the line through the two sights goes through the eye, so the front sight sits on the
+## crosshair and the gun's top runs away below it. Off, or on a scoped weapon, or with no
+## mesh to measure, aim is the written [member aim_offset] as before.
+@export var iron_sight: bool = true
+
+## Metres from the eye to the rear sight at full aim, before the view model pushes it out
+## far enough that the gun's back end stays in front of the near plane.
+@export_range(0.05, 1.0, 0.01) var aim_eye_relief: float = 0.2
+
 ## Seconds from hip to full aim (and back).
 @export_range(0.01, 1.0, 0.01) var aim_time: float = 0.16
 

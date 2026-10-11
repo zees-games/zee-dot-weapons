@@ -565,6 +565,11 @@ func _run_sheet(prefix: String) -> void:
 	# Read at a quarter of the size on the tiled sheet, so the label is drawn large.
 	_readout.add_theme_font_size_override("font_size", 52)
 	_crosshair.add_theme_font_size_override("font_size", 48)
+	# Grown both ways from the centre: the scene's box is sized for 24 px, and a 48 px "+" grew
+	# it downward only, drawing the crosshair 15 px under the screen's centre, below a sight
+	# that was on it.
+	_crosshair.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 	var def := _rig.current_def()
 	var recoil := Vector2(0.5, 0.1)
@@ -685,6 +690,9 @@ func _sheet_reset() -> void:
 func _sheet_steps(count: int) -> void:
 	for i in range(count):
 		_view.advance(SHEET_STEP)
+	# The HUD's half of aiming, as _process does it: without it a scoped weapon's aimed frame
+	# was an empty range, the gun hidden and no scope drawn.
+	_scope.fraction = _view.aim_fraction() if _view.is_scoped() else 0.0
 
 
 ## Quits after `--seconds N`, so a screenshot sweep can open this without a person.

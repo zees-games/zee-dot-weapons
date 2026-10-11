@@ -344,6 +344,9 @@ static func bullpup() -> ZeeWeaponArt:
 	# Behind the grip (+Z, toward the shoulder), which is what makes it a bullpup.
 	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.15, 0.14))
 	art.with_attachment(SCOPE_SMALL, Vector3(0.0, 0.24, 0.08))
+	# Aimed through the scope it carries: an iron sight's line runs into the back of it.
+	art.aim_scoped = true
+	art.aim_zoom = 0.6
 	return art
 
 
@@ -440,6 +443,9 @@ static func charge_rifle() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.CHARGE_RIFLE, "blaster-d", POSE_HEAVY)
 	art.with_attachment(SCOPE_LARGE_ALT, Vector3(0.0, 0.19, 0.10))
 	art.weight = 1.5
+	# Aimed through the scope it carries, like the bullpup.
+	art.aim_scoped = true
+	art.aim_zoom = 0.6
 	return art
 
 
@@ -474,8 +480,9 @@ static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeap
 	art.view_scale = pose_scale(pose)
 	art.weight = pose_weight(pose)
 	art.view_rotation = pose_rotation(pose)
-	# At the sight: centred, low enough that the eye looks along the top of the weapon rather
-	# than at the back of it (at -0.11 the stock filled the bottom of the screen as a block).
+	# The fallback aim place, used only when the view model cannot measure a sight line (no
+	# mesh data) or the weapon is scoped: the view model measures each gun's iron sight and
+	# puts its line through the eye instead (ZeeWeaponArt.iron_sight).
 	art.aim_offset = Vector3(0.0, -0.135, -0.46)
 	return art
 

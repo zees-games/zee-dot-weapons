@@ -2,6 +2,9 @@
 class_name ZeeViewModel
 extends Node3D
 
+## By path, not by class_name: see the file's own header.
+const IronSight := preload("zee_iron_sight.gd")
+
 ## The weapon you see in your own hands, and everything it does while you hold it.
 ##
 ## Parent it to the camera. It builds the arms once, swaps the weapon model whenever the
@@ -102,6 +105,18 @@ var _holder: Node3D = null
 var _weapon: Node3D = null
 var _magazine: Node3D = null
 var _attachments: Array[Node3D] = []
+var _sight: Node3D = null
+
+## The iron sight's line, measured at equip in the holder's (model) space: `rear` and `front`
+## on the line, or empty when the weapon aims at its written aim_offset. See zee_iron_sight.gd.
+var _sight_line: Dictionary = {}
+
+## The holder's transform at full aim when there is a sight line: the line through the eye.
+var _sight_aim := Transform3D.IDENTITY
+
+## The camera's near plane the eye relief keeps the gun's back end in front of, plus a margin
+## for the kick pushing it back. A view model under no camera assumes Godot's default.
+const NEAR_MARGIN := 0.05
 
 var _pose := ZeeWeaponPose.make()
 var _art: ZeeWeaponArt = null
@@ -315,6 +330,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_set_on_top(_weapon)
 
 	_muzzle = _measure_muzzle(art)
+	_fit_sight(art)
 
 	if art.has_magazine():
 		_magazine = _add_part(art.magazine_path, art.magazine_transform())
@@ -659,7 +675,7 @@ func _apply_aim(f: float) -> void:
 		_pose.pivot = hip.origin
 		return
 
-	var sight := _art.aim_transform()
+	var sight := _aim_target()
 	var turn := hip.basis.get_rotation_quaternion().slerp(
 		sight.basis.get_rotation_quaternion(), f
 	)
@@ -667,7 +683,62 @@ func _apply_aim(f: float) -> void:
 		Basis(turn).scaled(Vector3.ONE * _art.view_scale), hip.origin.lerp(sight.origin, f)
 	)
 	_aim_node.transform = now * hip.affine_inverse()
-	_pose.pivot = now.origin
+	# Aimed, the kick turns about the rear sight rather than the grip: the eye stays behind
+	# the notch and the front sight climbs off the crosshair and settles back onto it. About
+	# the grip, the whole sight picture jumped up the screen on every shot.
+	_pose.pivot = now.origin.lerp(now * _sight_line.rear, f) if not _sight_line.is_empty() \
+		else now.origin
+
+
+## The holder's transform at full aim: down the measured sight line, or the art's written
+## aim hold when there is none.
+func _aim_target() -> Transform3D:
+	return _sight_aim if not _sight_line.is_empty() else _art.aim_transform()
+
+
+## Measures [param art]'s sight line on the mesh just built, builds the sight on it, and
+## works out the aim hold that puts the line through the eye.
+##
+## [b]The hold is derived, not written.[/b] One written aim place for every blaster put the
+## eye level with the middle of each gun's back, and the screen showed the gun's pale rear
+## face. With the line, `origin = (0, 0, -relief) - B * rear` (B the orientation, scaled,
+## with no aim rotation: the line is the rotation) puts the rear sight straight ahead of the
+## eye and the front sight on the crosshair, for any model's shape.
+func _fit_sight(art: ZeeWeaponArt) -> void:
+	_sight_line = {}
+	if not art.iron_sight or not art.aim_enabled or art.aim_scoped or _weapon == null:
+		return
+	var line := IronSight.measure(_weapon, _holder, art.model_forward)
+	if line.is_empty():
+		return
+	var basis := art.orientation().scaled(Vector3.ONE * art.view_scale)
+	# The gun's back end is this far behind the rear sight; the eye stands back far enough to
+	# keep it in front of the near plane (a clip plane slices, it does not hide).
+	var behind := maxf(0.0, (basis * (line.back as Vector3)).z - (basis * (line.rear as Vector3)).z)
+	var camera := get_parent() as Camera3D
+	var near := camera.near if camera != null else 0.05
+	var relief := maxf(art.aim_eye_relief, behind + near + NEAR_MARGIN)
+	# The ring is sized to how far out it ends up, so it reads the same on a toy blaster and on
+	# a real-sized rifle drawn at another scale.
+	var span := absf((basis * (line.front as Vector3)).z - (basis * (line.rear as Vector3)).z)
+	var ring := (relief + span) * tan(deg_to_rad(IronSight.RING_DEGREES)) / art.view_scale
+	line = IronSight.with_ring(line, clampf(ring, IronSight.RING_FIT_MIN, IronSight.RING_FIT_MAX))
+
+	_sight_line = line
+	_sight = IronSight.build(line, art.model_forward)
+	_holder.add_child(_sight)
+	_set_on_top(_sight)
+	_sight_aim = Transform3D(basis, Vector3(0.0, 0.0, -relief) - basis * (line.rear as Vector3))
+
+
+## Where the iron sight's rear and front points are this frame, in the view model's own space
+## (the camera's, before the hands' lens), as `{rear, front}`; empty without a sight. Aimed and
+## at rest both are on the view axis (x and y zero): the line runs through the crosshair.
+func sight_points() -> Dictionary:
+	if _sight_line.is_empty() or _animated == null:
+		return {}
+	var to_view := _animated.transform * _aim_node.transform * _holder.transform
+	return {"rear": to_view * (_sight_line.rear as Vector3), "front": to_view * (_sight_line.front as Vector3)}
 
 
 ## Smoothstep, so the weapon leaves the hip and arrives at the eye gently rather than at
@@ -824,9 +895,11 @@ func _meshes(node: Node) -> Array[MeshInstance3D]:
 
 
 func _clear_models() -> void:
-	for node in [_weapon, _magazine]:
+	for node in [_weapon, _magazine, _sight]:
 		if node != null:
 			node.queue_free()
+	_sight = null
+	_sight_line = {}
 
 	for node in _attachments:
 		node.queue_free()

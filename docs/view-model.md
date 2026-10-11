@@ -69,8 +69,23 @@ Each of these is its own line in `ZeeWeaponPose`:
 - The game applies the zoom to its camera (`DotFpsView.external_fov_scale`) and puts a `ZeeScopeOverlay` in its HUD for scoped weapons.
 - Through a scope the view model hides the weapon **and the arms**: the arms are the view model's own child, so hiding the animated node alone leaves an arm across the scope.
 - The scope overlay sets its offsets as well as its anchors, or it fills nothing.
-- Melee and throwables have `aim_enabled` off; the sniper is x0.3 and the marksman x0.5, both scoped; everything else aims at x0.8.
+- Melee and throwables have `aim_enabled` off; the sniper is x0.3 and the marksman x0.5, the bullpup and the charge rifle x0.6, all four scoped; everything else aims at x0.8 down an iron sight.
 - Right mouse is the bash's button too; which one it is, is a game setting. The alt-fire is `BUTTON_ALT` in the command; the aim is a local hold.
+
+## Aiming down the sight is a line measured on the gun
+
+**The picture is a sight on the crosshair with the gun's top running away below it.** Aim was one written place for every blaster (`aim_offset` 0 / -0.135 / -0.46, straight): the eye level with the middle of the gun's back, so the screen showed the pale rear face of the gun as a block under the crosshair. No single place can be right for eighteen shapes, and no blaster in the kit has a readable iron sight (they are toys: fins and drums).
+
+So `view/zee_iron_sight.gd` measures and builds one per gun at equip, for every weapon with `aim_enabled`, `iron_sight` and not `aim_scoped`:
+
+- **Measured by casting straight down onto the mesh** at two stations along the barrel, 35% from the back (behind the grip) and 88% (short of a brake), on the centre line, or a little either side when the middle is a gap (the flamethrower's tank and barrel). Not from the bounds, whose top is a fin or a drum somewhere else, and not from a slice of vertices, which on these long low-poly faces is often empty. The line's height clears the highest top between the stations.
+- **Built from boxes in the gun's own colours**: each vertex carries the UV of the face the part stands on, with that face's material, so a sight is the colour of the metal under it and lit like it. A ring of sixteen segments round a post at the front, its centre on the line; a notch at the rear.
+- **The rear notch sits below the line.** The rear sight is about half the front's distance from the eye, so the same height there is twice the size on the screen: ears up to the line hid the bottom of the ring and filled the middle of the screen. Kept low, it reads as a rear sight under the front one, like the reference picture.
+- **The ring is sized by angle** (`RING_DEGREES`, 4.8 degrees of radius at full aim), from the eye relief and the distance between the sights. Sized by the gun's width, the second pack's slimmer real-sized guns drew a ring a third the size.
+- **The hold is derived**: `origin = (0, 0, -relief) - B * rear`, with `B` the orientation scaled and no aim rotation (the line is the rotation). `relief` is `aim_eye_relief` (0.2 m), pushed out until the gun's back end is in front of the near plane plus `NEAR_MARGIN` for the kick. `aim_offset` / `aim_rotation` are the fallback when nothing could be measured, and a scoped weapon's hold.
+- **The kick at the sight turns about the rear sight, not the grip, and at 40% of the hip's turn** (`ZeeWeaponPose.aim_kick_steadiness`). About the grip at full strength, the whole sight picture jumped a ring's width up the screen on every shot; now the front sight climbs under a degree and settles back on the crosshair.
+- **A gun carrying a scope attachment is scoped.** An iron sight's line on the bullpup and the charge rifle ran into the back of their scopes.
+- The suite checks that each unscoped gun's two sight points are on the view axis at full aim, the front further out, and that a kick moves the front sight under three degrees and settles back (`ZeeViewModel.sight_points()`); zed-dot-weapons checks its own guns the same way.
 
 ## The hands have a lens of their own
 
@@ -84,7 +99,7 @@ Each of these is its own line in `ZeeWeaponPose`:
 
 - **Rotations are in the model's own space**, which for a blaster is the view's: positive yaw is muzzle-in and positive roll is right-side-up. A sign written by intuition is the wrong one about half the time; render it.
 - **A correction along a weapon's length goes through the hold's basis**, not along the camera's Z (the sniper's pull-back): once the hold is turned, the camera's Z is no longer the weapon's.
-- **The aim hold is a transform of its own** (`aim_offset` plus `aim_rotation`, zero: straight down the sight), reached through the view model's `Aim` node by a slerp of the rotation and a lerp of the position. Moving only the position, as the pose's `aim_shift` did, brought the canted gun to the middle end-on and crooked; interpolating the bases component-wise shrinks the gun half way.
+- **The aim hold is a transform of its own** (the measured sight hold, [below](#aiming-down-the-sight-is-a-line-measured-on-the-gun); `aim_offset` plus `aim_rotation`, zero, where there is none), reached through the view model's `Aim` node by a slerp of the rotation and a lerp of the position. Moving only the position, as the pose's `aim_shift` did, brought the canted gun to the middle end-on and crooked; interpolating the bases component-wise shrinks the gun half way.
 - **The arms are not under `Aim`.** Carried rigidly to the sight, the shoulders went with the gun and the left arm lay across the screen. They are under `Animated` (so a kick, a reload and a draw carry them) and reach every frame for the grip and fore-end put through the `Aim` transform.
 - `--hold "x,y,z,pitch,yaw,roll,scale"` on the range's `--sheet` re-equips with that hold, for tuning without an edit per guess.
 
@@ -115,7 +130,7 @@ Each of these is its own line in `ZeeWeaponPose`:
 | Blasters | 18, from 0.42 m (`blaster-b`) to 1.39 m (`blaster-e`) |
 | Blaster axis | every one points **-Z**; the side render with a +Z marker is the proof, not the rack |
 | `blaster-e` | the only one whose mesh origin is not central: it is at the muzzle, the mesh running 1.39 m back along +Z; the grip is about 0.8 m back. It carries its own scope (an added one floated above it) |
-| Hip holds | rifle 0.19 / -0.23 / -0.40 at 0.60, yaw 10 roll 30; heavy 0.19 / -0.24 / -0.42 at 0.55, yaw 10 roll 26; pistol 0.15 / -0.19 / -0.36 at 0.55, yaw 8 roll 22; melee 0.22 / -0.25 / -0.40 at 1.2, (70, 80, 40); aim 0 / -0.135 / -0.46 straight |
+| Hip holds | rifle 0.19 / -0.23 / -0.40 at 0.60, yaw 10 roll 30; heavy 0.19 / -0.24 / -0.42 at 0.55, yaw 10 roll 26; pistol 0.15 / -0.19 / -0.36 at 0.55, yaw 8 roll 22; melee 0.22 / -0.25 / -0.40 at 1.2, (70, 80, 40); aim fallback 0 / -0.135 / -0.46 straight (the measured sight hold replaces it) |
 | Silencers | origin at their back end, body running -Z, centred on it: the origin goes on the barrel's end at the bore's height (`blaster-f`: z -0.52, y 0.052, not its bounds' end, which is a brake; `blaster-c`: z -0.238, y 0.017), and the art's `muzzle_distance` / `muzzle_offset` move the effects' muzzle to the silencer's far end (0.283 m and 0.244 m long) |
 | Blocky character | 2.7 m tall, 1.6 m wide: a stylised giant, not a person |
 | One arm | a 0.4 × 1.1 × 0.4 box, pivot at the shoulder, mesh hanging to `y = -1` |

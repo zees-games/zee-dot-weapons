@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 201
+const CHECKS := 205
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1151,8 +1151,49 @@ func _aim() -> void:
 	var aim_node := view.get_node("Animated/Aim") as Node3D
 	var holder := view.get_node("Animated/Aim/Holder") as Node3D
 	var at := (animated.transform * aim_node.transform * holder.transform).origin
-	_check("and arrives centred at its aim_offset (%.3f m off)" % at.distance_to(rifle.aim_offset),
-		at.distance_to(rifle.aim_offset) < 0.01)
+	_check("and arrives centred, below the eye (%.3f, %.3f)" % [at.x, at.y],
+		absf(at.x) < 0.002 and at.y < -0.02 and at.z < 0.0)
+
+	# The sight line, measured off each gun's own mesh, runs through the screen's centre at
+	# full aim: the rear and the front sight both on the view axis, the front further out.
+	# A sight built but held off the axis is the "aimed at the back of the gun" picture again.
+	var sighted := 0
+	var worst := 0.0
+	var worst_id := &""
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if not art.aim_enabled or art.aim_scoped:
+			continue
+		view.equip(art)
+		view.aim(true)
+		step.call(0.6)
+		var points := view.sight_points()
+		if points.is_empty():
+			continue
+		sighted += 1
+		var rear: Vector3 = points.rear
+		var front: Vector3 = points.front
+		var off := maxf(Vector2(rear.x, rear.y).length(), Vector2(front.x, front.y).length())
+		if off > worst or front.z >= rear.z or rear.z >= -0.05:
+			worst = maxf(off, worst + 1.0 if front.z >= rear.z or rear.z >= -0.05 else off)
+			worst_id = art.id
+	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 14)
+	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
+		worst < 0.002)
+
+	view.equip(rifle)
+	view.aim(true)
+	step.call(0.6)
+	view.on_fired(Vector2(1.0, 0.2))
+	step.call(0.06)
+	var kicked := view.sight_points()
+	var kicked_front: Vector3 = kicked.front
+	var kick_angle := rad_to_deg(Vector2(kicked_front.x, kicked_front.y).length() / -kicked_front.z)
+	step.call(1.0)
+	var settled: Vector3 = view.sight_points().front
+	_check("a kick at the sight moves the front sight under three degrees (%.2f)" % kick_angle,
+		kick_angle < 3.0)
+	_check("and it settles back onto the crosshair (%.4f m)" % Vector2(settled.x, settled.y).length(),
+		Vector2(settled.x, settled.y).length() < 0.002)
 
 	view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.PISTOL))
 	_check("a new weapon starts at the hip, aim held or not", view.aim_fraction() == 0.0)

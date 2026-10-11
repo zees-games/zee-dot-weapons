@@ -299,6 +299,12 @@ var aim_shift := Vector3.ZERO
 ## dead still at full aim reads as a picture of a weapon.
 var aim_steadiness: float = 0.75
 
+## How much of the kick's turn full aim takes away. The kick still happens (the front sight
+## climbs and settles: a shot has to be seen), but a hip kick at the sight is several degrees,
+## which threw the front sight a ring's width off the crosshair on every shot. The kick's push
+## back is left alone; it does not move the sight on the screen.
+var aim_kick_steadiness: float = 0.6
+
 
 static func make(p_weight: float = 1.0) -> ZeeWeaponPose:
 	var pose := ZeeWeaponPose.new()
@@ -469,10 +475,11 @@ func offset() -> Transform3D:
 
 	# The kick turns about the grip, inside everything else: sway and bob carry the
 	# kicking weapon around, rather than the kick being taken about wherever sway left it.
+	var held := 1.0 - _aim * clampf(aim_kick_steadiness, 0.0, 1.0)
 	var kick := Basis.from_euler(Vector3(
-		deg_to_rad(_kick_rotation.x),
-		deg_to_rad(_kick_rotation.y),
-		deg_to_rad(_kick_rotation.z)
+		deg_to_rad(_kick_rotation.x * held),
+		deg_to_rad(_kick_rotation.y * held),
+		deg_to_rad(_kick_rotation.z * held)
 	))
 	var about_grip := Transform3D(Basis.IDENTITY, pivot) \
 		* Transform3D(hand * kick, Vector3.ZERO) \
