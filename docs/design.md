@@ -47,6 +47,10 @@ An RPC per shot needs a reliable channel for something worthless late, costs a p
 
 **`uses_between()` is wrap-aware**, which is why it is a function: plain subtraction goes negative every sixteen shots, and reading a negative as "nothing happened" silences a weapon for one snapshot in sixteen.
 
+## What a kill does to the body
+
+A def's `params.death_reaction` and `params.death_power` (`ZeeWeaponIds.PARAM_DEATH_*`) are read by name by dot-player-char's death reactions, so neither addon names the other. The sniper and the launcher name `power_launch` (their kills always throw the body); the shotguns, the mallet and the charge rifle carry a power of 0.6 to 0.9, which makes the power launch one possible reaction among the server's weighted draw. Nothing light carries any: a launch is a reward for the heaviest hits, and one on every pistol kill would stop meaning anything. The server's `sv_ragdoll_reactions` can still turn the launch off.
+
 ## The art inside a delivered game
 
 `ZeeWeaponArtTable` and `ZeeViewArms` name `res://assets/…`, and a game delivered as a dot-cloud pack has its vendored copy under `res://dot_cloud/<id>/<version>/assets/…`, while the client shell carries this addon and no art. `ZeeModelCache.set_asset_root(root)` rewrites `res://assets/` paths under `root` at the one place every model is loaded; the table is untouched, because it must read the same in a game that builds the art in. **A game sets it when it loads and puts `res://` back when it goes**, because a static outlives one game in a shell that loads the next. A shell exported before this method existed cannot load a game that calls it.

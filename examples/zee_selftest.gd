@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 213
+const CHECKS := 216
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -233,6 +233,23 @@ func _pack() -> void:
 
 	var slots := catalogue.ids_in_slot(ZeeWeaponIds.SLOT_THROWN)
 	_check("two weapons in the thrown slot", slots.size() == 2)
+
+	# The death reactions' params (read by dot-player-char by name): the two heaviest hits
+	# always throw the body, and nothing light can.
+	var table := ZeeWeaponPack.table()
+	_check("the sniper and the launcher name the power launch",
+		(table[ZeeWeaponIds.SNIPER] as DotWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch"
+		and (table[ZeeWeaponIds.LAUNCHER] as DotWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch")
+	var powered := 0
+	var light_powered := 0
+	for def in ZeeWeaponPack.weapons():
+		var power := float(def.params.get(ZeeWeaponIds.PARAM_DEATH_POWER, 0.0))
+		if power >= 0.5:
+			powered += 1
+		if power > 0.0 and def.tags.has(ZeeWeaponIds.TAG_SIDEARM):
+			light_powered += 1
+	_check("six weapons are powerful enough to launch a body (%d)" % powered, powered == 6)
+	_check("no sidearm is", light_powered == 0)
 
 	_end()
 

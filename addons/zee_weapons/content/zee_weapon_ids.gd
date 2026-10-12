@@ -69,6 +69,12 @@ const AMMO_GRENADE := &"grenades"
 # What a mode filters on. A rule that names weapon ids has to be edited every time a
 # weapon is added; a rule that names a tag does not.
 
+## Weapon def params dot-player-char's death reactions read, by name, so neither addon names the
+## other: a reaction id this weapon's kills always get, and a 0-to-1 power that makes the
+## power launch possible at 0.5 and up.
+const PARAM_DEATH_REACTION := &"death_reaction"
+const PARAM_DEATH_POWER := &"death_power"
+
 const TAG_SIDEARM := &"sidearm"
 const TAG_PRIMARY := &"primary"
 const TAG_HEAVY := &"heavy"

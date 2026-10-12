@@ -219,6 +219,8 @@ static func mallet(t: Dictionary = {}) -> DotWeaponDef:
 	)
 	def.deploy_ticks = sec_ticks(0.5)
 	def.holster_ticks = sec_ticks(0.4)
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): A swing that kills may knock the body over backwards.
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
 
@@ -569,6 +571,8 @@ static func shotgun(t: Dictionary = {}) -> DotWeaponDef:
 	b.recoil_pitch = 2.4
 	b.max_range = 26.0
 	def.tuning = b
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): Point-blank buckshot carries a body: half the time or so, by the server's weights.
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
 
@@ -597,6 +601,8 @@ static func drum_shotgun(t: Dictionary = {}) -> DotWeaponDef:
 	b.recoil_pitch = 1.1
 	b.max_range = 20.0
 	def.tuning = b
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): As the pump: a close kill may carry the body.
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
 
@@ -656,6 +662,9 @@ static func sniper(t: Dictionary = {}) -> DotWeaponDef:
 	b.recoil_pitch = 4.0
 	b.max_range = 1000.0
 	def.tuning = b
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): The heaviest single hit in the pack: a kill always throws the body.
+	def.params[ZeeWeaponIds.PARAM_DEATH_REACTION] = &"power_launch"
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 1.0
 	return def
 
 
@@ -737,6 +746,9 @@ static func launcher(t: Dictionary = {}) -> DotWeaponDef:
 	b.recoil_pitch = 3.0
 	b.max_range = 260.0
 	def.tuning = b
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): A rocket kill always throws the body.
+	def.params[ZeeWeaponIds.PARAM_DEATH_REACTION] = &"power_launch"
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 1.0
 	return def
 
 
@@ -811,6 +823,8 @@ static func charge_rifle(t: Dictionary = {}) -> DotWeaponDef:
 	b.recoil_pitch = 2.6
 	b.max_range = 500.0
 	def.tuning = b
+	# Death reactions (dot-player-char's DotPlayerDeathReactions): A full draw usually carries the body.
+	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.9
 	return def
 
 
