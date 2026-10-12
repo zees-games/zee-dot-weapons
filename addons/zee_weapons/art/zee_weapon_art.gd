@@ -162,6 +162,30 @@ extends Resource
 ## something and puts it in the gun.
 @export var magazine_loose: bool = false
 
+## A part built in code instead of a file (`&"cell"`, `&"ammo_box"`: `view/zee_reload_parts.gd`),
+## used when [member magazine_path] is empty. Built, not vendored, because every game that
+## draws this pack carries its own copy of `assets/`, and a new file there is a copy in seven
+## games before the first one shows it; a part built in code arrives with the addon.
+@export var magazine_part: StringName = &""
+
+## How much larger than its file the magazine or round is drawn. A real round is 5-10 cm and
+## the gun is drawn at half size, so a round at 1.0 is a few pixels inside the fist.
+@export_range(0.1, 6.0, 0.05) var magazine_scale: float = 1.0
+
+## Where a round fed by hand starts its push into the gun, as an offset from its seat
+## ([member magazine_offset]) in the model's own space: above for a round pressed in from the
+## top, ahead of the muzzle for a rocket loaded down the tube. Zero keeps the round in the
+## hand until it is in (the hand comes up under the gun, as a magazine does).
+@export var load_from: Vector3 = Vector3.ZERO
+
+## How many rounds the hand feeds in one reload, one after another.
+@export_range(1, 6, 1) var load_count: int = 1
+
+## A bolt the support hand works before the rounds go in and after: where its handle is, in the
+## model's own space, and how far (and which way) it is drawn back. A zero pull is no bolt.
+@export var bolt_at: Vector3 = Vector3.ZERO
+@export var bolt_pull: Vector3 = Vector3.ZERO
+
 @export_group("Attachments")
 
 ## Extra meshes parented to the weapon: a scope, a silencer, a drum.
@@ -210,7 +234,7 @@ func aim_transform() -> Transform3D:
 
 
 func magazine_transform() -> Transform3D:
-	return _transform(magazine_offset, magazine_rotation, 1.0)
+	return _transform(magazine_offset, magazine_rotation, magazine_scale)
 
 
 ## The rotation that turns [member model_forward] into Godot's -Z.
@@ -246,7 +270,7 @@ func has_model() -> bool:
 
 
 func has_magazine() -> bool:
-	return magazine_path != ""
+	return magazine_path != "" or magazine_part != &""
 
 
 func _transform(offset: Vector3, rotation: Vector3, scale: float) -> Transform3D:
@@ -282,7 +306,7 @@ func validate() -> DotResult:
 			DotError.CODE_INVALID, "A scale of zero draws nothing at all.", where
 		)
 
-	if magazine_path != "" and not has_model():
+	if has_magazine() and not has_model():
 		return DotResult.fail(
 			DotError.CODE_INVALID,
 			"A magazine with no weapon to come out of.",
@@ -308,7 +332,7 @@ func describe() -> Dictionary:
 		"pose": String(pose),
 		"weight": weight,
 		"attachments": attachments.size(),
-		"magazine": magazine_path,
+		"magazine": magazine_path if magazine_path != "" else String(magazine_part),
 		"aim": ("scoped x%.2f" % aim_zoom) if aim_scoped else (
 			("x%.2f" % aim_zoom) if aim_enabled else "no"
 		),

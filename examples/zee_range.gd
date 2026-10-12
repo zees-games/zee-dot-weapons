@@ -598,12 +598,20 @@ func _run_sheet(prefix: String) -> void:
 	for i in range(30):
 		await RenderingServer.frame_post_draw
 
+	# `--reloads 0.1,0.3,0.5` renders a reload frame at each fraction instead: a whole reload on
+	# one sheet, which the sheet's five reload frames cannot show for a gun fed a round at a time.
+	var frames: Array = SHEET_FRAMES
+	if _argument("--reloads") != "":
+		frames = []
+		for fraction in _argument("--reloads").split_floats(","):
+			frames.append(["reload %d%%" % roundi(fraction * 100.0), "reload:%f" % fraction])
+
 	var roof: Node3D = null
-	for n in range(SHEET_FRAMES.size()):
+	for n in range(frames.size()):
 		if not only.is_empty() and not only.has(float(n)):
 			continue
-		var label: String = SHEET_FRAMES[n][0]
-		var step: String = SHEET_FRAMES[n][1]
+		var label: String = frames[n][0]
+		var step: String = frames[n][1]
 		_sheet_reset()
 		var parts := step.split(":")
 		var arg := parts[1].to_float() if parts.size() > 1 else 0.0
@@ -657,7 +665,7 @@ func _run_sheet(prefix: String) -> void:
 			roof.queue_free()
 			roof = null
 
-	print("sheet: %d frames at %s_NN.png" % [SHEET_FRAMES.size(), prefix])
+	print("sheet: %d frames at %s_NN.png" % [frames.size(), prefix])
 	get_tree().quit()
 
 

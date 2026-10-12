@@ -20,6 +20,7 @@ EXTRA="--aim" tools/screenshot.sh sniper     # aimed, through the scope
 EXTRA="--no-arms 1" tools/screenshot.sh rifle  # the weapon alone
 tools/screenshot.sh --sheet rifle pistol knife  # contact sheets: screenshots/sheet_<id>.png
 tools/screenshot.sh --sheet --all               # one sheet per weapon
+EXTRA="--reloads 0.04,0.10,…" tools/screenshot.sh --sheet sniper   # 18 reload frames at those fractions (exactly 18)
 ```
 
 **The contact sheet is the view model's review.** Eighteen frames of one weapon on one image: hip, aimed, fire frames 1/2/4/8/14 after a shot, reload at 0/25/50/75/90%, walking, turning right, the draw at 30% and 70%, standing under a roof in its shadow, and aimed four frames after a shot. The range (`--sheet <prefix>`) stops simulating, switches the view model's `_process` off and calls `ZeeViewModel.advance()` with a fixed 1/60 s step, so each frame is a number of steps and not wherever a software renderer's clock landed: the same frame is the same picture every run, and a before and an after compare side by side (`SHEET_DIR=/somewhere`). One screenshot of a weapon at rest says nothing about a reload, a kick or a draw, which is where every complaint about the hands came from.

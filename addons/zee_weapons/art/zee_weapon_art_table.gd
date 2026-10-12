@@ -411,7 +411,13 @@ static func sniper() -> ZeeWeaponArt:
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
 	art.aim_time = 0.22
-	return _loose(art, DART_TIP, Vector3(0.0, -0.06, 0.65))
+	# A bolt gun: the bolt drawn back, two rounds pressed down into the top of the receiver from
+	# above and to the right, the bolt shoved home (ZeeWeaponPose.RELOAD_KEYS_BOLT).
+	art = _fed(_loose(art, DART_TIP, Vector3(0.0, 0.12, 0.88)), Vector3(0.05, 0.18, 0.0), 2, 3.0)
+	art.bolt_at = Vector3(0.06, 0.10, 0.98)
+	art.bolt_pull = Vector3(0.0, 0.0, 0.10)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BOLT
+	return art
 
 
 static func minigun() -> ZeeWeaponArt:
@@ -428,6 +434,13 @@ static func minigun() -> ZeeWeaponArt:
 	art.muzzle_distance = 0.52 + 0.283
 	art.muzzle_offset = Vector3(0.0, 0.052, 0.0)
 	art.weight = 2.0
+	# A box and its belt hanging on the right of the body (built in code: view/zee_reload_parts.gd),
+	# the belt leaning in to the gun. The minigun feeds from the reserve and never reloads
+	# (ZeeWeaponPack: magazine 0), so here the box only says "belt-fed"; the swap is what a range
+	# reload sheet shows, and what a game that gives it a magazine would play.
+	art.magazine_part = &"ammo_box"
+	art.magazine_offset = Vector3(0.17, -0.22, 0.0)
+	art.magazine_scale = 2.0
 	return art
 
 
@@ -435,7 +448,11 @@ static func minigun() -> ZeeWeaponArt:
 static func launcher() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.LAUNCHER, "blaster-a", POSE_HEAVY)
 	art.weight = 1.6
-	return _loose(art, DART_TIP_THICK, Vector3(0.0, -0.12, 0.05))
+	# Broken open: the muzzle drops, a grenade goes into the breech from above and behind, and it
+	# snaps shut (ZeeWeaponPose.RELOAD_KEYS_BREAK).
+	art = _fed(_loose(art, DART_TIP_THICK, Vector3(0.0, 0.08, 0.02)), Vector3(0.0, 0.16, 0.06), 1, 3.5)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BREAK
+	return art
 
 
 ## The slimmest model in the kit. Nothing about it reads as a magazine, so it is the
@@ -453,7 +470,11 @@ static func charge_rifle() -> ZeeWeaponArt:
 	# Aimed through the scope it carries, like the bullpup.
 	art.aim_scoped = true
 	art.aim_zoom = 0.6
-	return _loose(art, DART_TIP, Vector3(0.0, -0.09, 0.05))
+	# A glowing cell under the body, dropped and replaced (built in code: view/zee_reload_parts.gd).
+	art.magazine_part = &"cell"
+	art.magazine_offset = Vector3(0.0, -0.33, -0.15)
+	art.magazine_scale = 1.5
+	return art
 
 
 # --- Thrown -----------------------------------------------------------------
@@ -484,6 +505,16 @@ static func sticky() -> ZeeWeaponArt:
 static func _loose(art: ZeeWeaponArt, path: String, offset: Vector3) -> ZeeWeaponArt:
 	var _with := art.with_magazine(path, offset)
 	art.magazine_loose = true
+	return art
+
+
+## A gun fed by hand from somewhere in sight: [param from] (model space, from the seat) is where
+## each round's push starts, [param count] rounds, drawn at [param scale] (a real round at half
+## size is a few pixels in a fist).
+static func _fed(art: ZeeWeaponArt, from: Vector3, count: int, scale: float) -> ZeeWeaponArt:
+	art.load_from = from
+	art.load_count = count
+	art.magazine_scale = scale
 	return art
 
 
@@ -618,7 +649,7 @@ static func _paths_of(art: ZeeWeaponArt) -> Array[String]:
 	if art.has_model():
 		out.append(art.model_path)
 
-	if art.has_magazine():
+	if art.magazine_path != "":
 		out.append(art.magazine_path)
 
 	for entry in art.attachments:

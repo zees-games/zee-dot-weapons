@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 220
+const CHECKS := 225
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -291,6 +291,28 @@ func _art() -> void:
 
 	var models := ZeeWeaponArtTable.validate_models()
 	_check("every model, magazine and attachment exists: %s" % _why(models), models.ok)
+
+	# A part built in code (an ammunition box, a cell) answers for itself: a name the builder
+	# does not know is a reload with nothing in the hand.
+	var parts := preload("res://addons/zee_weapons/view/zee_reload_parts.gd")
+	var unbuilt: Array[String] = []
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if art.magazine_part != &"":
+			var built: Node3D = parts.build(art.magazine_part)
+			if built == null:
+				unbuilt.append("%s: %s" % [art.id, art.magazine_part])
+			else:
+				built.free()
+	_check("every built magazine part builds: %s" % ", ".join(unbuilt), unbuilt.is_empty())
+
+	# Every heavy gun carries something in on a reload: the play test's "reads as a tilt" was a
+	# heavy reload with a 5 cm dart, or nothing, in the hand.
+	var empty: Array[String] = []
+	for id in [ZeeWeaponIds.SNIPER, ZeeWeaponIds.LAUNCHER, ZeeWeaponIds.CHARGE_RIFLE, ZeeWeaponIds.MINIGUN]:
+		var art := ZeeWeaponArtTable.get_art(id)
+		if art == null or not art.has_magazine() or (art.magazine_loose and art.load_from == Vector3.ZERO):
+			empty.append(String(id))
+	_check("every heavy gun reloads with something carried into it: %s" % ", ".join(empty), empty.is_empty())
 
 	var table := ZeeWeaponArtTable.table()
 	_check("one art entry per weapon", table.size() == 27)
@@ -674,7 +696,8 @@ func _pose_stability() -> void:
 	# meant to be fast, and the recoil sections hold it): no frame may move the weapon further than a smooth motion of that size could,
 	# and every key is a curve, so no frame jumps. A step in a key table or a spring that
 	# rings shows here as one frame far bigger than the frames either side of it.
-	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY]:
+	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY,
+			ZeeWeaponPose.RELOAD_KEYS_BOLT, ZeeWeaponPose.RELOAD_KEYS_BREAK, ZeeWeaponPose.RELOAD_KEYS_MUZZLE]:
 		var smooth := ZeeWeaponPose.make(1.0)
 		smooth.pivot = Vector3(0.19, -0.23, -0.40)
 		smooth.tunables.reload_keys = keys

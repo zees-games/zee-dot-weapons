@@ -4,6 +4,7 @@ extends Node3D
 
 ## By path, not by class_name: see the file's own header.
 const IronSight := preload("zee_iron_sight.gd")
+const ReloadParts := preload("zee_reload_parts.gd")
 
 ## The weapon you see in your own hands, and everything it does while you hold it.
 ##
@@ -135,6 +136,28 @@ var _grip_radius := 0.0
 ## with [member _has_well] false when the weapon has none.
 var _well := Vector3.ZERO
 var _has_well := false
+
+## A round fed by hand from [member ZeeWeaponArt.load_from], and its keys (`_build_feed_keys`):
+## where its push starts, and the bolt's handle forward and drawn back, in the well's space.
+var _feeds := false
+var _entry := Vector3.ZERO
+var _bolted := false
+var _bolt := Vector3.ZERO
+var _bolt_back := Vector3.ZERO
+var _feed_keys: Array = []
+
+## The share of a reload the rounds are fed in, and where in each round's share the hand has it
+## at the start of its push and home. Matched by the fed weapons' keys (ZeeWeaponPose
+## `RELOAD_KEYS_BOLT`, `_BREAK`, `_MUZZLE`), which hold the gun still across it.
+const FEED_START := 0.26
+const FEED_END := 0.70
+const FEED_AT_ENTRY := 0.45
+const FEED_AT_SEAT := 0.82
+
+## Where a fed round is held from the palm: above it and to its right, between the fingertips,
+## so the fist is below and beside the round rather than over it. Straight above the palm by
+## 3.5 cm, the glove hid every round on the contact sheet.
+const FEED_CARRY := Vector3(0.03, 0.06, 0.0)
 
 ## The last reload fraction handed in, for the hand that fetches the magazine.
 var _reload_fraction: float = 0.0
@@ -333,7 +356,10 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_fit_sight(art)
 
 	if art.has_magazine():
-		_magazine = _add_part(art.magazine_path, art.magazine_transform())
+		if art.magazine_path != "":
+			_magazine = _add_part(art.magazine_path, art.magazine_transform())
+		else:
+			_magazine = _add_built(ReloadParts.build(art.magazine_part), art.magazine_transform())
 
 	for entry in art.attachments:
 		var part := _add_part(
@@ -410,9 +436,18 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 
 	_has_well = art.has_magazine() and _weapon != null
 	_well = to_aim * art.magazine_transform().origin
+	# A round fed by hand from somewhere (the top, the muzzle): where its push in starts, and
+	# the bolt the hand works first, all in the same space as the well.
+	_feeds = _has_well and art.magazine_loose and art.load_from.length_squared() > 0.000001
+	_entry = to_aim * (art.magazine_offset + art.load_from)
+	_bolted = _feeds and art.bolt_pull.length_squared() > 0.000001
+	_bolt = to_aim * art.bolt_at
+	_bolt_back = to_aim * (art.bolt_at + art.bolt_pull)
 
 	_grip_at = to_aim * grip
 	_fore_at = to_aim * fore
+	# After the fore-end: the keys start and end on it.
+	_feed_keys = _build_feed_keys(art) if _feeds else []
 	_grip_axis = (to_aim.basis * grip_axis).normalized()
 	_fore_axis = (to_aim.basis * fore_axis).normalized()
 	if _weapon == null:
@@ -469,6 +504,8 @@ func _support_hand() -> Vector3:
 	var f := _reload_fraction
 	if not _has_well or f <= 0.0 or f >= 1.0:
 		return _fore_at
+	if _feeds:
+		return ZeeWeaponPose.sample_keys(_feed_keys, f)[0]
 	var below := _well + Vector3(0.0, -0.24, 0.08)
 	var keys := [
 		[0.0, _fore_at, Vector3.ZERO],
@@ -483,6 +520,58 @@ func _support_hand() -> Vector3:
 		[1.0, _fore_at, Vector3.ZERO],
 	]
 	return ZeeWeaponPose.sample_keys(keys, f)[0]
+
+
+## The support hand's keys for a gun fed by hand ([member ZeeWeaponArt.load_from]): the bolt
+## drawn back (when there is one), each round fetched, carried to where its push starts and
+## pushed home, the bolt closed, the hand back on the fore-end. Built once per weapon.
+##
+## [b]The round is drawn at the hand ([constant FEED_CARRY] above it) for its whole trip[/b], so
+## the two cannot part company: the hand's keys put it at the entry and then the seat, and
+## [method _animate_magazine] reads the hand. A round that slid on its own line while the hand
+## followed a curve was a round floating a finger's width off the glove.
+func _build_feed_keys(art: ZeeWeaponArt) -> Array:
+	var carry := FEED_CARRY
+	var keys: Array = [[0.0, _fore_at, Vector3.ZERO], [0.06, _fore_at, Vector3.ZERO]]
+	var start := FEED_START
+	if _bolted:
+		keys.append([0.12, _bolt, Vector3.ZERO])
+		keys.append([0.20, _bolt_back, Vector3.ZERO])
+	# Fetched from below the gun, out of frame the first time and from a pouch nearer for the
+	# next, so a round at a time does not send the hand off screen between each.
+	var far := _well + Vector3(0.0, -0.26, 0.06)
+	var near := _entry - carry + Vector3(0.0, -0.13, 0.05)
+	var count := maxi(1, art.load_count)
+	var span := (FEED_END - start) / float(count)
+	for i in count:
+		var a := start + span * float(i)
+		keys.append([a, far if i == 0 else near, Vector3.ZERO])
+		keys.append([a + span * FEED_AT_ENTRY, _entry - carry, Vector3.ZERO])
+		keys.append([a + span * FEED_AT_SEAT, _well - carry, Vector3.ZERO])
+	if _bolted:
+		keys.append([0.75, _bolt_back, Vector3.ZERO])
+		keys.append([0.82, _bolt, Vector3.ZERO])
+		keys.append([0.92, _fore_at, Vector3.ZERO])
+	else:
+		keys.append([0.84, _fore_at, Vector3.ZERO])
+	keys.append([1.0, _fore_at, Vector3.ZERO])
+	return keys
+
+
+## A fed round in the hand: where it is this frame in the holder's (model) space, and whether
+## it is drawn; empty when it is in the gun or not yet fetched.
+func _fed_round(fraction: float) -> Dictionary:
+	var count := maxi(1, _art.load_count)
+	var span := (FEED_END - FEED_START) / float(count)
+	var into := fraction - FEED_START
+	if into < 0.0 or fraction >= FEED_END:
+		return {}
+	var local := fmod(into, span) / span
+	if local >= FEED_AT_SEAT:
+		return {}
+	var hand := _support_hand() + FEED_CARRY
+	var at := _holder.transform.affine_inverse() * hand
+	return {"at": at} if at.is_finite() else {}
 
 
 ## Removes whatever is in hand.
@@ -795,7 +884,13 @@ func _animate_magazine(fraction: float) -> void:
 	var at := rest.origin
 	var basis := rest.basis
 
-	if _art.magazine_loose:
+	if _feeds:
+		# Fetched, carried to where its push starts and pushed home (_build_feed_keys).
+		var fed := _fed_round(f)
+		shown = not fed.is_empty()
+		if shown:
+			at = fed.at
+	elif _art.magazine_loose:
 		# A round fed by hand: in sight only while it is carried in.
 		shown = f >= 0.36 and f < 0.58
 		if shown and _holder != null:
@@ -820,6 +915,16 @@ func _animate_magazine(fraction: float) -> void:
 
 	_magazine.visible = shown
 	_magazine.transform = Transform3D(basis, at)
+
+
+## Puts a part built in code ([method _add_part]'s other half) on the weapon.
+func _add_built(part: Node3D, at: Transform3D) -> Node3D:
+	if part == null:
+		return null
+	_holder.add_child(part)
+	part.transform = at
+	_set_on_top(part)
+	return part
 
 
 func _add_part(path: String, at: Transform3D) -> Node3D:
