@@ -150,44 +150,50 @@ const DRAW_KEYS := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A long gun: rolled onto its side and dipped so the magazine well faces the eye while the
-## old magazine drops (0.10-0.28), held while the hand fetches the next, a jolt as it seats
-## (0.55-0.60), rolled back, and a rack (0.84-0.90).
+## A long gun: lifted in toward the middle of the screen and rolled onto its side, so the
+## magazine well is in sight while the old magazine drops (0.10-0.28); held there while the hand
+## fetches the next and brings it up (0.36-0.55); a jolt up as it seats (0.55-0.60); rolled back
+## down to the hip, and a rack (0.84-0.90).
+##
+## [b]Lifted, because at the hip the well is below the bottom of the screen.[/b] The first keys
+## rolled and dipped the gun where it sat: every magazine fell, and every hand fetched one, out
+## of frame, and what a player saw was the gun tilting and coming back. The play test called
+## that "no proper reload animations"; the contact sheet showed the same.
 const RELOAD_KEYS_RIFLE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
-	[0.10, Vector3(-0.02, -0.03, 0.01), Vector3(8.0, 8.0, -28.0)],
-	[0.20, Vector3(-0.03, -0.045, 0.015), Vector3(12.0, 10.0, -40.0)],
-	[0.42, Vector3(-0.035, -0.05, 0.015), Vector3(10.0, 12.0, -42.0)],
-	[0.55, Vector3(-0.03, -0.042, 0.01), Vector3(14.0, 10.0, -38.0)],
-	[0.60, Vector3(-0.03, -0.03, 0.01), Vector3(9.0, 10.0, -35.0)],
-	[0.74, Vector3(-0.01, -0.02, 0.0), Vector3(4.0, 4.0, -14.0)],
-	[0.84, Vector3(0.0, -0.012, 0.025), Vector3(-3.0, 2.0, -4.0)],
-	[0.90, Vector3(0.0, -0.008, -0.006), Vector3(2.0, 0.0, 0.0)],
+	[0.10, Vector3(-0.045, 0.035, 0.01), Vector3(8.0, 10.0, -30.0)],
+	[0.20, Vector3(-0.07, 0.055, 0.015), Vector3(12.0, 14.0, -42.0)],
+	[0.42, Vector3(-0.075, 0.06, 0.015), Vector3(10.0, 15.0, -44.0)],
+	[0.55, Vector3(-0.07, 0.05, 0.01), Vector3(14.0, 14.0, -40.0)],
+	[0.60, Vector3(-0.07, 0.066, 0.01), Vector3(8.0, 14.0, -38.0)],
+	[0.74, Vector3(-0.035, 0.03, 0.0), Vector3(4.0, 6.0, -16.0)],
+	[0.84, Vector3(0.0, -0.004, 0.025), Vector3(-3.0, 2.0, -4.0)],
+	[0.90, Vector3(0.0, -0.004, -0.006), Vector3(2.0, 0.0, 0.0)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A pistol: tipped muzzle-up and turned in, so the grip's foot (the magazine well) comes to
-## the other hand; a smaller roll; the slide racked at the end.
+## A pistol: brought up and in, tipped muzzle-up and turned in, so the grip's foot (the magazine
+## well) is in sight for the other hand; a smaller roll; the slide racked at the end.
 const RELOAD_KEYS_PISTOL := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
-	[0.12, Vector3(-0.03, -0.01, 0.01), Vector3(20.0, 14.0, -18.0)],
-	[0.45, Vector3(-0.035, -0.012, 0.012), Vector3(24.0, 16.0, -22.0)],
-	[0.56, Vector3(-0.03, -0.02, 0.01), Vector3(26.0, 14.0, -20.0)],
-	[0.62, Vector3(-0.03, -0.004, 0.01), Vector3(18.0, 14.0, -18.0)],
-	[0.78, Vector3(-0.01, -0.01, 0.0), Vector3(6.0, 5.0, -6.0)],
-	[0.87, Vector3(0.0, -0.006, 0.02), Vector3(-2.0, 2.0, 0.0)],
-	[0.93, Vector3(0.0, -0.004, -0.004), Vector3(1.5, 0.0, 0.0)],
+	[0.12, Vector3(-0.065, 0.075, 0.0), Vector3(30.0, 18.0, -20.0)],
+	[0.45, Vector3(-0.075, 0.085, 0.0), Vector3(34.0, 20.0, -24.0)],
+	[0.56, Vector3(-0.07, 0.075, 0.0), Vector3(36.0, 18.0, -22.0)],
+	[0.62, Vector3(-0.07, 0.09, 0.0), Vector3(28.0, 18.0, -20.0)],
+	[0.78, Vector3(-0.02, 0.02, 0.0), Vector3(7.0, 6.0, -6.0)],
+	[0.87, Vector3(0.0, -0.004, 0.02), Vector3(-2.0, 2.0, 0.0)],
+	[0.93, Vector3(0.0, -0.003, -0.004), Vector3(1.5, 0.0, 0.0)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A heavy weapon: lower and slower to roll, heaved back up at the end.
+## A heavy weapon: lifted less and slower to roll, heaved back up at the end.
 const RELOAD_KEYS_HEAVY := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
-	[0.14, Vector3(-0.02, -0.06, 0.02), Vector3(4.0, 6.0, -20.0)],
-	[0.45, Vector3(-0.03, -0.075, 0.025), Vector3(6.0, 9.0, -30.0)],
-	[0.58, Vector3(-0.03, -0.07, 0.02), Vector3(9.0, 9.0, -28.0)],
-	[0.63, Vector3(-0.03, -0.055, 0.02), Vector3(5.0, 8.0, -26.0)],
-	[0.80, Vector3(-0.01, -0.03, 0.0), Vector3(2.0, 3.0, -10.0)],
+	[0.14, Vector3(-0.035, 0.015, 0.02), Vector3(4.0, 8.0, -22.0)],
+	[0.45, Vector3(-0.05, 0.03, 0.025), Vector3(6.0, 11.0, -32.0)],
+	[0.58, Vector3(-0.05, 0.022, 0.02), Vector3(9.0, 11.0, -30.0)],
+	[0.63, Vector3(-0.05, 0.036, 0.02), Vector3(5.0, 10.0, -28.0)],
+	[0.80, Vector3(-0.02, 0.0, 0.0), Vector3(2.0, 3.0, -10.0)],
 	[0.90, Vector3(0.0, 0.006, 0.0), Vector3(-2.0, 0.0, 1.0)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]

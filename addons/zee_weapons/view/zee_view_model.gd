@@ -785,26 +785,41 @@ func _animate_magazine(fraction: float) -> void:
 	var f := clampf(fraction, 0.0, 1.0)
 	var rest := _art.magazine_transform()
 
-	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*): out while the gun rolls onto
-	# its side (0.10-0.28), absent while the hand fetches the next one, up into the well with
-	# the hand (0.48-0.58) and seated by the jolt at 0.60. A magazine visible throughout is a
-	# reload that reads as the gun shaking.
-	var drop := 0.0
-	if f < 0.10:
-		drop = 0.0
-	elif f < 0.28:
-		drop = (f - 0.10) / 0.18
-	elif f < 0.48:
-		drop = 1.0
-	elif f < 0.58:
-		drop = 1.0 - (f - 0.48) / 0.10
-	else:
-		drop = 0.0
+	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*) and the support hand
+	# (`_support_hand`): out and falling while the gun rolls onto its side (0.10-0.28), gone
+	# while the hand goes down for the next one, then IN THE HAND from 0.36, carried up to the
+	# well and seated with the jolt at 0.58. A magazine visible throughout is a reload that reads
+	# as the gun shaking; one that rose out of nothing under the gun (the first version) was a
+	# hand reaching for a magazine that was already there.
+	var shown := true
+	var at := rest.origin
+	var basis := rest.basis
 
-	_magazine.visible = drop < 0.98
-	_magazine.transform = Transform3D(
-		rest.basis, rest.origin + Vector3(0.0, -0.35 * drop, 0.0)
-	)
+	if _art.magazine_loose:
+		# A round fed by hand: in sight only while it is carried in.
+		shown = f >= 0.36 and f < 0.58
+		if shown and _holder != null:
+			# Held up between the fingertips, higher than a magazine: a round inside the fist
+			# is a hand that fetched nothing.
+			var carried := _holder.transform.affine_inverse() * (_support_hand() + Vector3(0.0, 0.065, 0.0))
+			at = carried if carried.is_finite() else rest.origin
+	elif f >= 0.10 and f < 0.28:
+		var drop := (f - 0.10) / 0.18
+		# Falls, faster as it goes, and tips forward off the hand's line.
+		at = rest.origin + Vector3(0.0, -0.40 * drop * drop - 0.04 * drop, 0.02 * drop)
+		basis = rest.basis * Basis(Vector3.RIGHT, deg_to_rad(-35.0 * drop))
+	elif f >= 0.28 and f < 0.36:
+		shown = false
+	elif f >= 0.36 and f < 0.58 and _holder != null:
+		# Where the support hand is, a little above the palm, in the holder's (model) space.
+		var hand := _support_hand() + Vector3(0.0, 0.035, 0.0)
+		var held := _holder.transform.affine_inverse() * hand
+		var settle := clampf((f - 0.36) / 0.22, 0.0, 1.0)
+		at = held if held.is_finite() else rest.origin
+		basis = rest.basis * Basis(Vector3.RIGHT, deg_to_rad(-20.0 * (1.0 - settle)))
+
+	_magazine.visible = shown
+	_magazine.transform = Transform3D(basis, at)
 
 
 func _add_part(path: String, at: Transform3D) -> Node3D:

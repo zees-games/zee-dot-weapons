@@ -156,6 +156,12 @@ extends Resource
 
 @export var magazine_rotation: Vector3 = Vector3.ZERO
 
+## The "magazine" is a loose round fed by hand (a shell, a cartridge, a grenade, a rocket):
+## nothing drops out, it is drawn only while the support hand carries it in, and it is gone
+## once it is in. A pack whose guns have no separate magazine still gets a hand that fetches
+## something and puts it in the gun.
+@export var magazine_loose: bool = false
+
 @export_group("Attachments")
 
 ## Extra meshes parented to the weapon: a scope, a silencer, a drum.

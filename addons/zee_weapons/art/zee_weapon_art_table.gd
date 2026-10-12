@@ -36,6 +36,13 @@ const MELEE := "res://assets/melee/"
 
 const CLIP_SMALL := BLASTERS + "clip-small.glb"
 const CLIP_LARGE := BLASTERS + "clip-large.glb"
+
+## Loose foam darts, for the guns with no clip: what the support hand carries in on a reload
+## (`ZeeWeaponArt.magazine_loose`), so no gun reloads with an empty hand.
+const DART := BLASTERS + "bullet-foam.glb"
+const DART_THICK := BLASTERS + "bullet-foam-thick.glb"
+const DART_TIP := BLASTERS + "bullet-foam-tip.glb"
+const DART_TIP_THICK := BLASTERS + "bullet-foam-tip-thick.glb"
 const SCOPE_SMALL := BLASTERS + "scope-small.glb"
 const SCOPE_LARGE := BLASTERS + "scope-large-a.glb"
 const SCOPE_LARGE_ALT := BLASTERS + "scope-large-b.glb"
@@ -295,7 +302,7 @@ static func revolver() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.REVOLVER, "blaster-o", POSE_PISTOL)
 	# The widest short model: at the pistol's scale it was a block filling the corner.
 	art.view_scale *= 0.85
-	return art
+	return _loose(art, DART, Vector3(0.0, -0.02, 0.02))
 
 
 static func machine_pistol() -> ZeeWeaponArt:
@@ -315,7 +322,7 @@ static func machine_pistol() -> ZeeWeaponArt:
 
 ## The smallest model in the kit, at 42 cm.
 static func derringer() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.DERRINGER, "blaster-b", POSE_PISTOL)
+	return _loose(_blaster(ZeeWeaponIds.DERRINGER, "blaster-b", POSE_PISTOL), DART, Vector3(0.0, -0.05, 0.0))
 
 
 # --- Primaries --------------------------------------------------------------
@@ -363,12 +370,12 @@ static func burst_rifle() -> ZeeWeaponArt:
 
 
 static func shotgun() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.SHOTGUN, "blaster-j", POSE_RIFLE)
+	return _loose(_blaster(ZeeWeaponIds.SHOTGUN, "blaster-j", POSE_RIFLE), DART_THICK, Vector3(0.0, -0.08, 0.0))
 
 
 ## The widest model in the kit, at 24 cm across. A drum, so a drum shotgun.
 static func drum_shotgun() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.DRUM_SHOTGUN, "blaster-l", POSE_RIFLE)
+	return _loose(_blaster(ZeeWeaponIds.DRUM_SHOTGUN, "blaster-l", POSE_RIFLE), DART_THICK, Vector3(0.0, -0.08, 0.0))
 
 
 static func marksman() -> ZeeWeaponArt:
@@ -404,7 +411,7 @@ static func sniper() -> ZeeWeaponArt:
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
 	art.aim_time = 0.22
-	return art
+	return _loose(art, DART_TIP, Vector3(0.0, -0.06, 0.65))
 
 
 static func minigun() -> ZeeWeaponArt:
@@ -428,7 +435,7 @@ static func minigun() -> ZeeWeaponArt:
 static func launcher() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.LAUNCHER, "blaster-a", POSE_HEAVY)
 	art.weight = 1.6
-	return art
+	return _loose(art, DART_TIP_THICK, Vector3(0.0, -0.12, 0.05))
 
 
 ## The slimmest model in the kit. Nothing about it reads as a magazine, so it is the
@@ -446,7 +453,7 @@ static func charge_rifle() -> ZeeWeaponArt:
 	# Aimed through the scope it carries, like the bullpup.
 	art.aim_scoped = true
 	art.aim_zoom = 0.6
-	return art
+	return _loose(art, DART_TIP, Vector3(0.0, -0.09, 0.05))
 
 
 # --- Thrown -----------------------------------------------------------------
@@ -472,6 +479,14 @@ static func sticky() -> ZeeWeaponArt:
 ## along model_forward) sat at whichever end it was told to, and every blaster was drawn
 ## stock-first in both views, with its tracers leaving the stock. A side render with a
 ## marker on +Z settled it: the marker is on the stock of all eighteen (docs/history.md).
+## A gun fed by hand: [param path] is the round the support hand carries in, delivered at
+## [param offset] (model space). Nothing drops out and nothing shows at rest.
+static func _loose(art: ZeeWeaponArt, path: String, offset: Vector3) -> ZeeWeaponArt:
+	var _with := art.with_magazine(path, offset)
+	art.magazine_loose = true
+	return art
+
+
 static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
 	var art := ZeeWeaponArt.make(id, BLASTERS + model + ".glb")
 	art.model_forward = Vector3.FORWARD
