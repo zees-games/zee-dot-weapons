@@ -15,7 +15,7 @@ extends RefCounted
 ## 4: [method ZeeShotFx.play_body_hit] (a confirmed hit drawn on a body the client's physics
 ## cannot see), [method ZeeShotFx.play_impact], [method ZeeShotFx.impact_kind], the
 ## [constant ZeeShotFx.BODY_GROUP] / [constant ZeeShotFx.NOT_BODY_GROUP] groups, and
-## [method ZeeViewModel.on_swing]. A game calls them through `has_method` until its shell has them.
+## [method ZeeViewModel.on_swing], and the `box_magazine` reload part. A game calls them through `has_method` until its shell has them.
 
 const LEVEL := 4
 const OLDEST := 1

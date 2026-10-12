@@ -17,6 +17,7 @@ extends RefCounted
 
 const CELL := &"cell"
 const AMMO_BOX := &"ammo_box"
+const BOX_MAGAZINE := &"box_magazine"
 
 
 ## The part named [param part], or null for a name this file does not know.
@@ -26,6 +27,8 @@ static func build(part: StringName) -> Node3D:
 			return cell()
 		AMMO_BOX:
 			return ammo_box()
+		BOX_MAGAZINE:
+			return box_magazine()
 	return null
 
 
@@ -72,6 +75,22 @@ static func ammo_box() -> Node3D:
 		_cylinder(root, 0.006, 0.014, at + Vector3(0.0, 0.0, -0.032), dark, along)
 		_box(root, Vector3(0.024, 0.006, 0.012), at + Vector3(0.0, -0.010, 0.012), dark,
 			Basis(Vector3.BACK, deg_to_rad(55.0 * t)))
+	return root
+
+
+## A stick magazine for a real-sized pistol or machine pistol (the second pack's), 14 cm tall: a
+## dark body, a lighter base plate and a brass round showing at the lips. The kit those guns
+## come from has no magazine, only a 6.5 cm cartridge, which inside a grip and a glove was
+## nothing on screen: a reload where the gun lifted and nothing left it.
+static func box_magazine() -> Node3D:
+	var root := Node3D.new()
+	root.name = "BoxMagazine"
+	var body := _material(Color(0.30, 0.32, 0.38), 0.3, 0.6)
+	var plate := _material(Color(0.42, 0.44, 0.50), 0.4, 0.5)
+	var brass := _material(Color(0.85, 0.62, 0.22), 0.6, 0.35)
+	_box(root, Vector3(0.034, 0.012, 0.05), Vector3(0.0, 0.006, 0.0), plate)
+	_box(root, Vector3(0.028, 0.13, 0.042), Vector3(0.0, 0.075, 0.0), body)
+	_cylinder(root, 0.0075, 0.03, Vector3(0.0, 0.142, 0.002), brass, Basis(Vector3.RIGHT, PI * 0.5))
 	return root
 
 
