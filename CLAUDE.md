@@ -21,7 +21,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-we
 
 | Path | What |
 | --- | --- |
-| `addons/zee_weapons/content/` | `ZeeWeaponPack` (the catalogue, in ticks), `ZeeWeaponIds` (roles), `ZeeWeaponDamage` |
+| `addons/zee_weapons/content/` | `ZeeWeaponPack` (the catalogue, in ticks), `ZeeWeaponIds` (roles), `ZeeWeaponDamage`, `ZeeWeaponCards` (a loadout card's line and stat bars, read off each document) |
 | `addons/zee_weapons/art/` | `ZeeWeaponArtTable` (the only file with filenames, poses, aim settings), `ZeeWeaponArt`, `ZeeModelCache` (loading, muzzle measurement, asset root) |
 | `addons/zee_weapons/runtime/` | `ZeeWeaponRig` (drives a `DotWeaponArsenal`, the bash, the snapshot), `ZeeWeaponInput` (the only file that reads a device) |
 | `addons/zee_weapons/behaviour/` | `ZeeWeaponBash` |
@@ -54,6 +54,7 @@ Short forms; the reasoning is in the linked file.
 - `player_ref` resolves on a SERVER rig too; a rig without a carrier is handed a context from the eye, not the camera. [design](docs/design.md#the-rig-needs-its-player-on-every-role)
 - Shots replicate as a four-bit counter in the snapshot; compare with wrap-aware `uses_between()`. [design](docs/design.md#replication-is-a-counter-not-an-event)
 - A game sets `ZeeModelCache.set_asset_root` on load and puts `res://` back when it goes. [design](docs/design.md#the-art-inside-a-delivered-game)
+- A loadout card's numbers are read off the weapon's document (`ZeeWeaponCards`), scaled to fixed ceilings, never a second table; the line under the name is `BLURB`. [design](docs/design.md#loadout-cards)
 - A second pack registers through `add_source` / `set_class`; this pack's ids win; **a source is a static method's Callable, never a lambda** (exit 134). [design](docs/design.md#a-second-pack-adds-to-this-one)
 
 **The view model** (every one found by rendering)

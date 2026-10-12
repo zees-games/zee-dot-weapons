@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 216
+const CHECKS := 220
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -36,6 +36,7 @@ func _ready() -> void:
 	_ids()
 	_damage()
 	_pack()
+	_cards()
 	_art()
 	_other_packs()
 	_orientation()
@@ -105,6 +106,34 @@ func _ids() -> void:
 
 	_check("no id appears twice", duplicates == 0)
 	_check("seven ammunition pools", ZeeWeaponIds.ammo_pools().size() == 7)
+
+	_end()
+
+
+## What a loadout screen says about each weapon, read off its own document.
+func _cards() -> void:
+	_begin("loadout cards")
+
+	var table := ZeeWeaponPack.table()
+	var bad := PackedStringArray()
+	for id in ZeeWeaponIds.all():
+		var card := ZeeWeaponCards.card(table[id])
+		var stats: Array = card.get("stats", [])
+		var in_range := stats.all(func(s: Variant) -> bool:
+			var v := float((s as Dictionary)["value"])
+			return v >= 0.0 and v <= 1.0 and str((s as Dictionary)["text"]) != "")
+		if str(card.get("detail", "")) == "" or str(card.get("kind", "")) == "" or stats.size() < 3 or not in_range:
+			bad.append(String(id))
+	_check("every weapon has a line, a kind and at least three bars in 0..1 (%s)" % ", ".join(bad), bad.is_empty())
+
+	var rifle: Array = ZeeWeaponCards.stats(table[ZeeWeaponIds.RIFLE])
+	var smg: Array = ZeeWeaponCards.stats(table[ZeeWeaponIds.SMG])
+	_check("the rifle out-ranges the SMG and the SMG out-fires the rifle, on the bars",
+		float(rifle[2]["value"]) > float(smg[2]["value"]) and float(smg[1]["value"]) > float(rifle[1]["value"]))
+	var frag: Array = ZeeWeaponCards.stats(table[ZeeWeaponIds.FRAG])
+	_check("a grenade's bars are its blast, radius and count", frag[0]["label"] == "Blast" and frag.size() == 3)
+	_check("a shotgun's damage is all its pellets",
+		float(ZeeWeaponCards.stats(table[ZeeWeaponIds.SHOTGUN])[0]["text"]) >= 100.0)
 
 	_end()
 

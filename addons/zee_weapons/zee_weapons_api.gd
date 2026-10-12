@@ -10,5 +10,7 @@ extends RefCounted
 ## delivered game calls to find its own vendored art. A client shell built before them
 ## would mount such a pack and then fail to compile its client script.
 
-const LEVEL := 2
+## 3: [ZeeWeaponCards] (card, stats, BLURB, KIND): what a loadout screen says about a weapon.
+
+const LEVEL := 3
 const OLDEST := 1
