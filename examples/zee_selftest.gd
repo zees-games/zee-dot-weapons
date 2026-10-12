@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 225
+const CHECKS := 234
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -689,6 +689,25 @@ func _pose_stability() -> void:
 		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 1.0)[1].length() < 0.0001)
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
+	# [b]A melee weapon moves when it strikes.[/b] A swing was the recoil spring alone and a melee
+	# weapon has no recoil: the knife did nothing on screen when it cut.
+	_check("a swing's and a throw's keys start and finish at rest",
+		ZeeWeaponPose.sample_keys(ZeeWeaponPose.SWING_KEYS, 0.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.SWING_KEYS, 1.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.THROW_KEYS, 1.0)[0].length() < 0.0001)
+	var swinger := ZeeWeaponPose.make(1.0)
+	var at_rest := swinger.offset()
+	swinger.swing()
+	for i in range(9):
+		swinger.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	var mid_swing := swinger.offset()
+	for i in range(60):
+		swinger.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	var swung_across := rad_to_deg(mid_swing.basis.get_rotation_quaternion().angle_to(at_rest.basis.get_rotation_quaternion()))
+	_check("a swing turns the weapon well across mid-cut (%.0f deg) and is back at rest after it" % swung_across,
+		swung_across > 30.0 and swinger.action_fraction() >= 1.0
+		and swinger.offset().origin.distance_to(at_rest.origin) < 0.001)
+
 	var odd: Vector3 = ZeeWeaponPose.sample_keys([[0.0, Vector3.ONE, Vector3.ONE]], NAN)[0]
 	_check("malformed keys sample as rest", odd == Vector3.ZERO)
 
@@ -697,7 +716,8 @@ func _pose_stability() -> void:
 	# and every key is a curve, so no frame jumps. A step in a key table or a spring that
 	# rings shows here as one frame far bigger than the frames either side of it.
 	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY,
-			ZeeWeaponPose.RELOAD_KEYS_BOLT, ZeeWeaponPose.RELOAD_KEYS_BREAK, ZeeWeaponPose.RELOAD_KEYS_MUZZLE]:
+			ZeeWeaponPose.RELOAD_KEYS_BOLT, ZeeWeaponPose.RELOAD_KEYS_BREAK, ZeeWeaponPose.RELOAD_KEYS_MUZZLE,
+			ZeeWeaponPose.RELOAD_KEYS_TUBE]:
 		var smooth := ZeeWeaponPose.make(1.0)
 		smooth.pivot = Vector3(0.19, -0.23, -0.40)
 		smooth.tunables.reload_keys = keys
@@ -1446,6 +1466,49 @@ func _effects() -> void:
 		"and turning their sounds off after a shot silences the next one",
 		their_fx != null and not their_fx.sounds
 	)
+
+	# --- Where a shot lands ---
+	# A wall takes a spark, a puff and a mark that stays; a body takes a red burst and no mark;
+	# the server's confirmation of the same hit does not draw it twice.
+	var wall := StaticBody3D.new()
+	var somebody := CharacterBody3D.new()
+	var crate := RigidBody3D.new()
+	var disguised := CharacterBody3D.new()
+	disguised.add_to_group(ZeeShotFx.NOT_BODY_GROUP)
+	_check("a character is a body, a wall and a crate are the world, a disguised character is not a body",
+		ZeeShotFx.impact_kind(somebody) == ZeeShotFx.IMPACT_BODY
+		and ZeeShotFx.impact_kind(wall) == ZeeShotFx.IMPACT_WORLD
+		and ZeeShotFx.impact_kind(crate) == ZeeShotFx.IMPACT_WORLD
+		and ZeeShotFx.impact_kind(disguised) == ZeeShotFx.IMPACT_WORLD)
+	_check("only what never moves takes a mark",
+		ZeeShotFx.takes_marks(wall) and not ZeeShotFx.takes_marks(crate)
+		and not ZeeShotFx.takes_marks(somebody) and not ZeeShotFx.takes_marks(null))
+
+	var marks_before := fx.mark_count() if fx != null else 0
+	var sparks_before := fx.count_of(&"spark") if fx != null else 0
+	if fx != null:
+		fx.play_impact(Vector3(0.0, 1.0, -5.0), Vector3.BACK, wall)
+	_check("a shot on a wall strikes a spark and leaves a mark",
+		fx != null and fx.mark_count() == marks_before + 1 and fx.count_of(&"spark") == sparks_before + 1)
+
+	if fx != null:
+		fx.play_impact(Vector3(2.0, 1.0, -5.0), Vector3.BACK, somebody)
+	_check("a shot on a body bursts red and leaves no mark",
+		fx != null and fx.count_of(&"hit") == 1 and fx.mark_count() == marks_before + 1)
+
+	if fx != null:
+		fx.play_body_hit(Vector3(2.05, 1.0, -5.0), Vector3.FORWARD)
+		fx.play_body_hit(Vector3(-3.0, 1.0, -5.0), Vector3.FORWARD)
+	_check("the server's word on the same hit is not drawn twice; on a body the ray never saw it is",
+		fx != null and fx.count_of(&"hit") == 2)
+
+	if fx != null:
+		for i in range(int(ZeeShotFx.MARK_LIFE * 10.0) + 2):
+			fx.advance(0.1)
+	_check("marks fade and go", fx != null and fx.mark_count() == 0 and fx.live_count() == 0)
+
+	for node: Node in [wall, somebody, crate, disguised]:
+		node.free()
 
 	var server := _make_rig()
 	server.setup()

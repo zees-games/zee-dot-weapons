@@ -370,12 +370,12 @@ static func burst_rifle() -> ZeeWeaponArt:
 
 
 static func shotgun() -> ZeeWeaponArt:
-	return _loose(_blaster(ZeeWeaponIds.SHOTGUN, "blaster-j", POSE_RIFLE), DART_THICK, Vector3(0.0, -0.08, 0.0))
+	return _tube(_blaster(ZeeWeaponIds.SHOTGUN, "blaster-j", POSE_RIFLE))
 
 
 ## The widest model in the kit, at 24 cm across. A drum, so a drum shotgun.
 static func drum_shotgun() -> ZeeWeaponArt:
-	return _loose(_blaster(ZeeWeaponIds.DRUM_SHOTGUN, "blaster-l", POSE_RIFLE), DART_THICK, Vector3(0.0, -0.08, 0.0))
+	return _tube(_blaster(ZeeWeaponIds.DRUM_SHOTGUN, "blaster-l", POSE_RIFLE))
 
 
 static func marksman() -> ZeeWeaponArt:
@@ -515,6 +515,18 @@ static func _fed(art: ZeeWeaponArt, from: Vector3, count: int, scale: float) -> 
 	art.load_from = from
 	art.load_count = count
 	art.magazine_scale = scale
+	return art
+
+
+## A pump gun: three shells pushed up one at a time into the port under the body, the gun held
+## rolled over to show it (ZeeWeaponPose.RELOAD_KEYS_TUBE).
+##
+## [b]Fed, not loose.[/b] Loose, a single dart rode the hand once from below the screen and the
+## contact sheet showed a yellow fleck in one frame of the whole reload: the play test's "no
+## proper reload animations" for exactly the guns that reload most often.
+static func _tube(art: ZeeWeaponArt) -> ZeeWeaponArt:
+	art = _fed(_loose(art, DART_THICK, Vector3(0.0, -0.05, -0.04)), Vector3(0.0, -0.12, 0.03), 3, 2.6)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_TUBE
 	return art
 
 

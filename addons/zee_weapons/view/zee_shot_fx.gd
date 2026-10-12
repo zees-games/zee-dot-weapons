@@ -35,6 +35,25 @@ const MAX_TRACERS_PER_USE := 6
 ## Most effects alive at once, per carrier.
 const MAX_LIVE := 48
 
+## Most marks left on the world at once, per carrier. A mark outlives every other effect, so
+## it has its own budget: sharing [constant MAX_LIVE] let a held minigun evict its own tracers.
+const MAX_MARKS := 32
+
+## How long a mark stays on a wall, in seconds, the last quarter of it fading.
+const MARK_LIFE := 8.0
+
+## Put a node in this group to have a shot that lands on it drawn as a hit on a body (a red
+## burst, no mark), whatever its class. A character, a ragdoll's bone and this group are bodies.
+const BODY_GROUP := &"zee_body"
+
+## Put a node in this group to have it never drawn as a body, even if it is a character: a game
+## where what was hit must not be given away by the impact (a disguised player).
+const NOT_BODY_GROUP := &"zee_not_body"
+
+## What a presentation ray's collider is, for [method impact_kind].
+const IMPACT_WORLD := &"world"
+const IMPACT_BODY := &"body"
+
 ## Most reports playing at once, per carrier. A minigun cuts its own oldest report off
 ## rather than stacking forty.
 const MAX_VOICES := 6
@@ -69,12 +88,24 @@ var _live: Array[Dictionary] = []
 
 var _voices: Array[AudioStreamPlayer3D] = []
 
+## The marks on the world still showing: {node, age, size}. See [constant MAX_MARKS].
+var _marks: Array[Dictionary] = []
+
+## Where and when (msec) the last body was drawn hit, so a confirmation of the same hit
+## arriving from the server ([method play_body_hit]) does not draw it twice.
+var _last_body_at := Vector3.INF
+var _last_body_msec: int = -100000
+
 ## Materials shared by every carrier's effects, built once.
 static var _tracer_material: StandardMaterial3D = null
 static var _beam_material: StandardMaterial3D = null
 static var _flash_material: StandardMaterial3D = null
 static var _spark_material: StandardMaterial3D = null
 static var _puff_material: StandardMaterial3D = null
+static var _hit_material: StandardMaterial3D = null
+static var _petal_material: StandardMaterial3D = null
+static var _mist_material: StandardMaterial3D = null
+static var _mark_material: StandardMaterial3D = null
 static var _streak: BoxMesh = null
 static var _quad: QuadMesh = null
 static var _soft: GradientTexture2D = null
@@ -184,9 +215,82 @@ func tracer_count() -> int:
 	return count
 
 
+## How many marks are on the world.
+func mark_count() -> int:
+	return _marks.size()
+
+
+## How many live effects are of [param kind] (`&"spark"`, `&"puff"`, `&"hit"`, `&"mist"`, ...).
+func count_of(kind: StringName) -> int:
+	var count := 0
+	for fx in _live:
+		if fx["kind"] == kind:
+			count += 1
+	return count
+
+
+## A body the server says this machine's shot hit, at [param at], the shot travelling along
+## [param direction].
+##
+## [b]For bodies the presentation ray cannot see.[/b] A game whose targets have no physics body
+## on the client (a horde drawn as figures, hit through the server's hitboxes) gets a world
+## impact behind its target from the ray, and the hit on the body only from this. Called from
+## the same confirmation that flashes the hit marker. A body the ray already drew within a
+## fifth of a second and half a metre of [param at] is not drawn again.
+func play_body_hit(at: Vector3, direction: Vector3 = Vector3.ZERO) -> void:
+	if not visuals or not is_inside_tree() or not at.is_finite():
+		return
+	if Time.get_ticks_msec() - _last_body_msec < 200 and _last_body_at.distance_to(at) < 0.5:
+		return
+	var back := -direction.normalized() if direction.is_finite() and not direction.is_zero_approx() else Vector3.UP
+	_impact(at, back, IMPACT_BODY, false)
+
+
+## What a shot landing on [param collider] is drawn as: [constant IMPACT_BODY] for a character,
+## a ragdoll's bone or a node in [constant BODY_GROUP]; otherwise [constant IMPACT_WORLD].
+static func impact_kind(collider: Object) -> StringName:
+	var node := collider as Node
+	if node == null:
+		return IMPACT_WORLD
+	if node.is_in_group(NOT_BODY_GROUP):
+		return IMPACT_WORLD
+	if node is CharacterBody3D or node is PhysicalBone3D or node.is_in_group(BODY_GROUP):
+		return IMPACT_BODY
+	return IMPACT_WORLD
+
+
+## Whether a shot landing on [param collider] may leave a mark: only on what never moves. A mark
+## is placed in world space and would hang in the air where a crate or a door used to be.
+static func takes_marks(collider: Object) -> bool:
+	if collider == null:
+		return false
+	if collider is RigidBody3D or collider is CharacterBody3D or collider is AnimatableBody3D \
+			or collider is PhysicalBone3D:
+		return false
+	# By class name, not by type: a build without the CSG or GridMap module must still parse this.
+	return collider is StaticBody3D or collider.is_class("CSGShape3D") or collider.is_class("GridMap")
+
+
+## The effects of a shot landing at [param at] on [param collider], facing [param normal]: what a
+## presentation ray would draw. Public for a suite and for a game that traces its own shots.
+func play_impact(at: Vector3, normal: Vector3, collider: Object) -> void:
+	if not visuals or not is_inside_tree() or not at.is_finite():
+		return
+	_impact(at, normal, impact_kind(collider), takes_marks(collider))
+
+
 # --- The frame --------------------------------------------------------------
 
 func _process(delta: float) -> void:
+	advance(delta)
+
+
+## Moves every effect on by [param delta] seconds. [method _process] calls it; a capture that
+## steps time by hand (the range's contact sheet) calls it instead.
+func advance(delta: float) -> void:
+	if not _marks.is_empty():
+		_advance_marks(delta)
+
 	if _live.is_empty():
 		return
 
@@ -225,7 +329,7 @@ func _animate(fx: Dictionary, node: Node3D, through: float) -> void:
 			var mid := from.lerp(to, ((head + tail) * 0.5) / maxf(0.001, total))
 			var span := maxf(0.001, head - tail)
 			_place_along(node, mid, to - from, span, _screen_width(mid, float(fx["width"])))
-		&"beam":
+		&"beam", &"petal":
 			node.transparency = through
 		&"flash":
 			var grow := 1.0 + through * 0.6
@@ -241,7 +345,36 @@ func _animate(fx: Dictionary, node: Node3D, through: float) -> void:
 		&"puff":
 			var far := _distance_scale(node.global_position)
 			node.scale = Vector3.ONE * float(fx["size"]) * far * (0.6 + through * 1.4)
-			node.transparency = 0.35 + through * 0.65
+			node.transparency = 0.1 + through * 0.9
+		&"hit":
+			# A burst that opens fast and is gone: on a body the news is "that landed", and a
+			# cloud hanging on a moving target trails behind it.
+			var near := _distance_scale(node.global_position)
+			node.scale = Vector3.ONE * float(fx["size"]) * near * (0.7 + sqrt(through) * 0.8)
+			node.transparency = through * through
+		&"mist":
+			var far := _distance_scale(node.global_position)
+			node.global_position = (fx["origin"] as Vector3) + (fx["drift"] as Vector3) * float(fx["age"])
+			node.scale = Vector3.ONE * float(fx["size"]) * far * (0.5 + through * 1.2)
+			node.transparency = 0.3 + through * 0.7
+
+
+func _advance_marks(delta: float) -> void:
+	var kept: Array[Dictionary] = []
+	for mark in _marks:
+		var node: Node3D = mark["node"]
+		if not is_instance_valid(node):
+			continue
+		mark["age"] = float(mark["age"]) + delta
+		var through := float(mark["age"]) / MARK_LIFE
+		if through >= 1.0:
+			node.queue_free()
+			continue
+		# Holds, then fades over its last quarter: a mark that fades from the start is gone
+		# before anybody looks at the wall.
+		node.transparency = clampf((through - 0.75) / 0.25, 0.0, 1.0)
+		kept.append(mark)
+	_marks = kept
 
 
 # --- Building effects -------------------------------------------------------
@@ -258,6 +391,7 @@ func _trace(
 	var end := eye + dir * minf(reach, miss_distance)
 	var hit := false
 	var normal := Vector3.UP
+	var collider: Object = null
 
 	var space := get_world_3d().direct_space_state if get_world_3d() != null else null
 	if space != null:
@@ -268,6 +402,7 @@ func _trace(
 			end = found["position"]
 			normal = found["normal"]
 			hit = true
+			collider = found.get("collider")
 
 	if beam:
 		_beam(muzzle, end)
@@ -275,7 +410,7 @@ func _trace(
 		_tracer(muzzle, end)
 
 	if hit:
-		_impact(end, normal)
+		play_impact(end, normal, collider)
 
 
 func _tracer(from: Vector3, to: Vector3) -> void:
@@ -311,10 +446,25 @@ func _flash(muzzle: Transform3D, size: float) -> void:
 	var forward := -muzzle.basis.z.normalized()
 	node.global_position = muzzle.origin
 	node.rotate_object_local(Vector3.FORWARD, randf() * TAU)
-	# Seven centimetres, half a metre from the eye in first person: about a twelfth of the
-	# screen. Twice that was a pale square over the gun.
-	var across := 0.07 * size * randf_range(0.85, 1.15)
+	# Twelve centimetres, half a metre from the eye in first person: about a seventh of the screen.
+	# Twice the first seven was a pale square over the gun; seven alone was the play test's
+	# "almost no muzzle flash", a white dot lost against a pale barrel.
+	var across := 0.12 * size * randf_range(0.85, 1.15)
 	node.scale = Vector3.ONE * across
+
+	# Two petals along the barrel's line, crossed, so the flash has a direction and a shape and
+	# is read as fire leaving the muzzle rather than as a light on the gun.
+	var petals: Array[MeshInstance3D] = []
+	for turn in [0.0, PI * 0.5]:
+		var petal := _mesh(_quad_mesh(), _petal_mat())
+		var length := 0.16 * size * randf_range(0.85, 1.2)
+		var width := 0.05 * size
+		var x := forward.cross(Vector3.UP if absf(forward.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT).normalized()
+		x = x.rotated(forward, turn)
+		# The quad lies in its X/Y plane: Y along the barrel, X across it.
+		petal.global_transform = Transform3D(Basis(x * width, forward * length, x.cross(forward)),
+			muzzle.origin + forward * (length * 0.5))
+		petals.append(petal)
 
 	var light := OmniLight3D.new()
 	light.light_color = Color(1.0, 0.72, 0.38)
@@ -325,29 +475,80 @@ func _flash(muzzle: Transform3D, size: float) -> void:
 	light.top_level = true
 	light.global_position = muzzle.origin - forward * 0.05
 
-	_add(node, {"kind": &"flash", "life": 0.05, "size": across,
+	_add(node, {"kind": &"flash", "life": 0.06, "size": across,
 		"light": light, "energy": light.light_energy})
+	for petal in petals:
+		_add(petal, {"kind": &"petal", "life": 0.05})
 
 
-func _impact(at: Vector3, normal: Vector3) -> void:
+func _impact(at: Vector3, normal: Vector3, kind: StringName, mark: bool) -> void:
 	if _live.size() > MAX_LIVE - 2:
 		return
 
-	var lifted := at + normal.normalized() * 0.02
+	var facing := normal.normalized() if normal.is_finite() and not normal.is_zero_approx() else Vector3.UP
+	var lifted := at + facing * 0.02
+
+	if kind == IMPACT_BODY:
+		_last_body_at = at
+		_last_body_msec = Time.get_ticks_msec()
+		# A red burst and a darker mist drifting back toward the shooter: "that was somebody",
+		# told apart from a wall's grey dust at a glance. No spark: a body does not strike one.
+		var burst := _mesh(_quad_mesh(), _hit_mat())
+		burst.global_position = lifted + facing * 0.04
+		var burst_size := randf_range(0.30, 0.40)
+		burst.scale = Vector3.ONE * burst_size
+		_add(burst, {"kind": &"hit", "life": 0.16, "size": burst_size})
+
+		var mist := _mesh(_quad_mesh(), _mist_mat())
+		mist.global_position = lifted + facing * 0.08
+		var mist_size := randf_range(0.32, 0.42)
+		mist.scale = Vector3.ONE * mist_size
+		_add(mist, {"kind": &"mist", "life": 0.45, "size": mist_size, "drift": facing * 0.4,
+			"origin": mist.global_position})
+		_play(ZeeWeaponSound.stream(ZeeWeaponSound.IMPACT), at, -10.0)
+		return
 
 	var spark := _mesh(_quad_mesh(), _spark_mat())
 	spark.global_position = lifted
-	var spark_size := randf_range(0.10, 0.16)
+	var spark_size := randf_range(0.24, 0.32)
 	spark.scale = Vector3.ONE * spark_size
-	_add(spark, {"kind": &"spark", "life": 0.07, "size": spark_size})
+	_add(spark, {"kind": &"spark", "life": 0.09, "size": spark_size})
 
 	var puff := _mesh(_quad_mesh(), _puff_mat())
-	puff.global_position = lifted + normal.normalized() * 0.05
-	var puff_size := randf_range(0.16, 0.24)
+	puff.global_position = lifted + facing * 0.05
+	var puff_size := randf_range(0.3, 0.4)
 	puff.scale = Vector3.ONE * puff_size
-	_add(puff, {"kind": &"puff", "life": 0.35, "size": puff_size})
+	_add(puff, {"kind": &"puff", "life": 0.45, "size": puff_size})
+
+	if mark:
+		_mark(at, facing)
 
 	_play(ZeeWeaponSound.stream(ZeeWeaponSound.IMPACT), at, -8.0)
+
+
+## A dark scorch on the wall where a shot landed, flat on the surface, held for
+## [constant MARK_LIFE]. [b]The one effect that says where the shots went after they went[/b]:
+## a spark and a puff are gone in a third of a second, and a player correcting their aim reads
+## the group on the wall.
+func _mark(at: Vector3, facing: Vector3) -> void:
+	if _marks.size() >= MAX_MARKS:
+		var oldest: Dictionary = _marks.pop_front()
+		var old: Node3D = oldest["node"]
+		if is_instance_valid(old):
+			old.queue_free()
+
+	var node := _mesh(_quad_mesh(), _mark_mat())
+	# A quad faces +Z: turn +Z onto the surface's normal, any roll.
+	var up := Vector3.UP if absf(facing.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT
+	var x := up.cross(facing).normalized()
+	var y := facing.cross(x).normalized()
+	# Grown with distance like an impact (capped at four times, at twenty-four metres): left at
+	# its real size a mark at range was three pixels, which is no mark at all.
+	var size := randf_range(0.09, 0.11) * _distance_scale(at)
+	var spin := Basis(facing, randf() * TAU)
+	node.global_transform = Transform3D(spin * Basis(x * size, y * size, facing),
+		at + facing * 0.004)
+	_marks.append({"node": node, "age": 0.0})
 
 
 ## A reload's sound at [param at]: [param stage] is [constant ZeeWeaponSound.RELOAD_OUT] or
@@ -561,14 +762,52 @@ static func _spark_mat() -> StandardMaterial3D:
 
 static func _puff_mat() -> StandardMaterial3D:
 	if _puff_material == null:
-		_puff_material = _glow(Color(0.62, 0.6, 0.56, 0.55), true, false)
+		# Darker and warmer than the pale grey it was: grey dust on a grey wall was invisible on
+		# every frame of the contact sheet after the spark had gone.
+		_puff_material = _glow(Color(0.36, 0.32, 0.27, 0.8), true, false)
 	return _puff_material
+
+
+## The flash's petals: additive like the flash and, like it, drawn over the barrel that made it.
+static func _petal_mat() -> StandardMaterial3D:
+	if _petal_material == null:
+		_petal_material = _glow(Color(1.0, 0.62, 0.22, 0.95), false, true)
+		_petal_material.albedo_texture = _soft_disc()
+		_petal_material.no_depth_test = true
+		_petal_material.render_priority = 1
+	return _petal_material
+
+
+static func _hit_mat() -> StandardMaterial3D:
+	if _hit_material == null:
+		_hit_material = _glow(Color(0.85, 0.05, 0.04, 0.95), true, false)
+	return _hit_material
+
+
+static func _mist_mat() -> StandardMaterial3D:
+	if _mist_material == null:
+		_mist_material = _glow(Color(0.45, 0.02, 0.03, 0.6), true, false)
+	return _mist_material
+
+
+## A soft dark disc laid on the surface, not a billboard. Mixed, not added: added black is
+## nothing at all.
+static func _mark_mat() -> StandardMaterial3D:
+	if _mark_material == null:
+		_mark_material = _glow(Color(0.05, 0.045, 0.04, 0.85), false, false)
+		_mark_material.albedo_texture = _soft_disc()
+		# Drawn over the surface it sits on, a few millimetres off it: without the offset it
+		# flickers in and out of the wall (z-fighting), and depth-tested it still hides behind
+		# whatever stands in front of the wall.
+		_mark_material.render_priority = -1
+	return _mark_material
 
 
 func describe() -> Dictionary:
 	return {
 		"live": _live.size(),
 		"tracers": tracer_count(),
+		"marks": _marks.size(),
 		"voices": _voices.size(),
 		"excluded": exclude.size(),
 		"visuals": visuals,

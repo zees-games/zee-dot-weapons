@@ -610,11 +610,21 @@ func on_used(outcome: DotWeaponOutcome) -> void:
 		return
 
 	_pose.punch(outcome.recoil)
+	match outcome.kind:
+		DotWeaponOutcome.KIND_SWING:
+			_pose.swing()
+		DotWeaponOutcome.KIND_THROW:
+			_pose.throw()
 
 
 ## Recoil with no outcome to hand, for a remote player whose shots arrive as a counter.
 func on_fired(recoil: Vector2 = Vector2(0.5, 0.1)) -> void:
 	_pose.punch(recoil)
+
+
+## A melee swing with no outcome to hand (a bash, or a remote player's swing): the swing's keys.
+func on_swing() -> void:
+	_pose.swing()
 
 
 ## How far recoil should turn the camera this frame, in degrees: x pitch up, y yaw.

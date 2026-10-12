@@ -118,6 +118,19 @@ class Tunables extends RefCounted:
 	## The reload, as keys over its fraction, 0 to 1. Empty is no reload motion.
 	var reload_keys: Array = ZeeWeaponPose.RELOAD_KEYS_RIFLE
 
+	## A melee swing, as keys over its own time (see [member swing_seconds]). Empty is none.
+	var swing_keys: Array = ZeeWeaponPose.SWING_KEYS
+
+	## How long a swing's keys take, in seconds. Presentation time, not the weapon's cooldown:
+	## a swing that lasted the whole cooldown of a slow hammer would still be crossing the
+	## screen when the next one was pressed.
+	var swing_seconds: float = 0.36
+
+	## A throw, as keys over [member throw_seconds].
+	var throw_keys: Array = ZeeWeaponPose.THROW_KEYS
+
+	var throw_seconds: float = 0.45
+
 	## Metres it is pulled back at full charge.
 	var charge_pull: float = 0.06
 
@@ -147,6 +160,33 @@ const DRAW_KEYS := [
 	[0.35, Vector3(0.015, -0.10, 0.03), Vector3(-12.0, -6.0, 18.0)],
 	[0.70, Vector3(0.0, 0.006, 0.0), Vector3(3.0, 0.0, -4.0)],
 	[0.86, Vector3(0.0, -0.002, 0.0), Vector3(-0.8, 0.0, 1.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A melee swing: drawn back and up to the right (0-0.18), cut down and across to the left
+## through the middle of the screen (0.18-0.5), held a moment at the end of the cut, and
+## brought back.
+##
+## [b]Keys, because a swing is an action.[/b] A swing used to be the recoil spring alone, and
+## a melee weapon has no recoil: the knife, the hatchet and the fists did nothing on screen when
+## they struck, which reads as the weapon being broken.
+const SWING_KEYS := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.18, Vector3(0.04, 0.035, 0.03), Vector3(22.0, -16.0, -14.0)],
+	[0.40, Vector3(-0.11, -0.05, -0.10), Vector3(-40.0, 38.0, 24.0)],
+	[0.52, Vector3(-0.14, -0.08, -0.08), Vector3(-52.0, 46.0, 30.0)],
+	[0.78, Vector3(-0.04, -0.03, -0.02), Vector3(-14.0, 12.0, 8.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A throw: drawn back over the shoulder, then forward and down past the middle of the screen,
+## and back up into the hand.
+const THROW_KEYS := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.25, Vector3(0.03, 0.08, 0.10), Vector3(35.0, -8.0, -10.0)],
+	[0.50, Vector3(-0.06, -0.04, -0.16), Vector3(-30.0, 14.0, 8.0)],
+	[0.62, Vector3(-0.07, -0.16, -0.10), Vector3(-45.0, 16.0, 10.0)],
+	[0.85, Vector3(0.0, -0.10, 0.0), Vector3(-12.0, 4.0, 0.0)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
@@ -221,6 +261,22 @@ const RELOAD_KEYS_BOLT := [
 	[0.75, Vector3(-0.102, 0.098, 0.06), Vector3(9.0, 20.0, -7.0)],
 	[0.82, Vector3(-0.10, 0.094, 0.025), Vector3(8.0, 20.0, -4.0)],
 	[0.90, Vector3(-0.035, 0.03, 0.005), Vector3(3.0, 7.0, -2.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A pump gun fed shells through the port underneath: lifted in and rolled well over so the
+## underside is to the eye (0.10-0.22), held still while the shells are pushed up into it
+## (ZeeViewModel `FEED_START`-`FEED_END`), back down, and the pump worked (0.80-0.90: back, then
+## forward). Held like the bolt gun, because each shell needs the port in the same place.
+const RELOAD_KEYS_TUBE := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.10, Vector3(-0.05, 0.045, 0.01), Vector3(9.0, 11.0, -30.0)],
+	[0.22, Vector3(-0.08, 0.07, 0.015), Vector3(13.0, 15.0, -48.0)],
+	[0.46, Vector3(-0.082, 0.072, 0.015), Vector3(13.0, 15.0, -49.0)],
+	[0.68, Vector3(-0.08, 0.07, 0.015), Vector3(13.0, 15.0, -48.0)],
+	[0.76, Vector3(-0.035, 0.03, 0.005), Vector3(5.0, 6.0, -18.0)],
+	[0.83, Vector3(0.0, -0.004, 0.03), Vector3(-2.0, 2.0, -3.0)],
+	[0.90, Vector3(0.0, -0.004, -0.008), Vector3(2.0, 0.0, 0.0)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
@@ -360,6 +416,11 @@ var _charge: float = 0.0
 ## Metres of landing dip left to recover.
 var _landing: float = 0.0
 
+## The swing or throw playing: its keys, and how far through it is (1 or more is finished).
+var _action_keys: Array = []
+var _action: float = 1.0
+var _action_seconds: float = 0.36
+
 ## How far into aiming down the weapon, 0 at the hip to 1 at full aim. See [method set_aim].
 var _aim: float = 0.0
 
@@ -415,6 +476,8 @@ func advance(
 	_advance_bob(step, speed, on_floor, crouched)
 	_advance_kick(step)
 	_advance_landing(step)
+	if _action < 1.0:
+		_action = minf(1.0, _action + step / maxf(0.05, _action_seconds))
 
 
 ## Adds recoil. [param recoil] is the pitch and yaw in degrees a behaviour asked for.
@@ -450,6 +513,30 @@ func punch(recoil: Vector2) -> void:
 	_kick_velocity += minf(
 		climb * tunables.kick_back, tunables.kick_back_max
 	) * omega * 1.3 * exp(1.0)
+
+
+## Plays a melee swing ([member Tunables.swing_keys]) from its start. A swing pressed during a
+## swing starts again from the top, which is what a second press looks like.
+func swing() -> void:
+	_start_action(tunables.swing_keys, tunables.swing_seconds)
+
+
+## Plays a throw ([member Tunables.throw_keys]).
+func throw() -> void:
+	_start_action(tunables.throw_keys, tunables.throw_seconds)
+
+
+## How far through the swing or throw playing, 0 to 1; 1 when none is.
+func action_fraction() -> float:
+	return _action
+
+
+func _start_action(keys: Array, seconds: float) -> void:
+	if keys.size() < 2:
+		return
+	_action_keys = keys
+	_action_seconds = seconds if is_finite(seconds) and seconds > 0.0 else 0.36
+	_action = 0.0
 
 
 ## The muzzle climb, in degrees, a recoil of [param pitch] produces before [member feel].
@@ -511,6 +598,7 @@ func reset() -> void:
 	_kick_rotation_velocity = Vector3.ZERO
 	_landing = 0.0
 	_aim = 0.0
+	_action = 1.0
 
 
 # --- The result -------------------------------------------------------------
@@ -539,8 +627,9 @@ func offset() -> Transform3D:
 	# the whole gun across the screen rather than turning it in the hand.
 	var drawn := sample_keys(tunables.draw_keys, _deploy) if holstered > 0.0 else [Vector3.ZERO, Vector3.ZERO]
 	var reloaded := sample_keys(tunables.reload_keys, _reload) if _reload > 0.0 else [Vector3.ZERO, Vector3.ZERO]
-	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3)
-	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3)
+	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
+	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3)
+	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3)
 	var hand := Basis.from_euler(Vector3(
 		deg_to_rad(acted.x), deg_to_rad(acted.y), deg_to_rad(acted.z)
 	))
@@ -721,6 +810,7 @@ func describe() -> Dictionary:
 		"reload": _reload,
 		"charge": _charge,
 		"landing": _landing,
+		"action": _action,
 		"weight": weight,
 		"feel": feel,
 	}

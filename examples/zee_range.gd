@@ -10,6 +10,7 @@ extends Node
 ## godot --path . res://examples/zee_range.tscn -- --weapon smg --fire   # trigger held
 ## ... -- --weapon smg --fire --capture /tmp/smg   # frames 1-14 after the first shot
 ## ... -- --weapon rifle --sheet /tmp/rifle          # the contact sheet's frames, then quit
+## ... -- --weapon rifle --sheet /tmp/rifle --dummy  # the same, with a character in the line of fire
 ## [/codeblock]
 ##
 ## WASD to move, space to jump, ctrl to crouch, mouse to look, left click to fire, right
@@ -62,6 +63,9 @@ var _capturing: bool = false
 ## and [method _run_sheet] steps the view model by hand.
 var _sheet: bool = false
 
+## The simulation tick the sheet's own shots are fired on, clear of the range's.
+var _sheet_tick: int = 100000
+
 ## Every shot's impact, drawn as a short-lived marker so a hit is visible.
 var _markers: Array[Node3D] = []
 
@@ -85,8 +89,36 @@ func _ready() -> void:
 
 	_equip_requested()
 
+	if OS.get_cmdline_user_args().has("--dummy"):
+		_add_dummy()
+
 	if _argument("--sheet") != "":
 		_run_sheet(_argument("--sheet"))
+
+
+## `--dummy`: a character standing in the line of fire, so a capture shows a shot landing on a
+## body (ZeeShotFx's red burst) rather than on the far wall.
+func _add_dummy() -> void:
+	var body := CharacterBody3D.new()
+	body.name = "Dummy"
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.35
+	capsule.height = 1.8
+	shape.shape = capsule
+	body.add_child(shape)
+	var mesh := MeshInstance3D.new()
+	var look := CapsuleMesh.new()
+	look.radius = 0.35
+	look.height = 1.8
+	mesh.mesh = look
+	mesh.material_override = _material(Color(0.55, 0.62, 0.72))
+	body.add_child(mesh)
+	$World.add_child(body)
+	var eye := _controller.eye_transform()
+	var ahead := -eye.basis.z
+	ahead.y = 0.0
+	body.global_position = eye.origin + ahead.normalized() * 6.0 + Vector3(0.0, -0.75, 0.0)
 
 
 # --- Wiring -----------------------------------------------------------------
@@ -562,6 +594,10 @@ const SHEET_STEP := 1.0 / 60.0
 func _run_sheet(prefix: String) -> void:
 	_sheet = true
 	_view.set_process(false)
+	# The shot's effects are stepped with the view model, or a flash that lives three frames
+	# at 60 fps is gone before a software renderer has drawn one.
+	if _rig.shot_fx() != null:
+		_rig.shot_fx().set_process(false)
 	# Read at a quarter of the size on the tiled sheet, so the label is drawn large.
 	_readout.add_theme_font_size_override("font_size", 52)
 	_crosshair.add_theme_font_size_override("font_size", 48)
@@ -624,7 +660,7 @@ func _run_sheet(prefix: String) -> void:
 				_sheet_steps(40)
 			"fire":
 				_sheet_steps(10)
-				_view.on_fired(recoil)
+				_sheet_fire(recoil)
 				_sheet_steps(int(arg))
 			"reload":
 				_view.on_reload(arg)
@@ -650,7 +686,7 @@ func _run_sheet(prefix: String) -> void:
 			"aimfire":
 				_view.aim(true)
 				_sheet_steps(40)
-				_view.on_fired(recoil)
+				_sheet_fire(recoil)
 				_sheet_steps(int(arg))
 
 		var weapon := String(def.id) if def != null else "?"
@@ -695,9 +731,44 @@ func _sheet_reset() -> void:
 	_sheet_steps(1)
 
 
+## Pulls the trigger through the rig, as a game does: the use reaches the view model (the kick,
+## a melee swing, a throw) and the shot's effects (the flash, the tracer, the impact and its
+## mark), so the fire frames show what a player sees and not the kick alone. The magazine is
+## topped up first, so a two-round gun has a round for each fire frame. A weapon that will not
+## go off in half a second of held trigger and its release falls back to the kick.
+func _sheet_fire(recoil: Vector2) -> void:
+	var held := _rig.arsenal.current() if _rig.arsenal != null else null
+	var def := _rig.current_def()
+	if held != null and def != null and def.magazine > 0:
+		held.magazine = def.magazine
+	var eye := _controller.eye_transform()
+	for i in range(64):
+		_sheet_tick += 1
+		var command := DotWeaponCommand.new()
+		# Held for half a second and then let go: a grenade goes on the release.
+		command.set_button(DotWeaponCommand.BUTTON_ATTACK, i < 32)
+		var ctx := DotWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z)
+		var outcome := _rig.simulate_tick(command, _sheet_tick, ctx)
+		if outcome != null and outcome.used:
+			break
+		if i == 63:
+			_view.on_fired(recoil)
+	# Let go, and give the rig a quiet second, so the next frame's shot is not refused by this
+	# one's cooldown.
+	for i in range(64):
+		_sheet_tick += 1
+		var _idle := _rig.simulate_tick(DotWeaponCommand.new(), _sheet_tick,
+			DotWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z))
+	# The rig pushes its own deploy and reload fractions; the sheet's frame decides them.
+	_view.on_reload(0.0)
+	_view.on_deploy(1.0)
+
+
 func _sheet_steps(count: int) -> void:
 	for i in range(count):
 		_view.advance(SHEET_STEP)
+		if _rig.shot_fx() != null:
+			_rig.shot_fx().advance(SHEET_STEP)
 	# The HUD's half of aiming, as _process does it: without it a scoped weapon's aimed frame
 	# was an empty range, the gun hidden and no scope drawn.
 	_scope.fraction = _view.aim_fraction() if _view.is_scoped() else 0.0
