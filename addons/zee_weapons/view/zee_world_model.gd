@@ -29,6 +29,55 @@ extends Node3D
 ## How much of a weapon's recoil a watcher sees.
 const RECOIL_SHARE := 0.35
 
+# --- Authored motion ----------------------------------------------------------
+#
+# [b]A swing and a throw are keys here too, for the view model's reason[/b] ([ZeeWeaponPose]'s
+# SWING_KEYS): a melee weapon has no recoil, so a watcher saw somebody's knife ride the arm's
+# slash rigid in the hand, pointing where the held-gun pose points, and a grenade thrown from a
+# hand that never moved. Each key is [t, position in metres, rotation in degrees (pitch up,
+# yaw left, roll counter-clockwise)] in the hand's frame (-Z the way the person faces, +Y up),
+# turned about the grip, on top of [method ZeeWeaponArt.world_transform], read through
+# [method ZeeWeaponPose.sample_keys]. [b]Not the view model's keys[/b]: those are in the camera's
+# frame at the view model's scale, and the arm under this one already moves (the person's
+# slash overlay), so these are the wrist's share only: cocked back as the arm comes up, cut
+# through as it comes down, followed through and back.
+
+## A melee swing, timed to the person's slash overlay (the arm is up at about 0.12 s and through
+## by 0.3 s at the rate the family plays it).
+const SWING_KEYS := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.22, Vector3(0.0, 0.03, 0.04), Vector3(65.0, -15.0, -10.0)],
+	[0.42, Vector3(0.0, 0.0, -0.05), Vector3(-35.0, 30.0, 20.0)],
+	[0.58, Vector3(0.0, -0.02, -0.03), Vector3(-55.0, 38.0, 25.0)],
+	[0.82, Vector3(0.0, 0.0, 0.0), Vector3(-15.0, 10.0, 6.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+const SWING_SECONDS := 0.5
+
+## A throw: the wrist cocked back as the arm swings forward, flicked through, and the weapon gone
+## from [constant THROW_RELEASE] (the projectile is the game's, and a grenade still in the hand
+## beside it is two grenades) until it is back in the hand at [constant THROW_BACK]. The arm is
+## the person's: a thrown weapon is held with empty-handed arms, which have no throw of their
+## own, so [method throw] asks the person it hangs from for the slash overlay (see
+## [method _person]): up past the head and over, an overhand throw's path. Without an arm under
+## it a grenade moved by keys alone floated away from a hand that stayed where it was, and the
+## punch overlay punches with the other hand.
+const THROW_KEYS := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.20, Vector3(0.0, 0.03, 0.05), Vector3(55.0, 0.0, -8.0)],
+	[0.36, Vector3(0.0, 0.02, -0.04), Vector3(-30.0, 0.0, 4.0)],
+	[0.60, Vector3(0.0, 0.0, -0.03), Vector3(-40.0, 0.0, 0.0)],
+	[0.85, Vector3(0.0, 0.0, 0.0), Vector3(-8.0, 0.0, 0.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+const THROW_SECONDS := 0.55
+
+## The fractions of a throw between which the thrown weapon is not in the hand.
+const THROW_RELEASE := 0.36
+const THROW_BACK := 0.9
+
 @export_group("Attachment")
 
 ## The attachment point on the character to hang from.
@@ -74,6 +123,12 @@ var _fx: ZeeShotFx = null
 
 ## Recoil offset in metres and its decay, so a watcher sees the gun move when it fires.
 var _kick: float = 0.0
+
+## The swing or throw playing: its keys, its length, and how far through it is (1 is none).
+var _action_keys: Array = []
+var _action_seconds: float = SWING_SECONDS
+var _action: float = 1.0
+var _action_hides: bool = false
 
 var _built: bool = false
 
@@ -209,10 +264,64 @@ func on_fired(
 ) -> void:
 	if not is_finite(recoil.x):
 		return
-	_kick = minf(_kick + recoil.x * 0.008 * RECOIL_SHARE, 0.08)
+	match kind:
+		ZeeWeaponNet.KIND_SWING:
+			swing()
+		ZeeWeaponNet.KIND_THROW:
+			throw()
+		_:
+			_kick = minf(_kick + recoil.x * 0.008 * RECOIL_SHARE, 0.08)
 
 	if with_effects and effects and is_inside_tree() and not _carrier_draws_its_own():
 		_shot_fx().play_remote(kind, muzzle_transform(), muzzle_direction(), _id)
+
+
+## Plays [constant SWING_KEYS] from the top: what [method on_fired] does with a swing. A swing
+## during a swing starts again, which is what a second strike looks like.
+func swing() -> void:
+	_start_action(SWING_KEYS, SWING_SECONDS, false)
+
+
+## Plays [constant THROW_KEYS]: what [method on_fired] does with a throw. Also starts the slash
+## overlay on the person this hangs from, if it hangs from one.
+func throw() -> void:
+	_start_action(THROW_KEYS, THROW_SECONDS, true)
+	var person := _person()
+	if person != null:
+		person.call(&"swing", &"slash")
+
+
+## The person this hand belongs to: the nearest node above it that answers both `swing(which)`
+## and `set_hold(kind)`, which dot-player-char's figure does.
+##
+## [b]Asked for a throw only, and duck-typed for [method attach_to]'s reason.[/b] Every game
+## already plays the slash on a swing itself, and a second call would restart it; nobody plays
+## anything on a throw, because the figure has no throw clip and empty-handed arms are what a
+## thrown weapon is held with.
+func _person() -> Object:
+	var node := get_parent()
+	var depth := 0
+	while node != null and depth < 10:
+		if node.has_method(&"swing") and node.has_method(&"set_hold"):
+			return node
+		node = node.get_parent()
+		depth += 1
+	return null
+
+
+## How far through the swing or throw playing, 0 to 1; 1 when none is.
+func action_fraction() -> float:
+	return _action
+
+
+func _start_action(keys: Array, seconds: float, hides: bool) -> void:
+	_action_keys = keys
+	_action_seconds = seconds
+	_action_hides = hides
+	_action = 0.0
+	# The kick a swing used to be is not added to the cut: a knife pushed back along its own
+	# blade as it strikes reads as the hand flinching.
+	_kick = 0.0
 
 
 ## Which way the barrel points in the world: the art's forward through the model's basis.
@@ -230,18 +339,50 @@ func on_switching(switching: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	advance(delta)
+
+
+## One frame of the hand, [param delta] seconds long. [method _process] calls it; a tool that
+## freezes processing (`tools/world_sheet.gd`) calls it with a fixed step, so a frame is the
+## same picture on every machine.
+func advance(delta: float) -> void:
 	if Engine.is_editor_hint() or not _built or _holder == null:
 		return
+	if not is_finite(delta) or delta < 0.0:
+		return
 
-	if _kick <= 0.00001:
+	if _kick <= 0.00001 and _action >= 1.0:
 		return
 
 	# Decayed rather than sprung. A watcher cannot see an overshoot at twenty metres, so
 	# the spring the view model runs would be arithmetic nobody ever sees the result of.
 	_kick = move_toward(_kick, 0.0, _kick * 12.0 * delta + 0.0002)
 
+	var turn := Basis.IDENTITY
+	var moved := Vector3.ZERO
+	if _action < 1.0:
+		_action = minf(1.0, _action + delta / maxf(_action_seconds, 0.01))
+		var at := ZeeWeaponPose.sample_keys(_action_keys, _action)
+		moved = at[0]
+		var degrees: Vector3 = at[1]
+		turn = Basis.from_euler(Vector3(
+			deg_to_rad(degrees.x), deg_to_rad(degrees.y), deg_to_rad(degrees.z)
+		))
+	_show_in_hand(not (_action_hides and _action >= THROW_RELEASE and _action < THROW_BACK))
+
+	# About the grip, which is where the hand is: the rest transform's origin.
 	var rest := _art.world_transform() if _art != null else Transform3D.IDENTITY
-	_holder.transform = Transform3D(rest.basis, rest.origin + Vector3(0.0, 0.0, _kick))
+	_holder.transform = Transform3D(
+		turn * rest.basis, rest.origin + moved + Vector3(0.0, 0.0, _kick)
+	)
+
+
+func _show_in_hand(shown: bool) -> void:
+	if _weapon != null and _weapon.visible != shown:
+		_weapon.visible = shown
+	for part in _attachments:
+		if part.visible != shown:
+			part.visible = shown
 
 
 # --- Internals --------------------------------------------------------------
@@ -331,6 +472,7 @@ func _clear_models() -> void:
 	_weapon = null
 	_attachments.clear()
 	_kick = 0.0
+	_action = 1.0
 
 
 static func _radians(value: Variant) -> Vector3:
@@ -345,4 +487,5 @@ func describe() -> Dictionary:
 		"attachments": _attachments.size(),
 		"attached": get_parent() != null,
 		"mount": String(mount),
+		"action": snappedf(_action, 0.01),
 	}

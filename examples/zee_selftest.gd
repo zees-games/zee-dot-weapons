@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 234
+const CHECKS := 238
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1466,6 +1466,55 @@ func _effects() -> void:
 		"and turning their sounds off after a shot silences the next one",
 		their_fx != null and not their_fx.sounds
 	)
+
+	# [b]Somebody else's swing and throw are keys on their world model[/b], as one's own are on
+	# the view model: a watcher saw the knife ride the arm rigid, and a grenade thrown from a
+	# hand that never moved.
+	_check("the world model's swing and throw keys start and finish at rest",
+		ZeeWeaponPose.sample_keys(ZeeWorldModel.SWING_KEYS, 0.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWorldModel.SWING_KEYS, 1.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWorldModel.THROW_KEYS, 1.0)[0].length() < 0.0001)
+	var cutter := ZeeWorldModel.new()
+	cutter.effects = false
+	stranger.add_child(cutter)
+	cutter.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.KNIFE))
+	var cutter_holder := cutter.get_node(^"Holder") as Node3D
+	var cutter_rest := cutter_holder.transform
+	cutter.on_fired(Vector2(1.2, 0.0), ZeeWeaponNet.KIND_SWING)
+	for i in range(14):
+		cutter.advance(1.0 / 60.0)
+	var cut := rad_to_deg(cutter_holder.basis.get_rotation_quaternion().angle_to(
+		cutter_rest.basis.get_rotation_quaternion()))
+	for i in range(60):
+		cutter.advance(1.0 / 60.0)
+	_check("somebody else's swing turns their knife well across mid-cut (%.0f deg) and puts it back" % cut,
+		cut > 30.0 and cutter.action_fraction() >= 1.0
+		and cutter_holder.transform.is_equal_approx(cutter_rest))
+
+	# A thrown weapon leaves the hand at the release and is back for the next, and the person
+	# holding it is asked for the arm (a figure answers swing and set_hold).
+	var thrower := Node3D.new()
+	var person_script := GDScript.new()
+	person_script.source_code = "extends Node3D\nvar swung: Array = []\nfunc swing(which: StringName = &\"\") -> void:\n\tswung.append(which)\nfunc set_hold(_kind: int) -> void:\n\tpass\n"
+	var _loaded := person_script.reload()
+	thrower.set_script(person_script)
+	stranger.add_child(thrower)
+	var lobbed := ZeeWorldModel.new()
+	lobbed.effects = false
+	thrower.add_child(lobbed)
+	lobbed.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.FRAG))
+	lobbed.on_fired(Vector2(2.0, 0.0), ZeeWeaponNet.KIND_THROW)
+	var lobbed_weapon := lobbed.get_node_or_null(^"Holder/Weapon") as Node3D
+	for i in range(18):
+		lobbed.advance(1.0 / 60.0)
+	var gone := lobbed_weapon != null and not lobbed_weapon.visible
+	for i in range(60):
+		lobbed.advance(1.0 / 60.0)
+	_check("a throw lets go of the grenade mid-throw, has it back after, and swings the person's arm (%s)" % str(thrower.get(&"swung")),
+		gone and lobbed_weapon.visible and thrower.get(&"swung") == [&"slash"])
+	lobbed.advance(NAN)
+	_check("and a NaN step moves nothing",
+		(lobbed.get_node(^"Holder") as Node3D).transform.origin.is_finite())
 
 	# --- Where a shot lands ---
 	# A wall takes a spark, a puff and a mark that stays; a body takes a red burst and no mark;

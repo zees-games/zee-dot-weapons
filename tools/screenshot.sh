@@ -9,6 +9,7 @@
 #   tools/screenshot.sh --sheet rifle pistol knife # screenshots/sheet_<id>.png, 16 frames each
 #   tools/screenshot.sh --sheet --all              # a contact sheet for every weapon
 #   SHEET_DIR=/tmp/before tools/screenshot.sh --sheet rifle   # somewhere else
+#   tools/screenshot.sh --world knife frag        # screenshots/world_<id>.png: a person using it
 #
 # A contact sheet is eighteen frames of one weapon on one image: hip, aimed, fire frames
 # 1/2/4/8/14, reload at 0/25/50/75/90%, walking, turning, the draw at 30/70%, standing in a
@@ -50,6 +51,7 @@ WAIT=14
 ALL=0
 RACK=0
 SHEET=0
+WORLD=0
 WEAPONS=()
 WEAPON=""
 OUT=""
@@ -59,6 +61,7 @@ while [ $# -gt 0 ]; do
         --all)  ALL=1; shift ;;
         --rack) RACK=1; shift ;;
         --sheet) SHEET=1; shift ;;
+        --world) WORLD=1; shift ;;
         --wait) WAIT="$2"; shift 2 ;;
         --size) SIZE="$2"; shift 2 ;;
         -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -146,6 +149,44 @@ sheet() {
         "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
     rm -rf "$tmp"
 }
+
+# Somebody else's weapon: one of the family's people using it, 18 frames from the use to
+# 1 s after, as everybody else sees it (tools/world_sheet.gd).
+world() {
+    local weapon="$1" dir="${SHEET_DIR:-screenshots}"
+    local disp=$((90 + RANDOM % 8))
+    local tmp; tmp="$(mktemp -d)"
+    mkdir -p "$dir"
+    [ "$dir" = "screenshots" ] && touch screenshots/.gdignore
+
+    Xvfb ":$disp" -screen 0 "${SIZE}x24" >/dev/null 2>&1 &
+    local xpid=$!
+    sleep 2
+    DISPLAY=":$disp" LIBGL_ALWAYS_SOFTWARE=1 timeout 120 godot --path . \
+        --resolution "$SIZE" --rendering-driver opengl3 res://tools/world_sheet.tscn \
+        -- --weapon "$weapon" --sheet "$tmp/f" ${EXTRA:-} >"$tmp/log" 2>&1
+    kill "$xpid" 2>/dev/null
+
+    if [ ! -s "$tmp/f_17.png" ]; then
+        echo "world sheet failed for $weapon:" >&2
+        tail -20 "$tmp/log" >&2
+        rm -rf "$tmp"
+        return 1
+    fi
+    grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
+
+    ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \
+        -vf "scale=640:-1,tile=3x6:padding=4:color=black" -frames:v 1 \
+        "$dir/world_$weapon.png" && echo "wrote $dir/world_$weapon.png"
+    rm -rf "$tmp"
+}
+
+if [ $WORLD -eq 1 ]; then
+    [ ${#WEAPONS[@]} -eq 0 ] && WEAPONS=(knife hatchet frag)
+    status=0
+    for w in "${WEAPONS[@]}"; do world "$w" || status=1; done
+    exit $status
+fi
 
 if [ $SHEET -eq 1 ]; then
     if [ $ALL -eq 1 ]; then

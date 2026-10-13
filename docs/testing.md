@@ -22,7 +22,10 @@ tools/screenshot.sh --sheet rifle pistol knife  # contact sheets: screenshots/sh
 tools/screenshot.sh --sheet --all               # one sheet per weapon
 EXTRA="--reloads 0.04,0.10,…" tools/screenshot.sh --sheet sniper   # 18 reload frames at those fractions (exactly 18)
 EXTRA="--dummy" tools/screenshot.sh --sheet smg   # a character in the line of fire: the hit on a body
+tools/screenshot.sh --world knife hatchet frag  # somebody else using it: screenshots/world_<id>.png
 ```
+
+**The world sheet is the third-person review** (`tools/world_sheet.gd`): one of the family's people holding the weapon through `ZeeWorldModel`, driven as a game drives a remote player (the hold from the art's pose, the slash on a swing, `on_fired` with the replicated kind), eighteen frames from the use to a second after at a fixed 60 fps step (`DotHumanoidFigure.animate`, `ZeeWorldModel.advance`). The first-person sheet says nothing about it: a different file draws it on a different node from a different signal.
 
 **The contact sheet is the view model's review.** Eighteen frames of one weapon on one image: hip, aimed, fire frames 1/2/4/8/14 after a shot (fired through the rig, so they carry the flash, the tracer, the impact and a melee swing), reload at 0/25/50/75/90%, walking, turning right, the draw at 30% and 70%, standing under a roof in its shadow, and aimed four frames after a shot. The range (`--sheet <prefix>`) stops simulating, switches the view model's `_process` off and calls `ZeeViewModel.advance()` with a fixed 1/60 s step, so each frame is a number of steps and not wherever a software renderer's clock landed: the same frame is the same picture every run, and a before and an after compare side by side (`SHEET_DIR=/somewhere`). One screenshot of a weapon at rest says nothing about a reload, a kick or a draw, which is where every complaint about the hands came from.
 

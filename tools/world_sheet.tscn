@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/world_sheet.gd" id="1_world"]
+
+[node name="ZeeWorldSheet" type="Node3D"]
+script = ExtResource("1_world")

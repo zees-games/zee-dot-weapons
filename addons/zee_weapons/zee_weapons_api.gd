@@ -17,5 +17,9 @@ extends RefCounted
 ## [constant ZeeShotFx.BODY_GROUP] / [constant ZeeShotFx.NOT_BODY_GROUP] groups, and
 ## [method ZeeViewModel.on_swing], and the `box_magazine` reload part. A game calls them through `has_method` until its shell has them.
 
-const LEVEL := 4
+## 5: [method ZeeWorldModel.advance], [method ZeeWorldModel.swing], [method ZeeWorldModel.throw],
+## [method ZeeWorldModel.action_fraction] and its SWING_KEYS / THROW_KEYS: somebody else's swing
+## and throw drawn on their world model.
+
+const LEVEL := 5
 const OLDEST := 1
