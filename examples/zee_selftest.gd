@@ -1308,6 +1308,7 @@ func _aim() -> void:
 	var at := (animated.transform * aim_node.transform * holder.transform).origin
 	_check("and arrives centred, below the eye (%.3f, %.3f)" % [at.x, at.y],
 		absf(at.x) < 0.002 and at.y < -0.02 and at.z < 0.0)
+	# 15: the bullpup lost its added scope with the real-world guns and aims down its iron sight.
 
 	# The sight line, measured off each gun's own mesh, runs through the screen's centre at
 	# full aim: the rear and the front sight both on the view axis, the front further out.
@@ -1331,7 +1332,7 @@ func _aim() -> void:
 		if off > worst or front.z >= rear.z or rear.z >= -0.05:
 			worst = maxf(off, worst + 1.0 if front.z >= rear.z or rear.z >= -0.05 else off)
 			worst_id = art.id
-	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 14)
+	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 15)
 	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
 		worst < 0.002)
 

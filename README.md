@@ -130,7 +130,7 @@ The easiest way to get the pack and its addons is [dot-bootstrap](https://github
 In the range: **WASD** to move, mouse to look, **left click** to fire, **right click** to bash, **R** to reload, **1**-**5** for the slots, **Q** for the last weapon, the wheel to cycle, and **F1** to print the rig's state.
 
 ## Credits
-The art is by [Kenney](https://kenney.nl) (CC0): the [Blaster Kit](https://kenney.nl/assets/blaster-kit), the Weapon Pack, the Survival Kit and the Blocky Characters. Only the files the pack uses are included (47 models and three textures, 1.7 MB), each kit's licence next to its files in `assets/`.
+The twelve real-world guns (SMG, machine pistol, carbine, assault rifle, bullpup, battle rifle, burst rifle, shotgun, marksman, sniper, revolver) are [Quaternius](https://quaternius.com)'s [Ultimate Low Poly Guns Pack](https://opengameart.org/content/low-poly-guns-pack) (CC0), converted to glTF with the magazines split off, and the launcher is Khairul Hidayat's [Low Poly Rocket Launcher](https://opengameart.org/content/low-poly-rocket-launcher) (CC0 on its page, MIT in its README); sources and licence in `assets/low-poly-guns/LICENSE.txt`. The toy and sci-fi weapons and everything else are by [Kenney](https://kenney.nl) (CC0): the [Blaster Kit](https://kenney.nl/assets/blaster-kit), the Weapon Pack, the Survival Kit and the Blocky Characters. Only the files the pack uses are included (47 models and three textures, 1.7 MB), each kit's licence next to its files in `assets/`.
 
 ## License
 MIT. See [LICENSE](LICENSE). The Kenney art is CC0, which is public domain.

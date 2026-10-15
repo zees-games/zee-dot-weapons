@@ -27,6 +27,8 @@ extends RefCounted
 
 const BLASTERS := "res://assets/blaster-kit/"
 const MELEE := "res://assets/melee/"
+## The real-world guns (Quaternius, CC0; the launcher by Khairul Hidayat): one file per role, the muzzle on -Z and the origin at the bounds' centre like the blasters, a magazine split off as `<role>_magazine.glb` where the source had one.
+const GUNS := "res://assets/low-poly-guns/"
 
 # --- Shared parts -----------------------------------------------------------
 #
@@ -299,24 +301,14 @@ static func pistol() -> ZeeWeaponArt:
 
 ## The widest short model in the kit. Width reads as a cylinder, so it is the revolver.
 static func revolver() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.REVOLVER, "blaster-o", POSE_PISTOL)
-	# The widest short model: at the pistol's scale it was a block filling the corner.
-	art.view_scale *= 0.85
+	var art := _gun(ZeeWeaponIds.REVOLVER, "revolver", POSE_PISTOL)
 	return _loose(art, DART, Vector3(0.0, -0.02, 0.02))
 
 
 static func machine_pistol() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.MACHINE_PISTOL, "blaster-c", POSE_PISTOL)
-	art.with_magazine(CLIP_SMALL, Vector3(0.0, -0.09, 0.0))
-	# The silencer's origin is its back end and its body runs forward (-Z) from there, so
-	# its origin goes on the muzzle: the model's -Z end, 0.238 m out. It was at +0.482,
-	# a silencer-length behind the stock, placed by eye while every blaster was drawn
-	# backwards (docs/history.md). At the bore's height (1.7 cm above the origin), and the
-	# muzzle the effects use is the silencer's far end (0.244 m long), or the flash and the
-	# tracers start inside it.
-	art.with_attachment(SILENCER_SMALL, Vector3(0.0, 0.017, -0.238))
-	art.muzzle_distance = 0.238 + 0.244
-	art.muzzle_offset = Vector3(0.0, 0.017, 0.0)
+	var art := _gun(ZeeWeaponIds.MACHINE_PISTOL, "machine_pistol", POSE_PISTOL).with_magazine(
+		GUNS + "machine_pistol_magazine.glb", Vector3(0.0, -0.042, 0.003)
+	)
 	return art
 
 
@@ -328,49 +320,50 @@ static func derringer() -> ZeeWeaponArt:
 # --- Primaries --------------------------------------------------------------
 
 static func smg() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.SMG, "blaster-i", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.14, -0.02)
+	var art := _gun(ZeeWeaponIds.SMG, "smg", POSE_RIFLE).with_magazine(
+		GUNS + "smg_magazine.glb", Vector3(0.0, -0.06, -0.092)
 	)
+	return art
 
 
 static func carbine() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.CARBINE, "blaster-m", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.15, 0.0)
+	var art := _gun(ZeeWeaponIds.CARBINE, "carbine", POSE_RIFLE).with_magazine(
+		GUNS + "carbine_magazine.glb", Vector3(0.0, -0.083, -0.102)
 	)
+	return art
 
 
 static func rifle() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.RIFLE, "blaster-q", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.15, 0.0)
+	var art := _gun(ZeeWeaponIds.RIFLE, "rifle", POSE_RIFLE).with_magazine(
+		GUNS + "rifle_magazine.glb", Vector3(0.0, -0.033, -0.009)
 	)
+	return art
 
 
 ## Rear-heavy: this is the one model whose bulk sits behind the grip.
 static func bullpup() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.BULLPUP, "blaster-r", POSE_RIFLE)
-	# Behind the grip (+Z, toward the shoulder), which is what makes it a bullpup.
-	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.15, 0.14))
-	art.with_attachment(SCOPE_SMALL, Vector3(0.0, 0.24, 0.08))
-	# Aimed through the scope it carries: an iron sight's line runs into the back of it.
-	art.aim_scoped = true
-	art.aim_zoom = 0.6
+	var art := _gun(ZeeWeaponIds.BULLPUP, "bullpup", POSE_RIFLE).with_magazine(
+		GUNS + "bullpup_magazine.glb", Vector3(0.0, -0.049, 0.267)
+	)
 	return art
 
 
 static func battle_rifle() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.BATTLE_RIFLE, "blaster-g", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.16, 0.0)
+	var art := _gun(ZeeWeaponIds.BATTLE_RIFLE, "battle_rifle", POSE_RIFLE).with_magazine(
+		GUNS + "battle_rifle_magazine.glb", Vector3(0.0, -0.059, 0.017)
 	)
+	return art
 
 
 static func burst_rifle() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.BURST_RIFLE, "blaster-n", POSE_RIFLE).with_magazine(
-		CLIP_LARGE, Vector3(0.0, -0.15, 0.0)
+	var art := _gun(ZeeWeaponIds.BURST_RIFLE, "burst_rifle", POSE_RIFLE).with_magazine(
+		GUNS + "burst_rifle_magazine.glb", Vector3(0.0, -0.032, -0.014)
 	)
+	return art
 
 
 static func shotgun() -> ZeeWeaponArt:
-	return _tube(_blaster(ZeeWeaponIds.SHOTGUN, "blaster-j", POSE_RIFLE))
+	return _tube(_gun(ZeeWeaponIds.SHOTGUN, "shotgun", POSE_RIFLE))
 
 
 ## The widest model in the kit, at 24 cm across. A drum, so a drum shotgun.
@@ -379,13 +372,13 @@ static func drum_shotgun() -> ZeeWeaponArt:
 
 
 static func marksman() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.MARKSMAN, "blaster-p", POSE_RIFLE)
-	art.with_magazine(CLIP_LARGE, Vector3(0.0, -0.16, 0.02))
-	art.with_attachment(SCOPE_SMALL, Vector3(0.0, 0.19, 0.06))
-	# A scope it carries, so a scope it looks through. Less zoom than the sniper's: it is
-	# the rifle for the middle distance, and a 4x view there loses the target sideways.
+	var art := _gun(ZeeWeaponIds.MARKSMAN, "marksman", POSE_RIFLE)
+	# The scope is part of the mesh, so it is looked through (aim_scoped) and nothing is added.
+	# Less zoom than the sniper's: the rifle for the middle distance, where a 4x view loses the
+	# target sideways.
 	art.aim_scoped = true
 	art.aim_zoom = 0.5
+	art.weight = 1.5
 	return art
 
 
@@ -395,7 +388,7 @@ static func marksman() -> ZeeWeaponArt:
 ## the muzzle, the mesh running 1.39 m back (+Z) to the stock. Which is why the muzzle is
 ## measured rather than assumed.
 static func sniper() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.SNIPER, "blaster-e", POSE_HEAVY)
+	var art := _gun(ZeeWeaponIds.SNIPER, "sniper", POSE_HEAVY)
 	# [b]Slid forward along its own length, in both views, and scaled with the model.[/b]
 	# Its origin is the muzzle, so left alone the whole rifle lies back past the hand into
 	# the player's face. 0.8 m back from the muzzle is the grip, and it goes on the hold.
@@ -446,7 +439,7 @@ static func minigun() -> ZeeWeaponArt:
 
 ## The tallest short model: a drum sitting above the body reads as a grenade launcher.
 static func launcher() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.LAUNCHER, "blaster-a", POSE_HEAVY)
+	var art := _gun(ZeeWeaponIds.LAUNCHER, "launcher", POSE_HEAVY)
 	art.weight = 1.6
 	# Broken open: the muzzle drops, a grenade goes into the breech from above and behind, and it
 	# snaps shut (ZeeWeaponPose.RELOAD_KEYS_BREAK).
@@ -527,6 +520,13 @@ static func _fed(art: ZeeWeaponArt, from: Vector3, count: int, scale: float) -> 
 static func _tube(art: ZeeWeaponArt) -> ZeeWeaponArt:
 	art = _fed(_loose(art, DART_THICK, Vector3(0.0, -0.05, -0.04)), Vector3(0.0, -0.12, 0.03), 3, 2.6)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_TUBE
+	return art
+
+
+## A real-world gun from [constant GUNS]: placed like a blaster (the same poses, the same -Z muzzle).
+static func _gun(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
+	var art := _blaster(id, "", pose)
+	art.model_path = GUNS + model + ".glb"
 	return art
 
 
