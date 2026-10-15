@@ -41,6 +41,13 @@ const CLIP_LARGE := BLASTERS + "clip-large.glb"
 
 ## Loose foam darts, for the guns with no clip: what the support hand carries in on a reload
 ## (`ZeeWeaponArt.magazine_loose`), so no gun reloads with an empty hand.
+## Realistic rounds (Kenney Weapon Pack, CC0) for the real-world guns; the darts stay for the toy ones.
+const AMMO := "res://assets/ammo/"
+const ROUND_CARTRIDGE := AMMO + "ammo_uzi.glb"
+const ROUND_SHELL := AMMO + "ammo_shotgun.glb"
+const ROUND_RIFLE := AMMO + "ammo_sniper.glb"
+const ROUND_ROCKET := AMMO + "ammo_rocketModern.glb"
+
 const DART := BLASTERS + "bullet-foam.glb"
 const DART_THICK := BLASTERS + "bullet-foam-thick.glb"
 const DART_TIP := BLASTERS + "bullet-foam-tip.glb"
@@ -302,7 +309,7 @@ static func pistol() -> ZeeWeaponArt:
 ## The widest short model in the kit. Width reads as a cylinder, so it is the revolver.
 static func revolver() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.REVOLVER, "revolver", POSE_PISTOL)
-	return _loose(art, DART, Vector3(0.0, -0.02, 0.02))
+	return _loose(art, ROUND_CARTRIDGE, Vector3(0.0, -0.02, 0.02))
 
 
 static func machine_pistol() -> ZeeWeaponArt:
@@ -406,8 +413,9 @@ static func sniper() -> ZeeWeaponArt:
 	art.aim_time = 0.22
 	# A bolt gun: the bolt drawn back, two rounds pressed down into the top of the receiver from
 	# above and to the right, the bolt shoved home (ZeeWeaponPose.RELOAD_KEYS_BOLT).
-	art = _fed(_loose(art, DART_TIP, Vector3(0.0, 0.12, 0.88)), Vector3(0.05, 0.18, 0.0), 2, 3.0)
-	art.bolt_at = Vector3(0.06, 0.10, 0.98)
+	art = _fed(_loose(art, ROUND_RIFLE, Vector3(0.0, 0.03, 0.72)), Vector3(0.07, 0.10, 0.0), 2, 1.0)
+	art.magazine_rotation = Vector3(90.0, 0.0, 0.0)
+	art.bolt_at = Vector3(0.03, 0.03, 0.93)
 	art.bolt_pull = Vector3(0.0, 0.0, 0.10)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BOLT
 	return art
@@ -443,8 +451,9 @@ static func launcher() -> ZeeWeaponArt:
 	art.weight = 1.6
 	# Broken open: the muzzle drops, a grenade goes into the breech from above and behind, and it
 	# snaps shut (ZeeWeaponPose.RELOAD_KEYS_BREAK).
-	art = _fed(_loose(art, DART_TIP_THICK, Vector3(0.0, 0.08, 0.02)), Vector3(0.0, 0.16, 0.06), 1, 3.5)
-	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BREAK
+	art = _fed(_loose(art, ROUND_ROCKET, Vector3(0.0, 0.0, 0.30)), Vector3(0.0, 0.0, 0.30), 1, 1.0)
+	art.magazine_rotation = Vector3(0.0, 180.0, 0.0)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_MUZZLE
 	return art
 
 
@@ -518,7 +527,7 @@ static func _fed(art: ZeeWeaponArt, from: Vector3, count: int, scale: float) -> 
 ## contact sheet showed a yellow fleck in one frame of the whole reload: the play test's "no
 ## proper reload animations" for exactly the guns that reload most often.
 static func _tube(art: ZeeWeaponArt) -> ZeeWeaponArt:
-	art = _fed(_loose(art, DART_THICK, Vector3(0.0, -0.05, -0.04)), Vector3(0.0, -0.12, 0.03), 3, 2.6)
+	art = _fed(_loose(art, ROUND_SHELL, Vector3(0.0, -0.05, -0.04)), Vector3(0.0, -0.12, 0.03), 3, 1.6)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_TUBE
 	return art
 

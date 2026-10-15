@@ -8,3 +8,5 @@ Quaternius, "Ultimate Low Poly Guns Pack" (sub-machine guns, assault rifles, bul
 Khairul Hidayat, "Low Poly Rocket Launcher" (launcher.glb: tube and loaded rocket joined)
   https://opengameart.org/content/low-poly-rocket-launcher
   Licence: listed CC0 on the page; the README in the download says MIT ("use it however you like"). Both are permissive; credited either way.
+
+Rounds (assets/ammo/): Kenney Weapon Pack, CC0, see assets/ammo/LICENSE-kenney-weapon-pack.txt.
