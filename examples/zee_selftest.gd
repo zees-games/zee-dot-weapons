@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 249
+const CHECKS := 258
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1250,6 +1250,59 @@ func _view_models() -> void:
 	view.clear()
 	_check("clearing leaves nothing in hand", view.equipped() == &"")
 
+	# A magazine gun's magazine must visibly leave the well and come back, or a reload reads as
+	# the gun shaking. For every gun with a magazine of its own (not a round fed by hand): away
+	# from the well and falling at 20%, out of sight at 30%, back in the well and visible at 100%.
+	var mag_guns := 0
+	var mag_bad: Array[String] = []
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if not art.has_magazine() or art.magazine_loose or art.magazine_part != &"":
+			continue
+		view.equip(art)
+		var mag: Node3D = view.get(&"_magazine")
+		if mag == null:
+			mag_bad.append("%s: no magazine node" % String(art.id))
+			continue
+		mag_guns += 1
+		var rest := art.magazine_transform().origin
+		view.on_reload(0.2)
+		var left := mag.visible and mag.position.distance_to(rest) > 0.05
+		view.on_reload(0.3)
+		var gone := not mag.visible
+		view.on_reload(1.0)
+		var back := mag.visible and mag.position.distance_to(rest) < 0.0001
+		if not (left and gone and back):
+			mag_bad.append("%s left %s gone %s back %s" % [String(art.id), left, gone, back])
+	_check("%d magazine guns: the magazine leaves and returns (%s)" % [mag_guns, ", ".join(mag_bad)],
+		mag_bad.is_empty() and mag_guns >= 8)
+
+	# The finish: a rifle's surfaces are no longer one material, and its shells are real guns' only.
+	view.equip(ZeeWeaponArtTable.rifle())
+	var kinds := {}
+	for mi in view.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := mi as MeshInstance3D
+		for surface in mesh_instance.mesh.get_surface_count():
+			var surface_material := mesh_instance.get_active_material(surface) as BaseMaterial3D
+			if surface_material != null:
+				kinds["%.2f/%.2f" % [surface_material.metallic, surface_material.roughness]] = true
+	_check("a rifle's metal, polymer and wood are shaded apart (%d finishes)" % kinds.size(),
+		kinds.size() >= 3)
+	_check("a rifle ejects and a foam pistol does not", view.ejects()
+		and not (func() -> bool:
+			view.equip(ZeeWeaponArtTable.pistol())
+			return view.ejects()).call())
+	_check("its ejection port is finite and right of the muzzle line",
+		(func() -> bool:
+			view.equip(ZeeWeaponArtTable.rifle())
+			var port := view.eject_transform()
+			return port.origin.is_finite()).call())
+	_check("kinds of finish are named", ZeeWeaponFinish.kind_of("DarkMetal") == ZeeWeaponFinish.METAL
+		and ZeeWeaponFinish.kind_of("Black") == ZeeWeaponFinish.POLYMER
+		and ZeeWeaponFinish.kind_of("DarkWood") == ZeeWeaponFinish.WOOD
+		and ZeeWeaponFinish.kind_of("colormap") == &"")
+
+	view.clear()
+
 	var arms := ZeeViewArms.new()
 	add_child(arms)
 	var built := arms.build()
@@ -1480,6 +1533,25 @@ func _effects() -> void:
 		"and plays a report",
 		fx != null and int(fx.describe()["voices"]) >= 1
 	)
+
+	_check("a real gun's shot throws a case (%d)" % fx.shell_count(), fx.shell_count() >= 1)
+
+	# Budgets: a held minigun asks for a flash and a case per shot, and neither may grow.
+	var capped := ZeeShotFx.new()
+	add_child(capped)
+	for i in 40:
+		capped.call(&"_flash", Transform3D(Basis.IDENTITY, Vector3(0, 0, -1)), 1.0, ZeeWeaponSound.MINIGUN)
+		capped.play_eject(Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	var lights := int(capped.call(&"_lights_live"))
+	_check("flash lights stay under the cap (%d of %d)" % [lights, capped.max_flash_lights],
+		lights >= 1 and lights <= capped.max_flash_lights)
+	_check("cases stay under the pool (%d of %d)" % [capped.shell_count(), capped.max_shells],
+		capped.shell_count() == capped.max_shells)
+	for i in 80:
+		capped.advance(0.02)
+	_check("a case is gone after its life, and its flash with it",
+		capped.shell_count() == 0 and capped.live_count() == 0)
+	capped.queue_free()
 
 	# The local player's own world model, driven by the replicated counter the way
 	# game-playground drives every player's: it must not play the shot a second time.

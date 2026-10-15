@@ -93,6 +93,19 @@ signal model_ready(id: StringName, weapon: Node3D)
 ## space: above, behind and to the left, so it rakes across the right side the hold shows.
 @export var view_light_rotation: Vector3 = Vector3(-38.0, -32.0, 0.0)
 
+@export_group("Finish")
+## Gives each surface of a real-world gun its own metal, polymer, wood or glass shading (see
+## [ZeeWeaponFinish]); off leaves the imported materials as they came.
+@export var finish_materials: bool = true
+## Metallic factor of bare metal. Kept modest: metal with no reflections to show is black.
+@export_range(0.0, 1.0, 0.05) var finish_metal: float = 0.4
+## Roughness of metal (low is shiny), polymer and wood.
+@export_range(0.0, 1.0, 0.05) var finish_metal_roughness: float = 0.38
+@export_range(0.0, 1.0, 0.05) var finish_polymer_roughness: float = 0.6
+@export_range(0.0, 1.0, 0.05) var finish_wood_roughness: float = 0.85
+## Multiplier on the albedo of finished surfaces (1 as authored).
+@export_range(0.5, 4.0, 0.05) var finish_lift: float = 1.4
+
 @export_group("Feel")
 
 ## Scales sway, bob and kick for everything this rig draws.
@@ -618,6 +631,29 @@ func muzzle_transform() -> Transform3D:
 	return _weapon.global_transform * Transform3D(Basis.IDENTITY, _muzzle)
 
 
+## True when the weapon in hand throws a spent case ([member ZeeWeaponArt.ejects]).
+func ejects() -> bool:
+	return _art != null and _art.ejects and _weapon != null
+
+
+## Where the ejection port is right now, in world space: on the receiver's right side, a little
+## below the top and about 45% of the way from the stock to the muzzle, measured from the mesh's
+## bounds like the muzzle (never authored). The basis is the weapon's, unscaled: +X is out of the
+## gun's right side, +Y up, -Z toward the muzzle. Effects only, like [method muzzle_transform].
+func eject_transform() -> Transform3D:
+	if _weapon == null:
+		return global_transform
+
+	var box := _bounds_in(_weapon, _weapon)
+	if box.size == Vector3.ZERO:
+		return _weapon.global_transform
+
+	var local := Vector3(
+		box.end.x * 0.9, box.position.y + box.size.y * 0.72, box.position.z + box.size.z * 0.55)
+	var world := _weapon.global_transform
+	return Transform3D(world.basis.orthonormalized(), world * local)
+
+
 # --- Being told what happened -----------------------------------------------
 
 ## A use produced [param outcome].
@@ -1029,23 +1065,29 @@ func _set_on_top(root: Node) -> void:
 		# world model is what casts the shadow other people see.
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-		var material: Material = mesh.material_override
-
-		if material == null:
-			# Duplicated from the imported material rather than replaced by a fresh one:
-			# a new StandardMaterial3D turns the model flat white, and the imported one is
-			# shared with the third-person copy of the same mesh, which must not be edited.
-			var source := mesh.get_active_material(0)
-			material = (source as StandardMaterial3D).duplicate() \
-				if source is StandardMaterial3D else StandardMaterial3D.new()
-			mesh.material_override = material
-
-		# [b]A view model receives no shadow either.[/b] It is drawn where the camera is,
-		# so the world's shadow map darkens it whenever the player's head is in shade: the
-		# gun flipped bright and dark walking along a wall, which no real hand does. Lit,
-		# not flat: the sun, the ambient and the view's own key light all still shade it.
-		if material is BaseMaterial3D:
-			(material as BaseMaterial3D).disable_receive_shadows = true
+		# [b]Each surface is its own material[/b]: a gun has metal, polymer and wood, and one
+		# override on the mesh flattened all of them to the first surface's colour (a rifle that
+		# was one tan plank). Duplicated from the imported material rather than replaced by a
+		# fresh one (a new StandardMaterial3D turns the model flat white), because the imported
+		# one is shared with the third-person copy of the same mesh, which must not be edited.
+		# [b]A view model receives no shadow[/b]: it is drawn where the camera is, so the
+		# world's shadow map darkened it whenever the player's head was in shade, the gun
+		# flipping bright and dark along a wall. Lit, not flat: the sun, the ambient and the
+		# view's own key light all still shade it.
+		if mesh.mesh != null and mesh.material_override == null:
+			for surface in mesh.mesh.get_surface_count():
+				var source := mesh.get_active_material(surface)
+				var material: Material = (source as StandardMaterial3D).duplicate() \
+					if source is StandardMaterial3D else StandardMaterial3D.new()
+				if material is BaseMaterial3D:
+					var base := material as BaseMaterial3D
+					base.disable_receive_shadows = true
+					if finish_materials:
+						ZeeWeaponFinish.apply(base, finish_metal, finish_metal_roughness,
+							finish_polymer_roughness, finish_wood_roughness, finish_lift)
+				mesh.set_surface_override_material(surface, material)
+		elif mesh.material_override is BaseMaterial3D:
+			(mesh.material_override as BaseMaterial3D).disable_receive_shadows = true
 
 		if view_layer > 0:
 			mesh.layers = 1 << (view_layer - 1)

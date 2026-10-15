@@ -186,6 +186,13 @@ extends Resource
 @export var bolt_at: Vector3 = Vector3.ZERO
 @export var bolt_pull: Vector3 = Vector3.ZERO
 
+@export_group("Effects")
+
+## Whether a shot throws a spent case from the ejection port ([method ZeeViewModel.eject_transform],
+## [method ZeeShotFx.play_eject]). On for the real-world guns; the foam blasters fire darts and
+## leave nothing behind. Which class of case is the weapon's sound class's ([constant ZeeShotFx.FLASH]).
+@export var ejects: bool = false
+
 @export_group("Attachments")
 
 ## Extra meshes parented to the weapon: a scope, a silencer, a drum.

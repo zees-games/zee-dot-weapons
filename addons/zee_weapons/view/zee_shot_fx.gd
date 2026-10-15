@@ -54,9 +54,55 @@ const NOT_BODY_GROUP := &"zee_not_body"
 const IMPACT_WORLD := &"world"
 const IMPACT_BODY := &"body"
 
+## What each weapon class's flash and case are, by [ZeeWeaponSound] class: `size` scales the
+## flash (1 is a rifle's, 12 cm across at the muzzle), `light` its light, `petals` how many
+## crossed streaks leave the muzzle (a shotgun's is a fat four, a sniper's a long two), `length`
+## stretches them, and `case` is the spent case's length in metres, `hull` true for a shotgun's
+## fat red one, `delay` seconds before it leaves (a bolt or a pump cycles after the shot). A
+## class not here is a rifle's. No `case` means nothing is ejected: a revolver keeps its
+## cases, and a launcher has none.
+const FLASH := {
+	ZeeWeaponSound.LIGHT: {"size": 0.7, "light": 0.7, "petals": 2, "length": 0.9, "case": 0.024},
+	ZeeWeaponSound.MAGNUM: {"size": 1.15, "light": 1.1, "petals": 3, "length": 1.0},
+	ZeeWeaponSound.RIFLE: {"size": 1.0, "light": 1.0, "petals": 2, "length": 1.0, "case": 0.038},
+	ZeeWeaponSound.HEAVY: {"size": 1.25, "light": 1.25, "petals": 3, "length": 1.1, "case": 0.05},
+	ZeeWeaponSound.SNIPER: {"size": 1.5, "light": 1.4, "petals": 2, "length": 2.0, "case": 0.065, "delay": 0.45},
+	ZeeWeaponSound.SHOTGUN: {"size": 1.6, "light": 1.5, "petals": 4, "length": 0.9, "case": 0.055, "hull": true, "delay": 0.4},
+	ZeeWeaponSound.MINIGUN: {"size": 1.1, "light": 0.9, "petals": 3, "length": 1.2, "case": 0.038},
+	ZeeWeaponSound.LAUNCHER: {"size": 2.0, "light": 1.8, "petals": 4, "length": 1.4},
+}
+
 ## Most reports playing at once, per carrier. A minigun cuts its own oldest report off
 ## rather than stacking forty.
 const MAX_VOICES := 6
+
+@export_group("Muzzle flash")
+
+## Multiplier on every flash's size, on top of the weapon class's own ([constant FLASH]).
+@export_range(0.0, 3.0, 0.05) var flash_scale: float = 1.0
+
+## Multiplier on the flash's light. 0 draws no light at all.
+@export_range(0.0, 3.0, 0.05) var flash_light_scale: float = 1.0
+
+## Most flash lights alive at once, per carrier. A held minigun asks for one per shot and each
+## lives 0.06 s, so without a cap it is a light per frame; past the cap the flash is drawn
+## without its light.
+@export_range(0, 8) var max_flash_lights: int = 2
+
+@export_group("Shell ejection")
+
+## Eject spent cases from the gun's port. Presentation only: no physics body, no sound.
+@export var eject_shells: bool = true
+
+## Multiplier on a case's size (the base is drawn for a view model, which is smaller than life).
+@export_range(0.2, 4.0, 0.05) var shell_scale: float = 1.0
+
+## Most cases in the air at once, per carrier; the pool is this big and no bigger, and the
+## oldest is reused. Each is one draw call.
+@export_range(0, 32) var max_shells: int = 10
+
+## How long a case is drawn, in seconds.
+@export_range(0.1, 3.0, 0.05) var shell_life: float = 0.7
 
 @export_group("Behaviour")
 
@@ -88,6 +134,11 @@ var _live: Array[Dictionary] = []
 
 var _voices: Array[AudioStreamPlayer3D] = []
 
+## Spent cases in the air: {node, pos, vel, spin, basis, age, delay}. Finished nodes wait,
+## hidden, in [member _shell_pool] and are never freed until the carrier is.
+var _shells: Array[Dictionary] = []
+var _shell_pool: Array[MeshInstance3D] = []
+
 ## The marks on the world still showing: {node, age, size}. See [constant MAX_MARKS].
 var _marks: Array[Dictionary] = []
 
@@ -106,6 +157,9 @@ static var _hit_material: StandardMaterial3D = null
 static var _petal_material: StandardMaterial3D = null
 static var _mist_material: StandardMaterial3D = null
 static var _mark_material: StandardMaterial3D = null
+static var _brass_material: StandardMaterial3D = null
+static var _hull_material: StandardMaterial3D = null
+static var _shell_mesh: CylinderMesh = null
 static var _streak: BoxMesh = null
 static var _quad: QuadMesh = null
 static var _soft: GradientTexture2D = null
@@ -156,12 +210,12 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 		DotWeaponOutcome.KIND_SWING, DotWeaponOutcome.KIND_THROW:
 			return
 		DotWeaponOutcome.KIND_SPAWN:
-			_flash(muzzle, 1.4)
+			_flash(muzzle, 1.4, ZeeWeaponSound.LAUNCHER)
 			return
 
 	var beam := kind == DotWeaponOutcome.KIND_BEAM
 	if not beam:
-		_flash(muzzle, 1.0)
+		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, kind))
 
 	var drawn := 0
 	for shot: DotShot in outcome.shots:
@@ -191,12 +245,12 @@ func play_remote(kind: int, muzzle: Transform3D, direction: Vector3, id: StringN
 		ZeeWeaponNet.KIND_SWING, ZeeWeaponNet.KIND_THROW, ZeeWeaponNet.KIND_NONE:
 			return
 		ZeeWeaponNet.KIND_SPAWN:
-			_flash(muzzle, 1.4)
+			_flash(muzzle, 1.4, ZeeWeaponSound.LAUNCHER)
 			return
 
 	var beam := kind == ZeeWeaponNet.KIND_BEAM
 	if not beam:
-		_flash(muzzle, 1.0)
+		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)))
 
 	_trace(muzzle.origin, muzzle.origin, direction, miss_distance, beam)
 
@@ -227,6 +281,98 @@ func count_of(kind: StringName) -> int:
 		if fx["kind"] == kind:
 			count += 1
 	return count
+
+
+## How many flash lights are alive, against [member max_flash_lights].
+func _lights_live() -> int:
+	var count := 0
+	for fx in _live:
+		if fx.get("has_light", false):
+			count += 1
+	return count
+
+
+## Spent cases in the air, for a suite and [method describe].
+func shell_count() -> int:
+	return _shells.size()
+
+
+## A spent case leaves [param port] (the gun's ejection port: its origin on the receiver's
+## right, its +X out of the gun, +Y up, as [method ZeeViewModel.eject_transform] hands it).
+##
+## [b]Pooled, and no physics body.[/b] A case lives 0.7 s and is a ballistic arc written by
+## hand (a velocity, gravity, a tumble): a rigid body per case is a body per shot on a
+## machine that, on the web, has no threads to spend on it. The pool is [member max_shells]
+## nodes made on first use and reused oldest first, so a held minigun cannot grow the scene.
+func play_eject(port: Transform3D, id: StringName) -> void:
+	if not visuals or not eject_shells or max_shells <= 0 or not is_inside_tree():
+		return
+
+	var profile: Dictionary = FLASH.get(ZeeWeaponSound.class_for(id, DotWeaponOutcome.KIND_SHOT), {})
+	if not profile.has("case") or not port.origin.is_finite():
+		return
+
+	var hull: bool = profile.get("hull", false)
+	var length: float = float(profile["case"]) * shell_scale
+	var width: float = length * (0.42 if hull else 0.3)
+
+	var node: MeshInstance3D = null
+	if not _shell_pool.is_empty():
+		node = _shell_pool.pop_back()
+	elif _shells.size() < max_shells:
+		node = _mesh(_shell_mesh_unit(), _brass_mat())
+	else:
+		# Out of pool: the oldest case is the one nobody is looking at.
+		var oldest: Dictionary = _shells.pop_front()
+		node = oldest["node"]
+	if node == null or not is_instance_valid(node):
+		return
+
+	node.material_override = _hull_mat() if hull else _brass_mat()
+	node.visible = false
+	node.scale = Vector3(width, length, width)
+	var out := port.basis.x.normalized()
+	var up := port.basis.y.normalized()
+	var back := port.basis.z.normalized()
+	var speed := randf_range(1.0, 1.5)
+	_shells.append({
+		"node": node,
+		"pos": port.origin,
+		"vel": (out * 1.0 + up * randf_range(0.5, 0.9) + back * randf_range(0.0, 0.35)) * speed,
+		"spin": Vector3(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0), randf_range(-18.0, 18.0)),
+		"age": 0.0,
+		"delay": float(profile.get("delay", 0.0)),
+		"basis": port.basis.orthonormalized(),
+	})
+
+
+func _advance_shells(delta: float) -> void:
+	var kept: Array[Dictionary] = []
+	for shell in _shells:
+		var node: MeshInstance3D = shell["node"]
+		if not is_instance_valid(node):
+			continue
+		var wait: float = shell["delay"]
+		if wait > 0.0:
+			shell["delay"] = wait - delta
+			kept.append(shell)
+			continue
+		shell["age"] = float(shell["age"]) + delta
+		if float(shell["age"]) >= shell_life:
+			node.visible = false
+			_shell_pool.append(node)
+			continue
+		var vel: Vector3 = shell["vel"]
+		vel.y -= 9.8 * delta
+		shell["vel"] = vel
+		shell["pos"] = (shell["pos"] as Vector3) + vel * delta
+		var spun: Basis = (shell["basis"] as Basis) * Basis.from_euler((shell["spin"] as Vector3) * delta)
+		shell["basis"] = spun.orthonormalized()
+		var length_scale := node.scale
+		node.global_transform = Transform3D((shell["basis"] as Basis).scaled_local(length_scale), shell["pos"])
+		node.visible = true
+		kept.append(shell)
+	_shells = kept
 
 
 ## A body the server says this machine's shot hit, at [param at], the shot travelling along
@@ -290,6 +436,9 @@ func _process(delta: float) -> void:
 func advance(delta: float) -> void:
 	if not _marks.is_empty():
 		_advance_marks(delta)
+
+	if not _shells.is_empty():
+		_advance_shells(delta)
 
 	if _live.is_empty():
 		return
@@ -441,7 +590,12 @@ func _beam(from: Vector3, to: Vector3) -> void:
 	_add(node, {"kind": &"beam", "life": 0.07})
 
 
-func _flash(muzzle: Transform3D, size: float) -> void:
+func _flash(muzzle: Transform3D, size: float, weapon_class: StringName = ZeeWeaponSound.RIFLE) -> void:
+	var profile: Dictionary = FLASH.get(weapon_class, FLASH[ZeeWeaponSound.RIFLE])
+	size *= float(profile["size"]) * flash_scale
+	if size <= 0.0:
+		return
+
 	var node := _mesh(_quad_mesh(), _flash_mat())
 	var forward := -muzzle.basis.z.normalized()
 	node.global_position = muzzle.origin
@@ -452,12 +606,15 @@ func _flash(muzzle: Transform3D, size: float) -> void:
 	var across := 0.12 * size * randf_range(0.85, 1.15)
 	node.scale = Vector3.ONE * across
 
-	# Two petals along the barrel's line, crossed, so the flash has a direction and a shape and
-	# is read as fire leaving the muzzle rather than as a light on the gun.
+	# Crossed petals along the barrel's line, so the flash has a direction and a shape and
+	# is read as fire leaving the muzzle rather than as a light on the gun. How many, and how
+	# long, is the class's: a shotgun's is a fat star, a sniper's two long tongues.
 	var petals: Array[MeshInstance3D] = []
-	for turn in [0.0, PI * 0.5]:
+	var count: int = int(profile["petals"])
+	for i in count:
+		var turn := PI * float(i) / float(count)
 		var petal := _mesh(_quad_mesh(), _petal_mat())
-		var length := 0.16 * size * randf_range(0.85, 1.2)
+		var length := 0.16 * size * float(profile["length"]) * randf_range(0.85, 1.2)
 		var width := 0.05 * size
 		var x := forward.cross(Vector3.UP if absf(forward.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT).normalized()
 		x = x.rotated(forward, turn)
@@ -466,17 +623,22 @@ func _flash(muzzle: Transform3D, size: float) -> void:
 			muzzle.origin + forward * (length * 0.5))
 		petals.append(petal)
 
-	var light := OmniLight3D.new()
-	light.light_color = Color(1.0, 0.72, 0.38)
-	light.omni_range = 4.5 * size
-	light.light_energy = 2.2 * size
-	light.shadow_enabled = false
-	node.add_child(light)
-	light.top_level = true
-	light.global_position = muzzle.origin - forward * 0.05
+	var fx := {"kind": &"flash", "life": 0.06, "size": across}
+	if flash_light_scale > 0.0 and _lights_live() < max_flash_lights:
+		var light := OmniLight3D.new()
+		light.light_color = Color(1.0, 0.72, 0.38)
+		light.omni_range = 4.5 * size
+		light.light_energy = 2.2 * size * float(profile["light"]) / maxf(0.01, float(profile["size"])) \
+			* flash_light_scale
+		light.shadow_enabled = false
+		node.add_child(light)
+		light.top_level = true
+		light.global_position = muzzle.origin - forward * 0.05
+		fx["light"] = light
+		fx["energy"] = light.light_energy
+		fx["has_light"] = true
 
-	_add(node, {"kind": &"flash", "life": 0.06, "size": across,
-		"light": light, "energy": light.light_energy})
+	_add(node, fx)
 	for petal in petals:
 		_add(petal, {"kind": &"petal", "life": 0.05})
 
@@ -737,6 +899,41 @@ static func _tracer_mat() -> StandardMaterial3D:
 	return _tracer_material
 
 
+static func _shell_mesh_unit() -> CylinderMesh:
+	if _shell_mesh == null:
+		_shell_mesh = CylinderMesh.new()
+		_shell_mesh.top_radius = 0.5
+		_shell_mesh.bottom_radius = 0.5
+		_shell_mesh.height = 1.0
+		_shell_mesh.radial_segments = 6
+		_shell_mesh.rings = 0
+	return _shell_mesh
+
+
+## Brass: lit, a little metallic, and a touch emissive so it still reads in shade.
+static func _brass_mat() -> StandardMaterial3D:
+	if _brass_material == null:
+		_brass_material = StandardMaterial3D.new()
+		_brass_material.albedo_color = Color(0.85, 0.62, 0.22)
+		_brass_material.metallic = 0.6
+		_brass_material.roughness = 0.35
+		_brass_material.emission_enabled = true
+		_brass_material.emission = Color(0.5, 0.33, 0.1)
+		_brass_material.emission_energy_multiplier = 0.6
+	return _brass_material
+
+
+static func _hull_mat() -> StandardMaterial3D:
+	if _hull_material == null:
+		_hull_material = StandardMaterial3D.new()
+		_hull_material.albedo_color = Color(0.75, 0.12, 0.1)
+		_hull_material.roughness = 0.6
+		_hull_material.emission_enabled = true
+		_hull_material.emission = Color(0.5, 0.06, 0.05)
+		_hull_material.emission_energy_multiplier = 0.5
+	return _hull_material
+
+
 static func _beam_mat() -> StandardMaterial3D:
 	if _beam_material == null:
 		_beam_material = _glow(Color(0.45, 0.85, 1.0, 0.9), false, true)
@@ -808,6 +1005,7 @@ func describe() -> Dictionary:
 		"live": _live.size(),
 		"tracers": tracer_count(),
 		"marks": _marks.size(),
+		"shells": _shells.size(),
 		"voices": _voices.size(),
 		"excluded": exclude.size(),
 		"visuals": visuals,

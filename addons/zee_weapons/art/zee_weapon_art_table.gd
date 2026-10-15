@@ -536,6 +536,7 @@ static func _tube(art: ZeeWeaponArt) -> ZeeWeaponArt:
 static func _gun(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
 	var art := _blaster(id, "", pose)
 	art.model_path = GUNS + model + ".glb"
+	art.ejects = true
 	return art
 
 

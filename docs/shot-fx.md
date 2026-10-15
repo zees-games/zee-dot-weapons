@@ -14,6 +14,12 @@
 - **A body the client's physics cannot see is drawn from the server's confirmation**: `play_body_hit(point, direction)`, called by a game from the same confirmed hit that flashes `DotHitMarker`. A horde drawn as figures and hit through the server's hitboxes is never met by the presentation ray, which draws a world impact behind it. A body the ray already drew within a fifth of a second and half a metre is not drawn again.
 - `ZeeViewModel.model_ready` is where a game could hang its own flash, but a game should not need to: the pack draws the shot.
 
+## The look pass: class flashes, cases, finish
+
+- **A flash is the weapon class's** (`ZeeShotFx.FLASH`, keyed by the sound class): size, light, petal count and length (a shotgun a fat four-petal star, a sniper two long tongues, an SMG small). `flash_scale`, `flash_light_scale` and `max_flash_lights` (2) are exported; past the cap the flash is drawn without its light. Per shot: 3 to 5 quads (3 to 5 draws, additive) and at most one 0.06 s omni light.
+- **Cases are pooled, not bodies.** `play_eject(port, id)` writes a hand-made ballistic arc (velocity, gravity, tumble) for `shell_life` (0.7 s) on a pool of `max_shells` (10) six-sided cylinders, one draw call each, oldest reused; threadless and fine on the web. The port is `ZeeViewModel.eject_transform()`, measured from the mesh bounds (right side, 72% up, 55% back from the muzzle). Only art with `ejects` (the real-world guns) throws a case; a revolver has no `case` in its class and keeps them; a sniper and a shotgun cycle first (`delay`). A watcher's world model does not eject yet.
+- **Finish** (`ZeeWeaponFinish`, `ZeeViewModel.finish_*`): each surface keeps its own material (a mesh-wide override had flattened every gun to its first surface, one tan plank), and metal, polymer, wood and glass get their own metallic and roughness by material name. Factors only, no texture, so nothing to deliver.
+
 ## Sounds are baked
 
 There is no CC0 set of twenty-seven matched weapon reports to vendor. dot-audio's synthesiser is right for a placeholder of anything and wrong for twenty-seven weapons that should be told apart, so `ZeeWeaponSound` layers a band-passed crack, a swept body and a low-passed tail per class, deterministically, so the suite can assert about the bytes. `set_stream(id_or_class, stream)` puts a recording in front of it one weapon at a time. A second pack adds classes with `set_class` ([design](design.md#a-second-pack-adds-to-this-one)).
