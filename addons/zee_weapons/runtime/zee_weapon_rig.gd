@@ -126,6 +126,7 @@ var fire_seq: int = 0
 var fire_kind: int = ZeeWeaponNet.KIND_NONE
 
 var _view: ZeeViewModel = null
+var _standalone_feel: ZeeViewFeel = null
 var _world: ZeeWorldModel = null
 var _fx: ZeeShotFx = null
 var _player: Node = null
@@ -272,6 +273,9 @@ func _resolve_presentation() -> void:
 		var view := view_model_ref.resolve(self)
 		if view.ok and view.value is ZeeViewModel:
 			_view = view.value
+			# Cvars bound before the view model existed keep their object.
+			if _standalone_feel != null:
+				_view.feel_rules = _standalone_feel
 
 	if world_model_ref != null:
 		var world := world_model_ref.resolve(self)
@@ -475,9 +479,23 @@ func _update_presentation(tick: int) -> void:
 ## between ticks and doing them on the tick quantises them to the tick rate, which is the
 ## same reason dot-player-controller runs its view in `_process`. A game already calling
 ## the controller's own view each frame calls this beside it.
-func drive_view(look: Vector2, speed: float, on_floor: bool, crouched: bool) -> void:
+##
+## [param strafe] is the sideways speed in metres a second, positive right; left out, the view
+## model measures it from its own movement.
+func drive_view(look: Vector2, speed: float, on_floor: bool, crouched: bool, strafe: float = NAN) -> void:
 	if _view != null:
-		_view.drive(look, speed, on_floor, crouched)
+		_view.drive(look, speed, on_floor, crouched, strafe)
+
+
+## The amounts for the view model's motion, and the `mp_vm_*` cvars: `feel_rules().bind_cvars(
+## add_cvar, flags)` on a server, `follow_cvars(link)` on a client. A fresh set when there is no
+## view model (a server rig), so a module can bind before anything is built.
+func feel_rules() -> ZeeViewFeel:
+	if _view != null:
+		return _view.feel_rules
+	if _standalone_feel == null:
+		_standalone_feel = ZeeViewFeel.new()
+	return _standalone_feel
 
 
 ## A landing, for the view model's dip.

@@ -579,6 +579,17 @@ const SHEET_FRAMES := [
 	["in shade", "shade"], ["aimed, fire 4", "aimfire:4"],
 ]
 
+## `--moves`: how the weapon moves with its carrier, hip and aimed. Review on this after
+## touching sway, tilt, bob or the landing.
+const MOVE_FRAMES := [
+	["hip", "rest"], ["aimed", "aim"],
+	["strafe right", "strafe:5"], ["strafe left", "strafe:-5"],
+	["aimed, strafe right", "aimstrafe:5"], ["aimed, strafe left", "aimstrafe:-5"],
+	["turning right", "turn"], ["aimed, turning right", "aimturn"],
+	["walking", "walk"], ["aimed, walking", "aimwalk"],
+	["landing", "land"], ["aimed, landing", "aimland"],
+]
+
 ## The fixed step the sheet advances the view model by: 60 frames a second, so "fire 4"
 ## is 67 ms after the shot on any machine and under any renderer.
 const SHEET_STEP := 1.0 / 60.0
@@ -637,6 +648,8 @@ func _run_sheet(prefix: String) -> void:
 	# `--reloads 0.1,0.3,0.5` renders a reload frame at each fraction instead: a whole reload on
 	# one sheet, which the sheet's five reload frames cannot show for a gun fed a round at a time.
 	var frames: Array = SHEET_FRAMES
+	if OS.get_cmdline_user_args().has("--moves"):
+		frames = MOVE_FRAMES
 	if _argument("--reloads") != "":
 		frames = []
 		for fraction in _argument("--reloads").split_floats(","):
@@ -675,6 +688,28 @@ func _run_sheet(prefix: String) -> void:
 				for i in range(12):
 					_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
 					_view.advance(SHEET_STEP)
+			"strafe", "aimstrafe":
+				_view.aim(parts[0] == "aimstrafe")
+				for i in range(40):
+					_view.drive(Vector2.ZERO, absf(arg), true, false, arg)
+					_view.advance(SHEET_STEP)
+			"aimturn":
+				_view.aim(true)
+				_sheet_steps(40)
+				for i in range(12):
+					_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
+					_view.advance(SHEET_STEP)
+			"aimwalk":
+				_view.aim(true)
+				_sheet_steps(40)
+				for i in range(27):
+					_view.drive(Vector2.ZERO, 5.0, true)
+					_view.advance(SHEET_STEP)
+			"land", "aimland":
+				_view.aim(parts[0] == "aimland")
+				_sheet_steps(40)
+				_view.on_landed(9.0)
+				_sheet_steps(3)
 			"deploy":
 				_view.on_deploy(arg)
 				_sheet_steps(2)

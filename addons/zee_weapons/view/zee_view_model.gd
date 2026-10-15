@@ -98,6 +98,14 @@ signal model_ready(id: StringName, weapon: Node3D)
 ## Scales sway, bob and kick for everything this rig draws.
 @export_range(0.0, 3.0, 0.05) var feel: float = 1.0
 
+## The server's amounts for sway, strafe tilt, bob and the landing (the `mp_vm_*` cvars). One
+## object per view model, shared with its pose; assign a game's own to share it between rigs.
+var feel_rules := ZeeViewFeel.new():
+	set(value):
+		feel_rules = value if value != null else ZeeViewFeel.new()
+		if _pose != null:
+			_pose.rules = feel_rules
+
 var _arms: ZeeViewArms = null
 var _light: DirectionalLight3D = null
 var _animated: Node3D = null
@@ -181,6 +189,13 @@ var _speed: float = 0.0
 var _on_floor: bool = true
 var _crouched: bool = false
 var _look := Vector2.ZERO
+
+## Sideways ground speed, m/s, positive to the right: handed in by [method drive], else
+## measured from how this node moved between frames (a game that never heard of strafing
+## still gets the tilt). NAN is "not handed in".
+var _strafe_given: float = NAN
+var _last_origin := Vector3.ZERO
+var _origin_seen := false
 
 ## Whether the aim button is held, and how far the weapon has come up to the eye.
 ##
@@ -313,6 +328,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_art = art
 	_id = art.id
 	_pose.weight = art.weight
+	_pose.rules = feel_rules
 	_pose.feel = maxf(0.0, feel)
 	_pose.tunables.draw_keys = art.draw_keys if not art.draw_keys.is_empty() \
 		else ZeeWeaponPose.DRAW_KEYS
@@ -682,7 +698,7 @@ func advance(delta: float) -> void:
 	if Engine.is_editor_hint() or not _built:
 		return
 
-	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched)
+	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_speed(delta))
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
 	_place_hands()
@@ -851,11 +867,34 @@ static func _ease(x: float) -> float:
 ## [param look] is absolute yaw and pitch in degrees; the rig takes the difference
 ## itself, because the difference is what sway is made of and two callers computing it
 ## independently is two chances to compute it differently.
-func drive(look: Vector2, speed: float, on_floor: bool, crouched: bool = false) -> void:
+##
+## [param strafe] is the sideways ground speed in metres a second, positive to the right; left
+## out, it is measured from this node's own movement.
+func drive(look: Vector2, speed: float, on_floor: bool, crouched: bool = false, strafe: float = NAN) -> void:
+	_strafe_given = strafe
 	_look = look
 	_speed = speed
 	_on_floor = on_floor
 	_crouched = crouched
+
+
+## Sideways speed this frame, m/s, to the right of the view. Measured as the camera's world
+## movement across its own right axis when the game did not say; a teleport (a jump of more
+## than 30 m/s) is no strafe, and the first frame has nothing to compare with.
+func _strafe_speed(delta: float) -> float:
+	if not is_nan(_strafe_given):
+		return _strafe_given
+	if not is_inside_tree():
+		return 0.0
+	var origin := global_position
+	var moved := origin - _last_origin
+	var seen := _origin_seen
+	_last_origin = origin
+	_origin_seen = true
+	if not seen or delta <= 0.0:
+		return 0.0
+	var side := moved.dot(global_transform.basis.x.normalized()) / delta
+	return side if absf(side) < 30.0 else 0.0
 
 
 func _look_delta() -> Vector2:

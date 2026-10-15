@@ -144,3 +144,12 @@ So `view/zee_iron_sight.gd` measures and builds one per gun at equip, for every 
 | One arm | a 0.4 × 1.1 × 0.4 box, pivot at the shoulder, mesh hanging to `y = -1` |
 | Melee tools | 0.15 m to 0.35 m tall, origin at the butt of the handle, pointing +Y |
 | Target discs | modelled in the YZ plane, 0.34 m across: they need turning and scaling |
+
+## Motion with the carrier, and the server's cvars (2026-10-15)
+
+The view model reacts to look (lag and roll), strafing (a trail and a lean against the move), walking (bob) and a landing (a dip). **Every amount is a multiplier a server owner sets** through `ZeeViewFeel` (`rig.feel_rules()`): `mp_vm_sway`, `mp_vm_strafe_tilt`, `mp_vm_bob`, `mp_vm_landing` (0 off, 1 the pack's own amount, up to 3) and `mp_vm_aim_steadiness` (0 to 1, default 0.75). A game binds them with `rig.feel_rules().bind_cvars(add_cvar, flags)` on the server and `follow_cvars(link)` on the client, the same shape as `mp_forceview`. Read every frame, so a change applies at once.
+
+Strafe speed is handed to `drive_view(..., strafe)` (metres a second, positive right) or, left out, measured from how the view model's node moved (a teleport over 30 m/s is no strafe).
+
+**Aimed, the gun drifted sideways** (arena, 2026-10-15): aim steadied the sway and bob to a quarter but left the roll whole, and a quarter of the look lag and the bob's sideways swing is centimetres at a half metre's range, so the body of the gun swung left and right of a sight that was meant to stay on the crosshair. Sideways motion and roll are now held to a twentieth aimed (`steady_x` in `ZeeWeaponPose.offset`). Review on `EXTRA="--moves" tools/screenshot.sh --sheet rifle`: hip and aimed, strafing, turning, walking, landing.
+

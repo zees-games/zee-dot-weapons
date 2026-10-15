@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 238
+const CHECKS := 249
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -44,6 +44,7 @@ func _ready() -> void:
 	_arsenal()
 	_bash()
 	_pose()
+	_feel()
 	_pose_stability()
 	_recoil()
 	_net()
@@ -548,6 +549,49 @@ func _bash() -> void:
 		is_equal_approx(again.shots[0].damage, outcome.shots[0].damage)
 	)
 
+	_end()
+
+
+func _feel() -> void:
+	_begin("the feel cvars and the strafe tilt")
+
+	var strafed := ZeeWeaponPose.make(1.0)
+	for i in range(60):
+		strafed.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true, false, 5.0)
+	var right := strafed.offset()
+	_check("strafing right trails the weapon left", right.origin.x < -0.005)
+	_check("and rolls it counter-clockwise", right.basis.get_euler().z > 0.03)
+
+	var left := ZeeWeaponPose.make(1.0)
+	for i in range(60):
+		left.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true, false, -5.0)
+	_check("strafing left is the mirror", left.offset().origin.x > 0.005)
+
+	# Aimed, the sight stays on the view axis: nothing slides it sideways.
+	strafed.set_aim(1.0)
+	var aimed := strafed.offset()
+	_check("aimed, a strafe moves the weapon less than a hundredth of a metre sideways",
+		absf(aimed.origin.x) < 0.01)
+	_check("and rolls it under a degree", absf(aimed.basis.get_euler().z) < deg_to_rad(1.0))
+
+	strafed.rules.strafe_tilt = 0.0
+	strafed.rules.aim_steadiness = 0.0
+	strafed.set_aim(0.0)
+	_check("strafe tilt 0 switches it off", absf(strafed.offset().basis.get_euler().z) < 0.001)
+
+	var rules := ZeeViewFeel.new()
+	_check("a cvar value is applied", rules.set_cvar(ZeeViewFeel.CVAR_BOB, "0.5") and is_equal_approx(rules.bob, 0.5))
+	_check("a value out of range is refused", not rules.set_cvar(ZeeViewFeel.CVAR_BOB, "9") and is_equal_approx(rules.bob, 0.5))
+	_check("so is one that is not a number", not rules.set_cvar(ZeeViewFeel.CVAR_SWAY, "lots"))
+	_check("every amount is a cvar", rules.cvar_specs().size() == 5)
+
+	var landed := ZeeWeaponPose.make(1.0)
+	landed.land(9.0)
+	var dip := landed.offset().origin.y
+	landed.reset()
+	landed.rules.landing = 0.0
+	landed.land(9.0)
+	_check("a landing dips the weapon, and landing 0 does not", dip < -0.01 and absf(landed.offset().origin.y) < 0.001)
 	_end()
 
 

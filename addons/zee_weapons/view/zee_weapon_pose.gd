@@ -34,6 +34,18 @@ class Tunables extends RefCounted:
 	## Degrees the weapon rolls into a turn.
 	var sway_roll: float = 4.0
 
+	## Sideways ground speed producing the full strafe tilt, metres a second.
+	var strafe_reference: float = 6.0
+
+	## How quickly the tilt follows a change of strafe, per second.
+	var strafe_response: float = 8.0
+
+	## Degrees the weapon leans against a full strafe.
+	var strafe_roll: float = 6.0
+
+	## Metres the weapon trails behind a full strafe.
+	var strafe_slide: float = 0.035
+
 	## Metres of vertical travel at [member bob_reference] metres a second.
 	var bob_amount: float = 0.022
 
@@ -371,6 +383,10 @@ var weight: float = 1.0
 ## Scales sway, bob and kick together: what a "weapon motion" setting turns down.
 var feel: float = 1.0
 
+## The server's amounts for each motion (the `mp_vm_*` cvars), read every frame so a change
+## applies at once. [ZeeViewModel] hands it in; a pose made alone gets the defaults.
+var rules := ZeeViewFeel.new()
+
 ## Where the weapon pivots when it kicks, in the space this pose's transform is applied
 ## in. [ZeeViewModel] sets it to the grip.
 ##
@@ -389,6 +405,9 @@ var _roll: float = 0.0
 
 ## Distance travelled, in metres. Drives the bob phase.
 var _bob_distance: float = 0.0
+
+## Smoothed sideways speed over [member Tunables.strafe_reference], -1 (left) to 1 (right).
+var _strafe: float = 0.0
 
 ## Smoothed bob amplitude, 0 to 1.
 var _bob_amount: float = 0.0
@@ -428,10 +447,6 @@ var _aim: float = 0.0
 ## from the art, because the resting place is the art's and so is the sight line.
 var aim_shift := Vector3.ZERO
 
-## How much of the sway and bob full aim takes away. Steadier, not frozen: a weapon held
-## dead still at full aim reads as a picture of a weapon.
-var aim_steadiness: float = 0.75
-
 ## How much of the kick's turn full aim takes away. The kick still happens (the front sight
 ## climbs and settles: a shot has to be seen), but a hip kick at the sight is several degrees,
 ## which threw the front sight a ring's width off the crosshair on every shot. The kick's push
@@ -462,7 +477,8 @@ func advance(
 	look_delta: Vector2,
 	speed: float,
 	on_floor: bool,
-	crouched: bool = false
+	crouched: bool = false,
+	strafe: float = 0.0
 ) -> void:
 	if not is_finite(delta) or delta <= 0.0:
 		return
@@ -473,6 +489,7 @@ func advance(
 	var step := minf(delta, 0.1)
 
 	_advance_sway(step, look_delta)
+	_advance_strafe(step, strafe if on_floor else 0.0)
 	_advance_bob(step, speed, on_floor, crouched)
 	_advance_kick(step)
 	_advance_landing(step)
@@ -591,6 +608,7 @@ func set_charge(fraction: float) -> void:
 func reset() -> void:
 	_sway = Vector2.ZERO
 	_roll = 0.0
+	_strafe = 0.0
 	_bob_amount = 0.0
 	_kick = 0.0
 	_kick_velocity = 0.0
@@ -609,18 +627,31 @@ func offset() -> Transform3D:
 
 	# Aiming steadies what the hands add, and leaves what the weapon does (kick, reload,
 	# deploy) alone: a reload at full aim still has to be seen to happen.
-	var steady := 1.0 - _aim * clampf(aim_steadiness, 0.0, 1.0)
+	var steady := 1.0 - _aim * clampf(rules.aim_steadiness, 0.0, 1.0)
+	var carried := maxf(0.1, weight) * maxf(0.0, feel)
 
+	# The trail behind a strafe: opposite the move, so a step right leaves the gun to the left.
+	var trail := -_strafe * tunables.strafe_slide * carried * rules.strafe_tilt
+	# [b]Sideways, aim holds nearly dead still.[/b] The sight is on the crosshair only while the
+	# gun is on the view axis, and a quarter of the look lag, the strafe trail and the bob's
+	# sideways swing (centimetres, at a half metre's range) slid the whole sight picture off the
+	# crosshair, left and right, in a fight: "when aimed in the gun slides to the left or right".
+	var steady_x := steady * (1.0 - _aim * 0.8)
 	var position := Vector3(
-		_sway.x * steady,
-		_sway.y * steady - _landing,
+		(_sway.x * rules.sway + trail) * steady_x,
+		_sway.y * rules.sway * steady - _landing * rules.landing,
 		_kick + _charge * tunables.charge_pull
 	)
 
-	position += _bob_offset() * steady
+	var bob := _bob_offset() * rules.bob
+	position += Vector3(bob.x * steady_x, bob.y * steady, bob.z * steady)
 	position += aim_shift * _aim
 
-	var basis := Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(_roll)))
+	# Roll is steadied too: at the sight a rolling gun is the sight picture tipping, and it
+	# was the one motion aim left whole. Counter-clockwise is positive, so a strafe right (the
+	# top leaning left) is a positive roll.
+	var roll := _roll * rules.sway + _strafe * tunables.strafe_roll * carried * rules.strafe_tilt
+	var basis := Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(roll * steady_x)))
 
 	# The authored half: the draw and the reload, both turned about the grip like the kick.
 	# A rotation about this transform's origin is a rotation about the camera, which swings
@@ -681,6 +712,15 @@ func _advance_sway(step: float, look_delta: Vector2) -> void:
 	_roll = lerpf(
 		_roll, rate.x * tunables.sway_roll * maxf(0.1, weight) * maxf(0.0, feel), follow
 	)
+
+
+## Strafing: the weapon trails the sideways motion (it lags to the side opposite the move) and
+## leans against it, which is what a hand does when the body slides under it. Driven by the
+## sideways ground speed in metres a second, signed to the right.
+func _advance_strafe(step: float, lateral: float) -> void:
+	var side := clampf(lateral if is_finite(lateral) else 0.0, -1.0e3, 1.0e3)
+	var target := clampf(side / maxf(0.1, tunables.strafe_reference), -1.0, 1.0)
+	_strafe = lerpf(_strafe, target, _smoothing(step, tunables.strafe_response))
 
 
 func _advance_bob(step: float, speed: float, on_floor: bool, crouched: bool) -> void:
@@ -803,6 +843,7 @@ func describe() -> Dictionary:
 	return {
 		"sway": _sway,
 		"roll": _roll,
+		"strafe": _strafe,
 		"bob": _bob_amount,
 		"kick": _kick,
 		"kick_rotation": _kick_rotation,
