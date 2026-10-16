@@ -21,5 +21,8 @@ extends RefCounted
 ## [method ZeeWorldModel.action_fraction] and its SWING_KEYS / THROW_KEYS: somebody else's swing
 ## and throw drawn on their world model.
 
-const LEVEL := 5
+## 6: [method ZeeWeaponArtTable.model_paths] (the one list of art files a game vendors),
+## [constant ZeeWeaponArtTable.ARMS_MODEL], and `validate_models(with_arms)` resolving through
+## [method ZeeModelCache.resolve]. The sync tool is `tools/sync-art.sh`.
+const LEVEL := 6
 const OLDEST := 1

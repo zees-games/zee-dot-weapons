@@ -25,6 +25,8 @@ extends RefCounted
 # No CHANNEL: a table of filenames. validate() returns a DotResult for the caller to log,
 # and the one runtime that can fail against the disk, ZeeModelCache, logs its own misses.
 
+## The arms model [ZeeViewArms] loads for `style = &"model"`; here so the vendoring list can name it.
+const ARMS_MODEL := "res://assets/arms/character-a.glb"
 const BLASTERS := "res://assets/blaster-kit/"
 const MELEE := "res://assets/melee/"
 ## The real-world guns (Quaternius, CC0; the launcher by Khairul Hidayat): one file per role, the muzzle on -Z and the origin at the bounds' centre like the blasters, a magazine split off as `<role>_magazine.glb` where the source had one.
@@ -642,18 +644,52 @@ static func validate() -> DotResult:
 	return DotResult.success(null)
 
 
+## Every model file the table names, once each, sorted: the weapon, its magazine and its
+## attachments, from this pack and every registered source (zed's included).
+##
+## [b]This is the list a game vendors, and the one list.[/b] A delivered game carries its own
+## copy of the art (see [method ZeeModelCache.set_asset_root]), so what a game must copy is
+## exactly what the table names, no more and no less; [method validate_models] checks it and
+## `tools/sync-art.sh` copies it, both reading this. A hand-written list in a game drifts: the
+## first one covered the weapons and missed the ammunition. [param with_arms] adds the arms
+## model, which only a game using `ZeeViewArms.style = &"model"` needs (gloves are built in code).
+static func model_paths(with_arms: bool = false) -> Array[String]:
+	var seen := {}
+
+	for art: ZeeWeaponArt in all():
+		for path in _paths_of(art):
+			if path != "":
+				seen[path] = true
+
+	if with_arms:
+		seen[ARMS_MODEL] = true
+
+	var out: Array[String] = []
+
+	for path: String in seen.keys():
+		out.append(path)
+
+	out.sort()
+	return out
+
+
 ## Checks that every mesh, magazine and attachment actually resolves.
 ##
 ## Loads scenes, so this is not the boot check. Run it once where there is a screen, or
 ## in the self-test. Reports every missing model rather than the first, because the
-## usual cause is a whole directory that did not ship.
-static func validate_models() -> DotResult:
+## usual cause is a whole directory that did not ship. Paths go through
+## [method ZeeModelCache.resolve], so it asks the question the renderer asks, under a
+## game's asset root too.
+##
+## [b]A game's suite calls this one line: `ZeeWeaponArtTable.validate_models()`.[/b] A game
+## delivered as a pack has only the art it vendored, and a missing folder fails nothing else
+## (one WARN per model, then invisible guns in production).
+static func validate_models(with_arms: bool = false) -> DotResult:
 	var missing: Array[String] = []
 
-	for art: ZeeWeaponArt in all():
-		for path in _paths_of(art):
-			if not ResourceLoader.exists(path):
-				missing.append("%s: %s" % [String(art.id), path])
+	for path in model_paths(with_arms):
+		if not ResourceLoader.exists(ZeeModelCache.resolve(path)):
+			missing.append(path)
 
 	if missing.is_empty():
 		return DotResult.success(null)

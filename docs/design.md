@@ -55,6 +55,14 @@ A def's `params.death_reaction` and `params.death_power` (`ZeeWeaponIds.PARAM_DE
 
 `ZeeWeaponArtTable` and `ZeeViewArms` name `res://assets/…`, and a game delivered as a dot-cloud pack has its vendored copy under `res://dot_cloud/<id>/<version>/assets/…`, while the client shell carries this addon and no art. `ZeeModelCache.set_asset_root(root)` rewrites `res://assets/` paths under `root` at the one place every model is loaded; the table is untouched, because it must read the same in a game that builds the art in. **A game sets it when it loads and puts `res://` back when it goes**, because a static outlives one game in a shell that loads the next. A shell exported before this method existed cannot load a game that calls it.
 
+### Why a game still vendors the art, and what keeps the copy honest
+
+A pack is the game's tracked tree with `addons/` left out (dot-ci's `package.sh --pack`), and its imported outputs are taken from the game's own import. The art lives in this repository's root `assets/`, outside `addons/zee_weapons/`, so it is in neither the addon's zip nor the client shell, and a game that does not copy it ships none: v0.1.13 of one game shipped without two folders and eleven guns drew nothing, with one WARN per model as the only symptom. Carrying the art in the pack from here would need the packager to import another repository's files, which is a larger change than the copy; so the copy stays and is made derived.
+
+- **The list is the table's**: `ZeeWeaponArtTable.model_paths()` (once each, sorted; `with_arms` adds the arms model; a second pack's art is in it once it registers).
+- **The check is one line in a game's suite**: `ZeeWeaponArtTable.validate_models()` reports every missing model, resolved through `ZeeModelCache.resolve` so it holds under an asset root too.
+- **The copy is a tool**: `tools/sync-art.sh <game-dir> [--check] [--arms]` finds the sources from the game's `addons/` links and copies exactly what the list names, its `.import` markers (a differing `uid=` line is left alone), and the textures and licences beside it. `--check` copies nothing and exits 1 on any difference. Run it when this addon's art changes; never hand-copy a folder.
+
 ## A second pack adds to this one
 
 `ZeeWeaponPack.add_source`, `ZeeWeaponArtTable.add_source` and `ZeeWeaponSound.set_class` let a second pack (zed-dot-weapons) register a callable once in its own install, and `weapons()` / `all()` append what it returns, so one rig carries both packs without a fork or every game handing a second catalogue everywhere.

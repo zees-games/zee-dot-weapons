@@ -29,7 +29,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-we
 | `addons/zee_weapons/net/` | `ZeeWeaponNet`: the replicated fields |
 | `assets/` | the vendored CC0 art: blasters, melee, arms |
 | `examples/` | `zee_selftest` (the suite), `zee_range` (a playable range, and the render target) |
-| `tools/` | `screenshot.sh`, `rack.tscn`, `world_sheet.tscn` (a person using a weapon, third person) |
+| `tools/` | `sync-art.sh` (copy or `--check` the art a game vendors; the script is `addons/zee_weapons/tools/zee_art_sync.gd`), `screenshot.sh`, `rack.tscn`, `world_sheet.tscn` (a person using a weapon, third person) |
 | `docs/rack.png` | the README's picture of the pack |
 
 ## Running and testing
@@ -55,6 +55,7 @@ Short forms; the reasoning is in the linked file.
 - `player_ref` resolves on a SERVER rig too; a rig without a carrier is handed a context from the eye, not the camera. [design](docs/design.md#the-rig-needs-its-player-on-every-role)
 - Shots replicate as a four-bit counter in the snapshot; compare with wrap-aware `uses_between()`. [design](docs/design.md#replication-is-a-counter-not-an-event)
 - A game sets `ZeeModelCache.set_asset_root` on load and puts `res://` back when it goes. [design](docs/design.md#the-art-inside-a-delivered-game)
+- A game vendors the art because a pack carries only the game's tree; the list is `ZeeWeaponArtTable.model_paths()`, the check is `validate_models()` (one line in the game's suite), the copy is `tools/sync-art.sh <game>`. Never hand-copy a folder. [design](docs/design.md#why-a-game-still-vendors-the-art-and-what-keeps-the-copy-honest)
 - A loadout card's numbers are read off the weapon's document (`ZeeWeaponCards`), scaled to fixed ceilings, never a second table; the line under the name is `BLURB`. [design](docs/design.md#loadout-cards)
 - A second pack registers through `add_source` / `set_class`; this pack's ids win; **a source is a static method's Callable, never a lambda** (exit 134). [design](docs/design.md#a-second-pack-adds-to-this-one)
 

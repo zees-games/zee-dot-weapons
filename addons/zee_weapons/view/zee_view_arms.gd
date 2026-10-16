@@ -49,7 +49,7 @@ const ARM_RIGHT := "arm-right"
 
 ## The character the arms come from, for [code]style = &"model"[/code].
 @export_file("*.glb", "*.gltf", "*.tscn", "*.scn") var model_path: String = \
-	"res://assets/arms/character-a.glb"
+	ZeeWeaponArtTable.ARMS_MODEL
 
 ## The atlas painted onto them. Empty keeps whatever the model shipped with.
 ##

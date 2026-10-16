@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 258
+const CHECKS := 260
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -292,6 +292,18 @@ func _art() -> void:
 
 	var models := ZeeWeaponArtTable.validate_models()
 	_check("every model, magazine and attachment exists: %s" % _why(models), models.ok)
+
+	# The vendoring list is the table's own: sorted, once each, every one of them a model of an
+	# entry, and the arms model only when asked. A game's check and the sync tool read it.
+	var listed := ZeeWeaponArtTable.model_paths()
+	var unique := {}
+	for path in listed:
+		unique[path] = true
+	_check("the vendoring list names each model once (%d)" % listed.size(),
+		listed.size() > 20 and unique.size() == listed.size())
+	_check("the arms model is listed only on request",
+		not listed.has(ZeeWeaponArtTable.ARMS_MODEL)
+		and ZeeWeaponArtTable.model_paths(true).has(ZeeWeaponArtTable.ARMS_MODEL))
 
 	# A part built in code (an ammunition box, a cell) answers for itself: a name the builder
 	# does not know is a reload with nothing in the hand.
