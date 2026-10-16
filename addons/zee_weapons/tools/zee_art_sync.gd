@@ -20,6 +20,8 @@ extends SceneTree
 ## without its texture and the art may not travel without its licence.
 
 const SIDECAR_SKIP := [".glb", ".glb.import"]
+## Godot's own formats, loaded as they are: no .import beside them, ever.
+const NATIVE_EXTENSIONS := ["scn", "tscn", "res", "tres"]
 
 var _sources: Array[String] = []
 var _check_only := false
@@ -75,7 +77,10 @@ func _run() -> int:
 
 		dirs[rel.get_base_dir()] = src.trim_suffix("/" + rel)
 
-		for suffix in ["", ".import"]:
+		# A native scene or resource (.scn, .tres) is loaded as it is and never gets an
+		# .import, so demanding one reports a missing file that cannot exist (zed's food kit).
+		var suffixes := [""] if rel.get_extension() in NATIVE_EXTENSIONS else ["", ".import"]
+		for suffix in suffixes:
 			var result := _sync_file(src + suffix, "res://" + rel + suffix)
 			problems += 1 if result < 0 else 0
 			copied += 1 if result > 0 else 0
