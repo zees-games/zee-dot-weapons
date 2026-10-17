@@ -387,8 +387,8 @@ func _orientation() -> void:
 	# mesh runs from its origin back along +Z, and its stock is the heavy end. Its grip, the
 	# lowest part of it, is in the back half: so the muzzle is the -Z end.
 	var long_box := ZeeModelCache.bounds(ZeeWeaponArtTable.sniper().model_path)
-	_check("the sniper's mesh runs back (+Z) from a muzzle at its origin (%.2f..%.2f)" % [long_box.position.z, long_box.end.z],
-		long_box.position.z > -0.05 and long_box.end.z > 1.2)
+	_check("the sniper's mesh is centred on its origin and 1.3 m long, muzzle on -Z (%.2f..%.2f)" % [long_box.position.z, long_box.end.z],
+		long_box.position.z < -0.5 and long_box.end.z > 0.5 and long_box.size.z > 1.2)
 
 	# The melee models stand upright on their handle instead.
 	var knife := ZeeWeaponArtTable.knife()
@@ -433,12 +433,12 @@ func _muzzles() -> void:
 	)
 
 	_check(
-		"the off-centre model measures its muzzle at its own origin, not 1.39 m off (%.3f)" % long,
-		long < 0.05
+		"the longest gun measures its muzzle at half its length, not the whole of it (%.3f)" % long,
+		long > 0.5 and long < 0.8
 	)
 	_check(
-		"and its stock end, the other way, is the full 1.39 m",
-		ZeeModelCache.muzzle_distance(sniper.model_path, -sniper.model_forward) > 1.2
+		"and its stock end, the other way, is the same half",
+		absf(ZeeModelCache.muzzle_distance(sniper.model_path, -sniper.model_forward) - long) < 0.1
 	)
 
 	# A centred model measures about half its length, which is the other half of the
@@ -1286,7 +1286,7 @@ func _view_models() -> void:
 		if not (left and gone and back):
 			mag_bad.append("%s left %s gone %s back %s" % [String(art.id), left, gone, back])
 	_check("%d magazine guns: the magazine leaves and returns (%s)" % [mag_guns, ", ".join(mag_bad)],
-		mag_bad.is_empty() and mag_guns >= 8)
+		mag_bad.is_empty() and mag_guns >= 6)
 
 	# The finish: a rifle's surfaces are no longer one material, and its shells are real guns' only.
 	view.equip(ZeeWeaponArtTable.rifle())

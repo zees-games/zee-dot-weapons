@@ -351,9 +351,10 @@ static func rifle() -> ZeeWeaponArt:
 
 ## Rear-heavy: this is the one model whose bulk sits behind the grip.
 static func bullpup() -> ZeeWeaponArt:
-	var art := _gun(ZeeWeaponIds.BULLPUP, "bullpup", POSE_RIFLE).with_magazine(
-		GUNS + "bullpup_magazine.glb", Vector3(0.0, -0.049, 0.267)
-	)
+	var art := _gun(ZeeWeaponIds.BULLPUP, "bullpup", POSE_RIFLE)
+	# The Polyy mesh has no separable magazine, so the reload's is built in code.
+	art.magazine_part = &"box_magazine"
+	art.magazine_offset = Vector3(0.0, -0.049, 0.267)
 	return art
 
 

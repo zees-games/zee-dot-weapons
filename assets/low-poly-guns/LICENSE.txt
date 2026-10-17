@@ -10,3 +10,8 @@ Khairul Hidayat, "Low Poly Rocket Launcher" (launcher.glb: tube and loaded rocke
   Licence: listed CC0 on the page; the README in the download says MIT ("use it however you like"). Both are permissive; credited either way.
 
 Rounds (assets/ammo/): Kenney Weapon Pack, CC0, see assets/ammo/LICENSE-kenney-weapon-pack.txt.
+
+Polyy (polyy.ai), "3D Low-Poly Guns Pack" (low variant): revolver, smg, carbine, rifle, bullpup, shotgun, marksman, sniper, launcher and the smg/carbine/rifle magazines. CC0 1.0 Universal, AI Assisted (disclosed by the author).
+  https://polyyai.itch.io/3d-low-poly-guns-pack
+  Converted: muzzle on -Z, centred, scaled, base-colour textures gamma-lifted (authored near black), metallic 0.
+  The Quaternius and Khairul Hidayat entries above now apply only to machine_pistol, battle_rifle and burst_rifle (and their magazines).
