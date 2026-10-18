@@ -801,7 +801,11 @@ func is_scoped() -> bool:
 
 
 func _advance_aim(delta: float) -> void:
-	var target := 1.0 if (_aim_held and can_aim()) else 0.0
+	# A reload lowers the aim: the reload keys turn the gun about the grip at hip distances,
+	# and about the rear sight (centimetres from the eye) at full aim they swing the whole
+	# rifle far left and up out of view. The button stays held; the sight comes back after.
+	var reloading := _reload_fraction > 0.0 and _reload_fraction < 1.0
+	var target := 1.0 if (_aim_held and can_aim() and not reloading) else 0.0
 	var time := _art.aim_time if _art != null else 0.16
 	_aim_fraction = move_toward(_aim_fraction, target, delta / maxf(time, 0.01))
 	_pose.set_aim(_ease(_aim_fraction))

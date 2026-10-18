@@ -676,8 +676,13 @@ func _run_sheet(prefix: String) -> void:
 				_sheet_fire(recoil)
 				_sheet_steps(int(arg))
 			"reload":
+				# `--aimed` holds the aim button through the reload: a player reloading with
+				# the button down, which the hip-only frames never showed.
+				if OS.get_cmdline_user_args().has("--aimed"):
+					_view.aim(true)
+					_sheet_steps(40)
 				_view.on_reload(arg)
-				_sheet_steps(2)
+				_sheet_steps(30 if OS.get_cmdline_user_args().has("--aimed") else 2)
 			"walk":
 				# A quarter of a stride past a footfall, where the bob is furthest out.
 				for i in range(27):

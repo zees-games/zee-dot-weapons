@@ -581,7 +581,12 @@ func _deploy_fraction(tick: int) -> float:
 
 
 func _reload_fraction(tick: int) -> float:
-	if _reload_started < 0 or _reload_ticks <= 0:
+	# The arsenal decides whether a reload is running; this rig only times it. Firing, a
+	# switch, a drop and a rollback all end a reload without announcing it (`reload_finished`
+	# fires only for a reload that completes), so a start tick kept past the end of its
+	# reload wrapped below for ever: the reload pose played constantly, on a full magazine,
+	# while firing.
+	if _reload_started < 0 or _reload_ticks <= 0 or not arsenal.is_reloading():
 		return 0.0
 
 	# Wrapped rather than clamped, so a shell-at-a-time reload plays one animation per
