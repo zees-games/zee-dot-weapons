@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_hf61x"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_ea1it"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_hnufk"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_ea1it")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_67bq2"]
+script = ExtResource("3_hnufk")
+damage_type = SubResource("Resource_khyr5")
+max_range = 150.0
+spread_moving = 1.0
+spread_airborne = 3.4
+bloom = 0.3
+bloom_max = 4.0
+recoil_pitch = 0.32
+recoil_yaw = 0.2
+
+[resource]
+script = ExtResource("1_hf61x")
+id = &"bullpup"
+display_name = "Bullpup"
+tags = Array[StringName]([&"primary", &"automatic", &"scoped"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9
+}
+tuning = SubResource("Resource_67bq2")
+authored_tick_rate = 64
+slot = 3
+holster_ticks = 17
+fire_mode = 1
+use_interval_ticks = 5
+ammo_type = &"darts_heavy"
+magazine = 32
+reserve = 128
+reserve_max = 256
+reload_ticks = 154

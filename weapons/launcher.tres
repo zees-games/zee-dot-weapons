@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_pnkgq"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_lk2l4"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_u5peb"]
+
+[sub_resource type="Resource" id="Resource_jxiy5"]
+script = ExtResource("2_lk2l4")
+id = &"blast"
+display_name = "Blast"
+armour_share = 0.75
+armour_wear = 1.5
+uses_hit_groups = false
+knockback_per_point = 0.35
+
+[sub_resource type="Resource" id="Resource_4eh5i"]
+script = ExtResource("3_u5peb")
+damage = 32.0
+damage_type = SubResource("Resource_jxiy5")
+min_charge_damage = 1.0
+max_range = 260.0
+spread = 0.0
+spread_moving = 0.0
+spread_airborne = 0.0
+recoil_pitch = 3.0
+splash_radius = 4.5
+splash_damage = 88.0
+splash_type = SubResource("Resource_jxiy5")
+speed = 44.0
+min_speed = 44.0
+gravity_scale = 0.25
+radius = 0.2
+life_ticks = 320
+
+[resource]
+script = ExtResource("1_pnkgq")
+id = &"launcher"
+display_name = "Launcher"
+tags = Array[StringName]([&"heavy", &"explosive"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_projectile.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9,
+&"death_power": 1.0,
+&"death_reaction": &"power_launch"
+}
+tuning = SubResource("Resource_4eh5i")
+authored_tick_rate = 64
+slot = 4
+deploy_ticks = 32
+holster_ticks = 22
+use_interval_ticks = 55
+ammo_type = &"ordnance"
+magazine = 4
+reserve = 12
+reserve_max = 24
+reload_ticks = 179

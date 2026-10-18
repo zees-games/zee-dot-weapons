@@ -30,6 +30,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first, and [dot-weapon's](../dot-we
 | `assets/` | the vendored CC0 art: blasters, melee, arms |
 | `examples/` | `zee_selftest` (the suite), `zee_range` (a playable range, and the render target) |
 | `tools/` | `sync-art.sh` (copy or `--check` the art a game vendors; the script is `addons/zee_weapons/tools/zee_art_sync.gd`), `screenshot.sh`, `rack.tscn`, `world_sheet.tscn` (a person using a weapon, third person) |
+| `weapons/`, `provides.json` | the Workshop form of the pack: one `DotWeaponDef` `.tres` per weapon and the schema-1 `provides.json` (kind `weapon`, `meta.asset_root` `.`, no thumbnails: the pack has no per-weapon images). **Generated** from the code table by `tools/export-defs.sh` (`ZeeDefExport`); the suite fails when they are stale. Change a builder, re-run it, commit all three |
 | `docs/rack.png` | the README's picture of the pack |
 
 ## Running and testing

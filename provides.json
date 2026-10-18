@@ -1,0 +1,430 @@
+{
+	"schema": 1,
+	"title": "Zee Weapons",
+	"kinds": [
+		"weapon"
+	],
+	"games": "*",
+	"categories": [
+		{
+			"id": "melee",
+			"name": "Melee"
+		},
+		{
+			"id": "sidearm",
+			"name": "Sidearms"
+		},
+		{
+			"id": "primary",
+			"name": "Primary"
+		},
+		{
+			"id": "heavy",
+			"name": "Heavy"
+		},
+		{
+			"id": "thrown",
+			"name": "Thrown"
+		}
+	],
+	"entries": [
+		{
+			"kind": "weapon",
+			"id": "fists",
+			"name": "Fists",
+			"def": "weapons/fists.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "knife",
+			"name": "Knife",
+			"def": "weapons/knife.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "shiv",
+			"name": "Shiv",
+			"def": "weapons/shiv.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "hatchet",
+			"name": "Hatchet",
+			"def": "weapons/hatchet.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "mallet",
+			"name": "Mallet",
+			"def": "weapons/mallet.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "pickaxe",
+			"name": "Pickaxe",
+			"def": "weapons/pickaxe.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "spade",
+			"name": "Spade",
+			"def": "weapons/spade.tres",
+			"slot": 1,
+			"category": "melee",
+			"tags": [
+				"melee"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "pistol",
+			"name": "Dart Pistol",
+			"def": "weapons/pistol.tres",
+			"slot": 2,
+			"category": "sidearm",
+			"tags": [
+				"sidearm"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "revolver",
+			"name": "Revolver",
+			"def": "weapons/revolver.tres",
+			"slot": 2,
+			"category": "sidearm",
+			"tags": [
+				"sidearm"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "machine_pistol",
+			"name": "Machine Pistol",
+			"def": "weapons/machine_pistol.tres",
+			"slot": 2,
+			"category": "sidearm",
+			"tags": [
+				"sidearm",
+				"automatic",
+				"silenced"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "derringer",
+			"name": "Derringer",
+			"def": "weapons/derringer.tres",
+			"slot": 2,
+			"category": "sidearm",
+			"tags": [
+				"sidearm"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "smg",
+			"name": "SMG",
+			"def": "weapons/smg.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"automatic"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "carbine",
+			"name": "Carbine",
+			"def": "weapons/carbine.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"automatic"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "rifle",
+			"name": "Assault Rifle",
+			"def": "weapons/rifle.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"automatic"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "bullpup",
+			"name": "Bullpup",
+			"def": "weapons/bullpup.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"automatic",
+				"scoped"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "battle_rifle",
+			"name": "Battle Rifle",
+			"def": "weapons/battle_rifle.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "burst_rifle",
+			"name": "Burst Rifle",
+			"def": "weapons/burst_rifle.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "shotgun",
+			"name": "Shotgun",
+			"def": "weapons/shotgun.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "drum_shotgun",
+			"name": "Drum Shotgun",
+			"def": "weapons/drum_shotgun.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"automatic"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "marksman",
+			"name": "Marksman Rifle",
+			"def": "weapons/marksman.tres",
+			"slot": 3,
+			"category": "primary",
+			"tags": [
+				"primary",
+				"scoped"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "sniper",
+			"name": "Sniper Rifle",
+			"def": "weapons/sniper.tres",
+			"slot": 4,
+			"category": "heavy",
+			"tags": [
+				"heavy",
+				"scoped",
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "minigun",
+			"name": "Minigun",
+			"def": "weapons/minigun.tres",
+			"slot": 4,
+			"category": "heavy",
+			"tags": [
+				"heavy",
+				"automatic",
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "launcher",
+			"name": "Launcher",
+			"def": "weapons/launcher.tres",
+			"slot": 4,
+			"category": "heavy",
+			"tags": [
+				"heavy",
+				"explosive"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "beamer",
+			"name": "Beamer",
+			"def": "weapons/beamer.tres",
+			"slot": 4,
+			"category": "heavy",
+			"tags": [
+				"heavy",
+				"energy",
+				"primary"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "charge_rifle",
+			"name": "Charge Rifle",
+			"def": "weapons/charge_rifle.tres",
+			"slot": 4,
+			"category": "heavy",
+			"tags": [
+				"heavy",
+				"energy",
+				"scoped"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "frag",
+			"name": "Frag Grenade",
+			"def": "weapons/frag.tres",
+			"slot": 5,
+			"category": "thrown",
+			"tags": [
+				"thrown",
+				"explosive"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		},
+		{
+			"kind": "weapon",
+			"id": "sticky",
+			"name": "Sticky Charge",
+			"def": "weapons/sticky.tres",
+			"slot": 5,
+			"category": "thrown",
+			"tags": [
+				"thrown",
+				"explosive"
+			],
+			"meta": {
+				"asset_root": "."
+			}
+		}
+	]
+}

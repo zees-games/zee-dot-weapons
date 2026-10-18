@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_5rhaf"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_6m70v"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_whhmj"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_6m70v")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_mgak1"]
+script = ExtResource("3_whhmj")
+damage = 12.0
+damage_type = SubResource("Resource_khyr5")
+max_range = 26.0
+pellets = 9
+fixed_pattern = true
+spread = 4.2
+spread_moving = 0.5
+recoil_pitch = 2.4
+
+[resource]
+script = ExtResource("1_5rhaf")
+id = &"shotgun"
+display_name = "Shotgun"
+tags = Array[StringName]([&"primary"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9,
+&"death_power": 0.6
+}
+tuning = SubResource("Resource_mgak1")
+authored_tick_rate = 64
+slot = 3
+deploy_ticks = 24
+holster_ticks = 18
+use_interval_ticks = 51
+ammo_type = &"shells"
+magazine = 8
+reserve = 32
+reserve_max = 64
+reload_ticks = 27
+reload_per_round = true
+reload_start_ticks = 19

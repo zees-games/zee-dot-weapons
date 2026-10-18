@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_pg8lc"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_pbeme"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_rhypx"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_pbeme")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_51eu4"]
+script = ExtResource("3_rhypx")
+damage = 11.0
+damage_type = SubResource("Resource_khyr5")
+max_range = 110.0
+spread = 2.4
+spread_moving = 4.5
+spread_airborne = 7.0
+bloom = 0.08
+bloom_max = 2.0
+bloom_recovery = 0.0625
+recoil_pitch = 0.12
+recoil_yaw = 0.1
+
+[resource]
+script = ExtResource("1_pg8lc")
+id = &"minigun"
+display_name = "Minigun"
+tags = Array[StringName]([&"heavy", &"automatic", &"primary"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9
+}
+tuning = SubResource("Resource_51eu4")
+authored_tick_rate = 64
+slot = 4
+deploy_ticks = 70
+holster_ticks = 51
+fire_mode = 1
+use_interval_ticks = 3
+ammo_type = &"belt"
+reserve = 200
+reserve_max = 400
+reload_ticks = 0
+auto_reload = false

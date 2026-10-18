@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_icy4i"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_pc8sm"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_7xeet"]
+
+[sub_resource type="Resource" id="Resource_dl628"]
+script = ExtResource("2_pc8sm")
+id = &"energy"
+display_name = "Energy"
+armour_share = 0.5
+armour_wear = 2.0
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_7ynkc"]
+script = ExtResource("3_7xeet")
+damage = 9.0
+damage_type = SubResource("Resource_dl628")
+max_range = 40.0
+spread = 0.0
+spread_moving = 0.0
+spread_airborne = 0.0
+recoil_pitch = 0.0
+
+[resource]
+script = ExtResource("1_icy4i")
+id = &"beamer"
+display_name = "Beamer"
+tags = Array[StringName]([&"heavy", &"energy", &"primary"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_beam.gd"
+params = {
+&"ramp_from": 0.45,
+&"ramp_ticks": 32
+}
+tuning = SubResource("Resource_7ynkc")
+authored_tick_rate = 64
+slot = 4
+deploy_ticks = 26
+holster_ticks = 19
+fire_mode = 4
+use_interval_ticks = 4
+ammo_type = &"cells"
+reserve = 260
+reserve_max = 520
+reload_ticks = 0
+auto_reload = false

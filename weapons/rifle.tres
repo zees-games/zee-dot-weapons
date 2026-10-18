@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_yxxfu"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_qhp7u"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_snof4"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_qhp7u")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_nvxnf"]
+script = ExtResource("3_snof4")
+damage = 23.0
+damage_type = SubResource("Resource_khyr5")
+max_range = 180.0
+spread = 0.45
+spread_moving = 2.2
+spread_airborne = 4.8
+bloom = 0.27
+bloom_max = 4.6
+bloom_recovery = 0.1328125
+recoil_pitch = 0.36
+
+[resource]
+script = ExtResource("1_yxxfu")
+id = &"rifle"
+display_name = "Assault Rifle"
+tags = Array[StringName]([&"primary", &"automatic"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9
+}
+tuning = SubResource("Resource_nvxnf")
+authored_tick_rate = 64
+slot = 3
+deploy_ticks = 20
+holster_ticks = 15
+fire_mode = 1
+use_interval_ticks = 6
+ammo_type = &"darts_heavy"
+magazine = 30
+reserve = 120
+reserve_max = 240

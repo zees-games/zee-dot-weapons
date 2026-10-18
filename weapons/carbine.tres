@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_4m5yp"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_edoge"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_7ss4e"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_edoge")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_o7bib"]
+script = ExtResource("3_7ss4e")
+damage = 21.0
+damage_type = SubResource("Resource_khyr5")
+max_range = 140.0
+spread_moving = 2.1
+spread_airborne = 4.5
+spread_crouched = 0.55
+bloom = 0.28
+bloom_max = 4.2
+bloom_recovery = 0.140625
+recoil_pitch = 0.34
+recoil_yaw = 0.14
+
+[resource]
+script = ExtResource("1_4m5yp")
+id = &"carbine"
+display_name = "Carbine"
+tags = Array[StringName]([&"primary", &"automatic"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9
+}
+tuning = SubResource("Resource_o7bib")
+authored_tick_rate = 64
+slot = 3
+deploy_ticks = 19
+holster_ticks = 14
+fire_mode = 1
+use_interval_ticks = 6
+ammo_type = &"darts_heavy"
+magazine = 24
+reserve = 96
+reserve_max = 192
+reload_ticks = 128

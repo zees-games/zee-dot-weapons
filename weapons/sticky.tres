@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_mj4j8"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_dpk8q"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_sb7at"]
+
+[sub_resource type="Resource" id="Resource_jxiy5"]
+script = ExtResource("2_dpk8q")
+id = &"blast"
+display_name = "Blast"
+armour_share = 0.75
+armour_wear = 1.5
+uses_hit_groups = false
+knockback_per_point = 0.35
+
+[sub_resource type="Resource" id="Resource_iypgn"]
+script = ExtResource("3_sb7at")
+damage = 0.0
+damage_type = SubResource("Resource_jxiy5")
+max_range = 100.0
+splash_radius = 4.0
+splash_damage = 135.0
+speed = 22.0
+min_speed = 22.0
+gravity_scale = 0.8
+radius = 0.12
+life_ticks = 768
+
+[resource]
+script = ExtResource("1_mj4j8")
+id = &"sticky"
+display_name = "Sticky Charge"
+tags = Array[StringName]([&"thrown", &"explosive"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_thrown.gd"
+params = {
+&"fuse_ticks": 141,
+&"speed_scales_with_cook": false,
+&"sticks": true
+}
+tuning = SubResource("Resource_iypgn")
+authored_tick_rate = 64
+slot = 5
+holster_ticks = 16
+fire_mode = 3
+use_interval_ticks = 64
+charge_ticks = 141
+ammo_type = &"grenades"
+reserve = 2
+reserve_max = 4
+reload_ticks = 0
+auto_reload = false

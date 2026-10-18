@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_52p4f"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_ld5j5"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_atxd7"]
+
+[sub_resource type="Resource" id="Resource_vqbh7"]
+script = ExtResource("2_ld5j5")
+id = &"strike"
+display_name = "Strike"
+armour_share = 0.15
+armour_wear = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_yxujx"]
+script = ExtResource("3_atxd7")
+damage = 45.0
+damage_type = SubResource("Resource_vqbh7")
+max_range = 1.9
+spread = 0.0
+spread_moving = 0.0
+spread_airborne = 0.0
+recoil_pitch = 0.0
+
+[resource]
+script = ExtResource("1_52p4f")
+id = &"knife"
+display_name = "Knife"
+tags = Array[StringName]([&"melee"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
+params = {
+&"arc_degrees": 24.0,
+&"rays": 3
+}
+tuning = SubResource("Resource_yxujx")
+authored_tick_rate = 64
+deploy_ticks = 10
+holster_ticks = 6
+use_interval_ticks = 26
+cost_per_use = 0
+reload_ticks = 0
+auto_reload = false

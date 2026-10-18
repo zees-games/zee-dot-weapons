@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_j2x07"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_0h663"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_co56s"]
+
+[sub_resource type="Resource" id="Resource_khyr5"]
+script = ExtResource("2_0h663")
+id = &"dart"
+display_name = "Dart"
+falloff_start = 30.0
+falloff_end = 70.0
+falloff_floor = 0.6
+armour_share = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_7bp0i"]
+script = ExtResource("3_co56s")
+damage = 62.0
+damage_type = SubResource("Resource_khyr5")
+max_range = 18.0
+spread = 2.2
+spread_moving = 5.0
+recoil_pitch = 3.2
+
+[resource]
+script = ExtResource("1_j2x07")
+id = &"derringer"
+display_name = "Derringer"
+tags = Array[StringName]([&"sidearm"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9
+}
+tuning = SubResource("Resource_7bp0i")
+authored_tick_rate = 64
+slot = 2
+deploy_ticks = 12
+holster_ticks = 8
+use_interval_ticks = 43
+ammo_type = &"darts_light"
+magazine = 2
+reserve = 12
+reserve_max = 24
+reload_ticks = 128

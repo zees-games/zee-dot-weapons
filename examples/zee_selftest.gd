@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 260
+const CHECKS := 460
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -39,6 +39,7 @@ func _ready() -> void:
 	_cards()
 	_art()
 	_other_packs()
+	_workshop()
 	_orientation()
 	_muzzles()
 	_arsenal()
@@ -367,6 +368,123 @@ func _art() -> void:
 	_check("putting res:// back finds it again, not the failure", ZeeModelCache.scene(pistol.model_path).ok)
 
 	_end()
+
+
+func _workshop() -> void:
+	_begin("the Workshop files agree with the code table")
+
+	var text := FileAccess.get_file_as_string("res://provides.json")
+	var doc: Variant = JSON.parse_string(text)
+	_check("provides.json parses to a dictionary", doc is Dictionary)
+	if not (doc is Dictionary):
+		_end()
+		return
+
+	var provides := doc as Dictionary
+	var code := ZeeDefExport.own_weapons()
+	var entries: Array = provides.get("entries", [])
+	_check("schema 1, kind weapon", int(provides.get("schema", 0)) == 1 and provides.get("kinds", []) == ["weapon"])
+	_check("one entry per code weapon", entries.size() == code.size() and code.size() == ZeeWeaponIds.all().size())
+	_check("provides.json is what the exporter writes now (run tools/export-defs.sh)",
+		JSON.stringify(provides) == JSON.stringify(JSON.parse_string(JSON.stringify(ZeeDefExport.provides(code)))))
+
+	var cat_ids := {}
+	for c: Dictionary in provides.get("categories", []):
+		cat_ids[c["id"]] = true
+
+	var by_id := {}
+	for def in code:
+		by_id[def.id] = def
+
+	for e: Dictionary in entries:
+		var id := StringName(e["id"])
+		var def: DotWeaponDef = by_id.get(id, null)
+		_check_quiet("%s: an entry for a code weapon" % id, def != null)
+		_check_quiet("%s: category is declared and matches the slot" % id,
+			cat_ids.has(e.get("category", "")) and def != null and e["category"] == ZeeDefExport.category_for(def.slot))
+		_check_quiet("%s: the file exists" % id, ResourceLoader.exists("res://" + String(e["def"])))
+		var loaded := load("res://" + String(e["def"])) as DotWeaponDef
+		_check_quiet("%s: loads as a DotWeaponDef with the entry's id" % id, loaded != null and String(loaded.id) == e["id"])
+		if loaded != null and def != null:
+			_check_quiet("%s: the .tres equals the code row" % id, _same(loaded, def, id))
+			_check_quiet("%s: behaviour stays in the host build" % id, loaded.behaviour_path.begins_with("res://addons/dot_weapon/"))
+		_check_quiet("%s: asset_root is declared" % id, (e.get("meta", {}) as Dictionary).has("asset_root"))
+
+	# Fed the way a mounted pack is: the index holds the document, the catalogue follows it.
+	var index := DotContentIndex.new()
+	index.set_session(DotContentIndex.SESSION_SOLO)
+	var added := index.add_pack({
+		"content_id": "gamemann/zee-dot-weapons", "version": "1.0.0", "prefix": "res://",
+		"session": "solo", "source": "subscription", "provides": provides,
+	})
+	_check("the index takes the pack", added.ok)
+	var cat := DotWeaponCatalogue.new().follow_content(index)
+	_check("the catalogue resolves every weapon", cat.size() == code.size())
+	_check("and validates", cat.validate().ok)
+
+	var missing := 0
+	for def in code:
+		if not cat.has(def.id) or cat.listing(def.id) == null:
+			missing += 1
+	_check("every code id is delivered", missing == 0)
+	var l := cat.listing(&"rifle")
+	_check("a listing carries the pack, the category and asset_root",
+		l != null and l.is_delivered() and l.category == "primary" and l.meta.get("asset_root", "") == ZeeDefExport.ASSET_ROOT)
+	_check("a delivered weapon instantiates its behaviour", cat.instantiate(&"knife").ok and cat.instantiate(&"launcher").ok)
+	cat.unfollow_content()
+
+	# The same document over a catalogue that already has the code table: code wins every id.
+	var full := ZeeWeaponPack.catalogue().follow_content(index)
+	_check("over the code table every delivered row is refused and nothing doubles", full.size() == code.size())
+	full.unfollow_content()
+
+	_end()
+
+
+## True when [param a] and [param b] hold the same stored values, resources compared by value.
+func _same(a: Variant, b: Variant, what: String) -> bool:
+	if a is Resource and b is Resource:
+		var ra := a as Resource
+		var rb := b as Resource
+		if ra.get_script() != rb.get_script():
+			print("   differs: %s script" % what)
+			return false
+
+		for p: Dictionary in ra.get_property_list():
+			if not (int(p["usage"]) & PROPERTY_USAGE_STORAGE) or p["name"] == "resource_path":
+				continue
+			if not _same(ra.get(p["name"]), rb.get(p["name"]), "%s.%s" % [what, p["name"]]):
+				return false
+
+		return true
+
+	if a is Dictionary and b is Dictionary:
+		var da := a as Dictionary
+		var db := b as Dictionary
+		if da.size() != db.size():
+			print("   differs: %s size" % what)
+			return false
+		for k: Variant in da:
+			if not db.has(k) or not _same(da[k], db[k], "%s[%s]" % [what, k]):
+				return false
+		return true
+
+	if a is Array and b is Array:
+		var aa := a as Array
+		var ab := b as Array
+		if aa.size() != ab.size():
+			print("   differs: %s size" % what)
+			return false
+		for i in aa.size():
+			if not _same(aa[i], ab[i], "%s[%d]" % [what, i]):
+				return false
+		return true
+
+	if typeof(a) != typeof(b) or a != b:
+		print("   differs: %s (%s vs %s)" % [what, str(a), str(b)])
+		return false
+
+	return true
 
 
 func _orientation() -> void:

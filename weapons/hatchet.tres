@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_gsllw"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_tlbyk"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_lawun"]
+
+[sub_resource type="Resource" id="Resource_vqbh7"]
+script = ExtResource("2_tlbyk")
+id = &"strike"
+display_name = "Strike"
+armour_share = 0.15
+armour_wear = 0.5
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_8onbr"]
+script = ExtResource("3_lawun")
+damage = 62.0
+damage_type = SubResource("Resource_vqbh7")
+max_range = 2.0
+spread = 0.0
+spread_moving = 0.0
+spread_airborne = 0.0
+recoil_pitch = 0.0
+
+[resource]
+script = ExtResource("1_gsllw")
+id = &"hatchet"
+display_name = "Hatchet"
+tags = Array[StringName]([&"melee"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
+params = {
+&"arc_degrees": 40.0,
+&"rays": 4
+}
+tuning = SubResource("Resource_8onbr")
+authored_tick_rate = 64
+deploy_ticks = 16
+holster_ticks = 12
+use_interval_ticks = 48
+cost_per_use = 0
+reload_ticks = 0
+auto_reload = false

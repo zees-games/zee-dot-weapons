@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_cshgl"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_xq0r4"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_apu1c"]
+
+[sub_resource type="Resource" id="Resource_dl628"]
+script = ExtResource("2_xq0r4")
+id = &"energy"
+display_name = "Energy"
+armour_share = 0.5
+armour_wear = 2.0
+self_scale = 0.0
+
+[sub_resource type="Resource" id="Resource_i5l6e"]
+script = ExtResource("3_apu1c")
+damage = 105.0
+damage_type = SubResource("Resource_dl628")
+min_charge_damage = 0.33
+max_range = 500.0
+spread = 0.0
+spread_moving = 3.0
+spread_airborne = 6.0
+recoil_pitch = 2.6
+
+[resource]
+script = ExtResource("1_cshgl")
+id = &"charge_rifle"
+display_name = "Charge Rifle"
+tags = Array[StringName]([&"heavy", &"energy", &"scoped"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+params = {
+&"bash_cooldown_ticks": 51,
+&"bash_damage": 42.0,
+&"bash_reach": 1.9,
+&"death_power": 0.9
+}
+tuning = SubResource("Resource_i5l6e")
+authored_tick_rate = 64
+slot = 4
+deploy_ticks = 32
+holster_ticks = 23
+fire_mode = 3
+use_interval_ticks = 43
+charge_ticks = 70
+charge_requires_min = true
+min_charge = 0.34
+ammo_type = &"cells"
+magazine = 4
+reserve = 24
+reserve_max = 48
+reload_ticks = 166

@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+
+[ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_ecu0x"]
+[ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_n0ynf"]
+[ext_resource type="Script" path="res://addons/dot_weapon/tuning/dot_weapon_ballistics.gd" id="3_koeul"]
+
+[sub_resource type="Resource" id="Resource_jxiy5"]
+script = ExtResource("2_n0ynf")
+id = &"blast"
+display_name = "Blast"
+armour_share = 0.75
+armour_wear = 1.5
+uses_hit_groups = false
+knockback_per_point = 0.35
+
+[sub_resource type="Resource" id="Resource_qnjwn"]
+script = ExtResource("3_koeul")
+damage = 0.0
+damage_type = SubResource("Resource_jxiy5")
+max_range = 100.0
+splash_radius = 5.2
+splash_damage = 115.0
+speed = 19.0
+min_speed = 19.0
+gravity_scale = 1.0
+radius = 0.12
+life_ticks = 768
+
+[resource]
+script = ExtResource("1_ecu0x")
+id = &"frag"
+display_name = "Frag Grenade"
+tags = Array[StringName]([&"thrown", &"explosive"])
+behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_thrown.gd"
+params = {
+&"fuse_ticks": 192,
+&"speed_scales_with_cook": false
+}
+tuning = SubResource("Resource_qnjwn")
+authored_tick_rate = 64
+slot = 5
+holster_ticks = 16
+fire_mode = 3
+use_interval_ticks = 64
+charge_ticks = 192
+ammo_type = &"grenades"
+reserve = 2
+reserve_max = 4
+reload_ticks = 0
+auto_reload = false
