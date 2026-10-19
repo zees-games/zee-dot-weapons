@@ -398,26 +398,24 @@ static func marksman() -> ZeeWeaponArt:
 ## from the bounds rather than assumed.
 static func sniper() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.SNIPER, "sniper", POSE_HEAVY)
-	# [b]Slid forward along its own length, in both views, and scaled with the model.[/b]
-	# Its origin is the muzzle, so left alone the whole rifle lies back past the hand into
-	# the player's face. 0.8 m back from the muzzle is the grip, and it goes on the hold.
-	# Along the hold's own basis (which carries the scale, the cant and the yaw), never the
-	# camera's Z: once the hold is turned the camera's Z is not the rifle's. This line has
-	# been wrong three times (a flipped sign, an unscaled distance, and the direction itself,
-	# while every blaster was drawn backwards); render the rack and the sheet after touching it.
-	art.view_offset += art.view_transform().basis * Vector3(0.0, 0.0, -0.8)
-	art.aim_offset += art.aim_transform().basis * Vector3(0.0, 0.0, -0.8)
-	art.world_offset += Vector3(0.0, 0.0, -0.8 * art.world_scale)
+	# No slide along the hold. The muzzle-origin model this replaced had to be pushed 0.8 m
+	# forward or it lay back through the player's face. This one is centred like the marksman,
+	# and its trigger sits within a few centimetres of the marksman's (z about +0.13), so the
+	# hold puts the grip in the hand unchanged. Adding the slide back pushes the rifle out at
+	# arm's length (the 2026-10-19 sheet).
 	# No scope attachment: the mesh has its own, and the one added sat in the air above it.
 	art.weight = 1.8
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
 	art.aim_time = 0.22
 	# A bolt gun: the bolt drawn back, two rounds pressed down into the top of the receiver from
-	# above and to the right, the bolt shoved home (ZeeWeaponPose.RELOAD_KEYS_BOLT).
-	art = _fed(_loose(art, ROUND_RIFLE, Vector3(0.0, 0.03, 0.72)), Vector3(0.07, 0.10, 0.0), 2, 1.0)
+	# above and to the right, the bolt shoved home (ZeeWeaponPose.RELOAD_KEYS_BOLT). Measured on
+	# art-src/guns' mesh: the receiver runs z +0.19 to -0.07 with its top at y 0.055; the round
+	# goes in between the scope rings (z +0.12 and 0.0), and the bolt is the orange knob on the
+	# right at (0.047, 0.028, -0.016).
+	art = _fed(_loose(art, ROUND_RIFLE, Vector3(0.0, 0.05, 0.06)), Vector3(0.07, 0.10, 0.0), 2, 1.0)
 	art.magazine_rotation = Vector3(90.0, 0.0, 0.0)
-	art.bolt_at = Vector3(0.03, 0.03, 0.93)
+	art.bolt_at = Vector3(0.047, 0.028, -0.016)
 	art.bolt_pull = Vector3(0.0, 0.0, 0.10)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BOLT
 	return art

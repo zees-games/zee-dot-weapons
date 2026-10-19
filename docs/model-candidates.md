@@ -2,6 +2,8 @@
 
 Researched 2026-10-15 for nightly item fgr-weapons-unique-1. Nothing here is downloaded or vendored yet.
 
+**Used, 2026-10-19:** the twelve real-world guns are kitbashes built by `art-src/guns/` from Quaternius Ultimate Low Poly Guns (CC0) and Kenney Blaster Kit (CC0) parts, recoloured and reshaped with parts of our own; `assets/low-poly-guns/LICENSE.txt` lists the parts per gun. The other candidates below were not used.
+
 ## Current models
 
 Every zee weapon already points at a different Kenney Blaster Kit file (CC0), so no two share a file. The "shared SMG look" is stylistic: the Blaster Kit is one toy-blaster family with the same boxy body, stock and magazine. Melee uses Kenney Survival Kit tools and knives. Grenades use Blaster Kit grenade-a and grenade-b.

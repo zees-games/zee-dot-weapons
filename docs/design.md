@@ -16,7 +16,7 @@ So the split is the same one, one level out. `ZeeWeaponPack` is documents a serv
 
 `blaster-a` through `blaster-r` is the order the art was exported in and means nothing to a player, a console or a loadout. `ZeeWeaponIds` names roles (`SNIPER`, `DRUM_SHOTGUN`, `BEAMER`) and **`ZeeWeaponArtTable` is the only file that contains a filename**: replacing the art is replacing one table.
 
-The roles were assigned from measurements, not filenames: the two widest short models became the revolver and the drum shotgun (width reads as a cylinder), the slimmest the beam weapon, the 1.39 m one the sniper, the 0.42 m one the derringer.
+The roles were assigned from measurements, not filenames: the two widest short models became the revolver and the drum shotgun (width reads as a cylinder), the slimmest the beam weapon, the 1.39 m one the sniper, the 0.42 m one the derringer. Since 2026-10-19 every real-world gun (the sniper among them, now a centred 1.30 m model) is a kitbash built by art-src/guns from CC0 parts; the toy and sci-fi blasters keep these Blaster Kit models.
 
 ## Durations are ticks
 
