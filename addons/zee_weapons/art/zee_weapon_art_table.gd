@@ -29,7 +29,7 @@ extends RefCounted
 const ARMS_MODEL := "res://assets/arms/character-a.glb"
 const BLASTERS := "res://assets/blaster-kit/"
 const MELEE := "res://assets/melee/"
-## The real-world guns (Quaternius, CC0; the launcher by Khairul Hidayat): one file per role, the muzzle on -Z and the origin at the bounds' centre like the blasters, a magazine split off as `<role>_magazine.glb` where the source had one.
+## The real-world guns (kitbashed from CC0 Quaternius and Kenney parts by art-src/guns/): one file per role, the muzzle on -Z and the origin at the bounds' centre like the blasters, a magazine split off as `<role>_magazine.glb` where the source had one.
 const GUNS := "res://assets/low-poly-guns/"
 
 # --- Shared parts -----------------------------------------------------------
@@ -308,15 +308,15 @@ static func pistol() -> ZeeWeaponArt:
 	)
 
 
-## The widest short model in the kit. Width reads as a cylinder, so it is the revolver.
+## A full-lug revolver: the round goes into the cylinder, a third of the way from the back.
 static func revolver() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.REVOLVER, "revolver", POSE_PISTOL)
-	return _loose(art, ROUND_CARTRIDGE, Vector3(0.0, -0.02, 0.02))
+	return _loose(art, ROUND_CARTRIDGE, Vector3(0.0, 0.02, 0.07))
 
 
 static func machine_pistol() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.MACHINE_PISTOL, "machine_pistol", POSE_PISTOL).with_magazine(
-		GUNS + "machine_pistol_magazine.glb", Vector3(0.0, -0.042, 0.003)
+		GUNS + "machine_pistol_magazine.glb", Vector3(0.0, -0.125, 0.138)
 	)
 	return art
 
@@ -330,44 +330,43 @@ static func derringer() -> ZeeWeaponArt:
 
 static func smg() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.SMG, "smg", POSE_RIFLE).with_magazine(
-		GUNS + "smg_magazine.glb", Vector3(0.0, -0.06, -0.092)
+		GUNS + "smg_magazine.glb", Vector3(0.0, -0.068, -0.044)
 	)
 	return art
 
 
 static func carbine() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.CARBINE, "carbine", POSE_RIFLE).with_magazine(
-		GUNS + "carbine_magazine.glb", Vector3(0.0, -0.083, -0.102)
+		GUNS + "carbine_magazine.glb", Vector3(0.001, -0.057, -0.069)
 	)
 	return art
 
 
 static func rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.RIFLE, "rifle", POSE_RIFLE).with_magazine(
-		GUNS + "rifle_magazine.glb", Vector3(0.0, -0.033, -0.009)
+		GUNS + "rifle_magazine.glb", Vector3(0.0, -0.078, 0.011)
 	)
 	return art
 
 
 ## Rear-heavy: this is the one model whose bulk sits behind the grip.
 static func bullpup() -> ZeeWeaponArt:
-	var art := _gun(ZeeWeaponIds.BULLPUP, "bullpup", POSE_RIFLE)
-	# The Polyy mesh has no separable magazine, so the reload's is built in code.
-	art.magazine_part = &"box_magazine"
-	art.magazine_offset = Vector3(0.0, -0.049, 0.267)
+	var art := _gun(ZeeWeaponIds.BULLPUP, "bullpup", POSE_RIFLE).with_magazine(
+		GUNS + "bullpup_magazine.glb", Vector3(-0.002, -0.058, 0.158)
+	)
 	return art
 
 
 static func battle_rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.BATTLE_RIFLE, "battle_rifle", POSE_RIFLE).with_magazine(
-		GUNS + "battle_rifle_magazine.glb", Vector3(0.0, -0.059, 0.017)
+		GUNS + "battle_rifle_magazine.glb", Vector3(0.0, -0.078, 0.035)
 	)
 	return art
 
 
 static func burst_rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.BURST_RIFLE, "burst_rifle", POSE_RIFLE).with_magazine(
-		GUNS + "burst_rifle_magazine.glb", Vector3(0.0, -0.032, -0.014)
+		GUNS + "burst_rifle_magazine.glb", Vector3(0.0, -0.073, 0.026)
 	)
 	return art
 
@@ -394,9 +393,9 @@ static func marksman() -> ZeeWeaponArt:
 
 # --- Heavies ----------------------------------------------------------------
 
-## The longest model at 1.39 m, and the only one whose origin is not at its centre: it is at
-## the muzzle, the mesh running 1.39 m back (+Z) to the stock. Which is why the muzzle is
-## measured rather than assumed.
+## The longest model, at 1.30 m (art-src/guns: a heavy bolt gun with a long scope and a folded
+## bipod). Its origin is its bounds' centre like every other model's; the muzzle is measured
+## from the bounds rather than assumed.
 static func sniper() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.SNIPER, "sniper", POSE_HEAVY)
 	# [b]Slid forward along its own length, in both views, and scaled with the model.[/b]
@@ -448,7 +447,8 @@ static func minigun() -> ZeeWeaponArt:
 	return art
 
 
-## The tallest short model: a drum sitting above the body reads as a grenade launcher.
+## A shoulder-fired recoilless tube (art-src/guns): loaded at the muzzle, so nothing in the mesh
+## stands in the bore that the round being carried in would have to pass through.
 static func launcher() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.LAUNCHER, "launcher", POSE_HEAVY)
 	art.weight = 1.6

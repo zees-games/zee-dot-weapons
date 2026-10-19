@@ -32,3 +32,6 @@ Thumbs.db
 
 # Editors
 .vscode/
+
+# Blender runs the art-src scripts and leaves bytecode beside them.
+__pycache__/
