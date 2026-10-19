@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 460
+const CHECKS := 463
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -172,6 +172,21 @@ func _other_packs() -> void:
 	ZeeWeaponArtTable.remove_source(&"test_pack")
 	_check("removed, it is gone from the catalogue", not ZeeWeaponPack.table().has(&"test_sidearm"))
 	_check("and from the art", ZeeWeaponArtTable.get_art(&"test_sidearm") == null)
+
+	# The table is memoised (per figure per frame callers): the same instance twice, and a
+	# source added or removed rebuilds it.
+	var cached := ZeeWeaponArtTable.table()
+	_check("the art table is cached: two calls, one instance",
+		cached == ZeeWeaponArtTable.table() and ZeeWeaponArtTable.get_art(&"pistol") == cached[&"pistol"])
+	ZeeWeaponArtTable.add_source(&"cache_pack", func() -> Array[ZeeWeaponArt]:
+		var extra := ZeeWeaponArtTable.pistol()
+		extra.id = &"cache_sidearm"
+		return [extra])
+	_check("add_source invalidates the cached table",
+		ZeeWeaponArtTable.table() != cached and ZeeWeaponArtTable.get_art(&"cache_sidearm") != null)
+	ZeeWeaponArtTable.remove_source(&"cache_pack")
+	_check("remove_source invalidates it again",
+		ZeeWeaponArtTable.get_art(&"cache_sidearm") == null and ZeeWeaponArtTable.table().size() == 27)
 
 	_end()
 

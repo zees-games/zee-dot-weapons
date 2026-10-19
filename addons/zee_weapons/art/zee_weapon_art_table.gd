@@ -184,13 +184,28 @@ static func pose_weight(pose: StringName) -> float:
 ## weapon added to one file and not the other — the failure mode being an invisible gun
 ## that works perfectly, which nobody notices on a dedicated server and everybody
 ## notices in a screenshot.
+##
+## [b]Cached, and the result is shared.[/b] Games ask for this per figure per frame (a
+## figure reads `.pose` of its held weapon), and building it creates about 27
+## [ZeeWeaponArt] resources plus every registered pack's: 8 of 10.5 ms of a zombie-zone
+## frame with 16 figures. It is safe because no caller writes to the art it gets (every
+## consumer reads; the range's `--hold` knob `duplicate(true)`s first), and [method add_source] / [method remove_source] drop the cache, the only inputs
+## that change. A caller that must edit an art duplicates it, or it edits everyone's.
+## [method all] still builds fresh, for tools that want their own copies.
 static func table() -> Dictionary:
+	if not _table.is_empty():
+		return _table
+
 	var out: Dictionary = {}
 
 	for art in all():
 		out[art.id] = art
 
+	_table = out
 	return out
+
+
+static var _table: Dictionary = {}
 
 
 static func all() -> Array[ZeeWeaponArt]:
@@ -232,10 +247,12 @@ static var _sources: Dictionary = {}
 ## a lambda, or the process aborts at exit).
 static func add_source(name: StringName, source: Callable) -> void:
 	_sources[name] = source
+	_table = {}
 
 
 static func remove_source(name: StringName) -> void:
 	_sources.erase(name)
+	_table = {}
 
 
 ## One weapon's art, or null.
