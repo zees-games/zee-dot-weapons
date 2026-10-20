@@ -56,6 +56,11 @@ const RING_FIT_MAX := 0.12
 ## `front_top` (the gun's top under each), `width`, `back` (the gun's back end along the
 ## line, for keeping the stock in front of the near plane), and `rear_paint` / `front_paint`
 ## (`{material, uv}` of the face each sight stands on).
+## Node names a model gives its own sight line (see [method from_marks]).
+const MARK_REAR := "sight_rear"
+const MARK_FRONT := "sight_front"
+
+
 static func measure(weapon: Node, space: Node3D, forward: Vector3) -> Dictionary:
 	var f := forward.normalized()
 	if f == Vector3.ZERO or absf(f.dot(Vector3.UP)) > 0.5:
@@ -112,6 +117,27 @@ static func measure(weapon: Node, space: Node3D, forward: Vector3) -> Dictionary
 		"rear_paint": {"material": rear.material, "uv": rear.uv},
 		"front_paint": {"material": front.material, "uv": front.uv},
 	}, ring)
+
+
+## The line a model marks for itself: two nodes named [constant MARK_REAR] and
+## [constant MARK_FRONT] (a gun with real sights, modelled; zed-dot-weapons' baked carbine),
+## in [param space]. Empty when the model has no marks. The line is used as it is: no ring
+## is fitted and no sight is built, because the model's own sights are what the eye lines up.
+static func from_marks(weapon: Node, space: Node3D, forward: Vector3) -> Dictionary:
+	var rear := weapon.find_child(MARK_REAR, true, false) as Node3D
+	var front := weapon.find_child(MARK_FRONT, true, false) as Node3D
+	if rear == null or front == null:
+		return {}
+	var to_space := space.global_transform.affine_inverse()
+	var r := to_space * rear.global_transform.origin
+	var fr := to_space * front.global_transform.origin
+	# The back end, for the eye relief: the furthest point behind the rear mark along forward.
+	var f := forward.normalized()
+	var back_t := r.dot(f)
+	for tri: Dictionary in _triangles(weapon, space):
+		for p: Vector3 in [tri.a, tri.b, tri.c]:
+			back_t = minf(back_t, p.dot(f))
+	return {"rear": r, "front": fr, "back": r + f * (back_t - r.dot(f)), "marked": true}
 
 
 ## [param line] with a ring of radius [param ring] (model metres): the ring's centre is the

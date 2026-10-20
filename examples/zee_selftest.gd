@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 463
+const CHECKS := 465
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1533,6 +1533,31 @@ func _aim() -> void:
 	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 15)
 	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
 		worst < 0.002)
+
+	# A model with real sights marks their line with two nodes, and is aimed along those
+	# instead of a measured line with a ring and a notch built over its own sights.
+	var sight_script := load("res://addons/zee_weapons/view/zee_iron_sight.gd")
+	var marked_gun := Node3D.new()
+	var body := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.05, 0.05, 0.6)
+	# An ArrayMesh, as an imported model's is: a primitive mesh has no surface_get_primitive_type.
+	var box_mesh := ArrayMesh.new()
+	box_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, box.get_mesh_arrays())
+	body.mesh = box_mesh
+	marked_gun.add_child(body)
+	for mark: Array in [["sight_rear", Vector3(0.0, 0.05, -0.2)], ["sight_front", Vector3(0.0, 0.05, 0.25)]]:
+		var m := Marker3D.new()
+		m.name = mark[0]
+		m.position = mark[1]
+		marked_gun.add_child(m)
+	add_child(marked_gun)
+	var marked: Dictionary = sight_script.from_marks(marked_gun, marked_gun, Vector3.BACK)
+	_check("a model's own sight marks are its line, the back end measured behind them (%s)" % str(marked),
+		marked.get("marked", false) and (marked.rear as Vector3).is_equal_approx(Vector3(0.0, 0.05, -0.2))
+		and absf((marked.back as Vector3).z + 0.3) < 0.001)
+	_check("and a model without marks has none", (sight_script.from_marks(body, body, Vector3.BACK) as Dictionary).is_empty())
+	marked_gun.queue_free()
 
 	view.equip(rifle)
 	view.aim(true)

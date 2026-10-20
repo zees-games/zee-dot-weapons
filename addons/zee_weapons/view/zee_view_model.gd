@@ -863,7 +863,11 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_line = {}
 	if not art.iron_sight or not art.aim_enabled or art.aim_scoped or _weapon == null:
 		return
-	var line := IronSight.measure(_weapon, _holder, art.model_forward)
+	# A model with its own sights marks their line; one without gets a sight measured and built.
+	var line := IronSight.from_marks(_weapon, _holder, art.model_forward)
+	var marked := not line.is_empty()
+	if not marked:
+		line = IronSight.measure(_weapon, _holder, art.model_forward)
 	if line.is_empty():
 		return
 	var basis := art.orientation().scaled(Vector3.ONE * art.view_scale)
@@ -876,13 +880,14 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	# The ring is sized to how far out it ends up, so it reads the same on a toy blaster and on
 	# a real-sized rifle drawn at another scale.
 	var span := absf((basis * (line.front as Vector3)).z - (basis * (line.rear as Vector3)).z)
-	var ring := (relief + span) * tan(deg_to_rad(IronSight.RING_DEGREES)) / art.view_scale
-	line = IronSight.with_ring(line, clampf(ring, IronSight.RING_FIT_MIN, IronSight.RING_FIT_MAX))
+	if not marked:
+		var ring := (relief + span) * tan(deg_to_rad(IronSight.RING_DEGREES)) / art.view_scale
+		line = IronSight.with_ring(line, clampf(ring, IronSight.RING_FIT_MIN, IronSight.RING_FIT_MAX))
+		_sight = IronSight.build(line, art.model_forward)
+		_holder.add_child(_sight)
+		_set_on_top(_sight)
 
 	_sight_line = line
-	_sight = IronSight.build(line, art.model_forward)
-	_holder.add_child(_sight)
-	_set_on_top(_sight)
 	_sight_aim = Transform3D(basis, Vector3(0.0, 0.0, -relief) - basis * (line.rear as Vector3))
 
 
