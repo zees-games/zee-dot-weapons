@@ -33,7 +33,7 @@ const PALM_DEPTH := 0.022
 ## Where along the grip the palm sits: a little back of the cylinder's middle, like the glove.
 const PALM_BACK := 0.012
 ## Half a finger's thickness, added to the grip radius for the wrap.
-const FINGER_THICKNESS := 0.009
+const FINGER_THICKNESS := 0.011
 ## No joint folds further than this (radians): a finger bends past ninety degrees at the
 ## knuckle and a little less at the others, and a fist is the limit.
 const MAX_CURL := 1.65
