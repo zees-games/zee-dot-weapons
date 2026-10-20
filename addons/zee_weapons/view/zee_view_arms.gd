@@ -29,15 +29,19 @@ const ARM_RIGHT := "arm-right"
 
 @export_group("Style")
 
-## What the arms are made of. [code]&"gloves"[/code] (the default) builds gloved hands that
-## close round what they hold and faceted sleeves, in code; [code]&"model"[/code] lifts the two
-## arm boxes out of [member model_path], the way this pack's first hands were made.
+## What the arms are made of. [code]&"rigged"[/code] (the default) draws a rigged arm mesh
+## with finger bones ([ZeeRiggedArm], [constant ZeeWeaponArtTable.RIGGED_ARMS_MODEL]) and wraps
+## its fingers on whatever it holds; [b]a game that has not vendored the file gets the gloves
+## below, not nothing[/b] (`tools/sync-art.sh <game> --arms` copies it). [code]&"gloves"[/code]
+## builds gloved hands that close round what they hold and faceted sleeves, in code;
+## [code]&"model"[/code] lifts the two arm boxes out of [member model_path], the way this pack's
+## first hands were made.
 ##
 ## [b]Why gloves are the default.[/b] The character kit's arms are a box each with no hand
 ## at the end: two pale slabs reaching for the gun, which is what a production shooter's
 ## hands were compared with and found wanting. A gloved fist round the grip is what reads as
 ## holding something, and it is a dozen boxes, which needs no model and no licence.
-@export var style: StringName = &"gloves"
+@export var style: StringName = &"rigged"
 
 ## The glove's colour (the hands).
 @export var glove_color: Color = Color(0.27, 0.27, 0.3)
@@ -86,6 +90,9 @@ var _left: Node3D = null
 var _right: Node3D = null
 var _pose: StringName = &"rifle"
 var _built: bool = false
+## What was actually built: [code]&"rigged"[/code] falls back to [code]&"gloves"[/code] when the
+## model is not there.
+var _style_built: StringName = &"gloves"
 
 ## How thick a forearm is drawn, in metres, when the arms reach for a weapon.
 ##
@@ -114,7 +121,21 @@ func build() -> DotResult:
 	if _built:
 		return DotResult.success(null)
 
-	if style == &"gloves":
+	_style_built = style
+
+	if style == &"rigged":
+		if _build_rigged():
+			_built = true
+			set_pose(_pose)
+			return DotResult.success(null)
+		# Not vendored, or not the arm this expects: the gloves, quietly (one WARN, once).
+		DotLog.warn(
+			CHANNEL, "no rigged arm model; using the code-built gloves",
+			{"model": ZeeWeaponArtTable.RIGGED_ARMS_MODEL}
+		)
+		_style_built = &"gloves"
+
+	if _style_built == &"gloves":
 		_right = _build_glove_arm("arm-right")
 		_left = _build_glove_arm("arm-left")
 		_set_on_top(self)
@@ -196,7 +217,12 @@ func reach(
 
 	var hands := _hands_for(pose, grip, fore)
 
-	if style == &"gloves":
+	if _style_built == &"rigged":
+		_right.visible = true
+		_reach_rigged(hands, pose, grip_axis, fore_axis, grip_radius)
+		return
+
+	if _style_built == &"gloves":
 		# A hand closes round what it holds: scaled so its grip is the measured radius, within
 		# what still reads as a hand next to the others. The weapons are drawn at about half
 		# size (ZeeWeaponArtTable.pose_scale) and a full-size glove beside one is a giant's.
@@ -312,6 +338,13 @@ func set_pose(pose: StringName) -> void:
 		reach(_reach_grip, _reach_muzzle, pose, _reach_grip_axis, _reach_fore_axis, _reach_radius)
 		return
 
+	if _style_built == &"rigged":
+		# No weapon to reach for yet: an unposed rigged arm is a full-size arm at the camera, so
+		# it stays hidden until the view model hands it a grip.
+		_left.visible = false
+		_right.visible = false
+		return
+
 	var placement := _placement_for(pose)
 
 	if _left != null:
@@ -332,10 +365,89 @@ func has_arms() -> bool:
 	return _left != null or _right != null
 
 
+# --- The rigged arm -------------------------------------------------------------
+
+## The fingers' openness by what is held: a ball is held open, an empty fist is shut.
+const OPEN_BY_POSE := {&"thrown": 0.45, &"fists": 0.0}
+
+func _build_rigged() -> bool:
+	var path := ZeeWeaponArtTable.RIGGED_ARMS_MODEL
+	if not ResourceLoader.exists(ZeeModelCache.resolve(path)):
+		return false
+	var parts: Array[ZeeRiggedArm] = []
+	for arm_name in ["arm-right", "arm-left"]:
+		var model := ZeeModelCache.instantiate(path)
+		if model == null:
+			return false
+		var arm := ZeeRiggedArm.new()
+		arm.name = arm_name
+		add_child(arm)
+		if not arm.setup(model, glove_color, sleeve_color, view_layer):
+			arm.queue_free()
+			model.queue_free()
+			return false
+		parts.append(arm)
+	_right = parts[0]
+	_left = parts[1]
+	return true
+
+
+## Poses both rigged arms for a weapon: the same frame the gloves use (Y along what is held, Z
+## the way the forearm leaves), the left hand its mirror, the fingers wrapped to the grip radius.
+func _reach_rigged(
+	hands: Dictionary, pose: StringName, grip_axis: Vector3, fore_axis: Vector3, grip_radius: float
+) -> void:
+	var size := clampf(grip_radius / GRIP_RADIUS, 0.6, 1.2) if grip_radius > 0.0 else 1.0
+	var square := pose in [&"thrown", &"fists"]
+	var open: float = OPEN_BY_POSE.get(pose, 0.0)
+	# A hand with nothing in it closes on nothing: the radius a fist makes.
+	var radius := grip_radius if grip_radius > 0.0 and pose != &"fists" else 0.012
+	_rigged_arm(
+		_right, hands["right_shoulder"], hands["right"], grip_axis, false, size, square, radius, open
+	)
+	var left_axis := grip_axis if pose == &"pistol" else fore_axis
+	_rigged_arm(
+		_left, hands["left_shoulder"], hands["left"], left_axis, true, size, square, radius, open
+	)
+	_left.visible = not (pose in [&"melee", &"thrown"])
+
+
+func _rigged_arm(
+	arm: Node3D, shoulder: Vector3, hand: Vector3, axis: Vector3, mirror: bool, size: float,
+	square: bool, radius: float, open: float
+) -> void:
+	var rigged := arm as ZeeRiggedArm
+	if rigged == null:
+		return
+	# The frame is the glove's, so both styles hold a weapon in the same place.
+	var y := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var toward := shoulder - hand
+	if toward.length() < 0.001:
+		toward = Vector3.BACK
+	var z := toward - y * toward.dot(y)
+	if z.length() < 0.001:
+		z = y.cross(Vector3.RIGHT)
+	z = z.normalized()
+	var x := y.cross(z)
+	if square:
+		shoulder = hand + z * toward.length()
+		shoulder.z = minf(shoulder.z, -0.09)
+	if mirror:
+		x = -x
+	rigged.pose_arm(
+		Basis(x, y, z), hand + arm_offset, shoulder + arm_offset, radius, RIGGED_SCALE * size,
+		open, -1.0 if mirror else 1.0
+	)
+
+
 # --- Gloves -----------------------------------------------------------------
 
 ## Radius of what a gloved hand closes round, in metres: a grip, a fore-end, a handle.
 const GRIP_RADIUS := 0.017
+
+## The rigged arm's scale against the file (a 0.52 m arm and a 0.19 m hand): the weapons are
+## drawn at about half size and the hand must not be a giant's beside them.
+const RIGGED_SCALE := 0.8
 
 ## One arm: a gloved hand (never stretched) and a faceted sleeve stretched from the wrist to
 ## the shoulder.

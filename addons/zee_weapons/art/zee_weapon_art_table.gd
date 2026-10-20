@@ -27,6 +27,8 @@ extends RefCounted
 
 ## The arms model [ZeeViewArms] loads for `style = &"model"`; here so the vendoring list can name it.
 const ARMS_MODEL := "res://assets/arms/character-a.glb"
+## The rigged arm [ZeeViewArms] draws by default (`style = &"rigged"`): one right arm with finger bones, built by art-src/arms/ from a CC0 base. Without the file the arms fall back to the code-built gloves, so a game that has not synced it loses nothing.
+const RIGGED_ARMS_MODEL := "res://assets/arms/arms-rigged.glb"
 const BLASTERS := "res://assets/blaster-kit/"
 const MELEE := "res://assets/melee/"
 ## The real-world guns (kitbashed from CC0 Quaternius and Kenney parts by art-src/guns/): one file per role, the muzzle on -Z and the origin at the bounds' centre like the blasters, a magazine split off as `<role>_magazine.glb` where the source had one.
@@ -668,7 +670,7 @@ static func validate() -> DotResult:
 ## exactly what the table names, no more and no less; [method validate_models] checks it and
 ## `tools/sync-art.sh` copies it, both reading this. A hand-written list in a game drifts: the
 ## first one covered the weapons and missed the ammunition. [param with_arms] adds the arms
-## model, which only a game using `ZeeViewArms.style = &"model"` needs (gloves are built in code).
+## models, which only a game using `ZeeViewArms.style = &"model"` or the default `&"rigged"` needs (gloves are built in code, and are what the arms fall back to when the rigged file is not vendored).
 static func model_paths(with_arms: bool = false) -> Array[String]:
 	var seen := {}
 
@@ -679,6 +681,7 @@ static func model_paths(with_arms: bool = false) -> Array[String]:
 
 	if with_arms:
 		seen[ARMS_MODEL] = true
+		seen[RIGGED_ARMS_MODEL] = true
 
 	var out: Array[String] = []
 
