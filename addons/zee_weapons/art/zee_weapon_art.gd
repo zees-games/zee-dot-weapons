@@ -156,6 +156,19 @@ extends Resource
 
 @export var magazine_rotation: Vector3 = Vector3.ZERO
 
+## Where the support hand holds the gun, as fractions of the model's bounds: along the barrel
+## from the stock (0) to the muzzle (1), and up from the bottom. The defaults are measured for a
+## plain body. A gun with something tall on top (a scope) has bounds that put 45% of the way up
+## inside the scope, with the glove drawn over barrel and scope.
+@export var fore_along: float = 0.62
+@export var fore_up: float = 0.45
+
+## Where a magazine is held from the support hand while it is carried in, in the view's space
+## (+Y up, +Z toward the eye): above the palm by default. A gun whose well is under the fist
+## (a pistol's grip) lifts it and brings it toward the eye, or the glove is in front of it from
+## the pull to the seat. It eases back to the default as the magazine seats.
+@export var magazine_carry: Vector3 = Vector3(0.0, 0.035, 0.0)
+
 ## The "magazine" is a loose round fed by hand (a shell, a cartridge, a grenade, a rocket):
 ## nothing drops out, it is drawn only while the support hand carries it in, and it is gone
 ## once it is in. A pack whose guns have no separate magazine still gets a hand that fetches

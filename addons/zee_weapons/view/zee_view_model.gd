@@ -457,8 +457,8 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					var tall := box.size.y
 					grip = on_axis + forward * lerpf(t_min, t_max, 0.30)
 					grip.y = low + tall * 0.30
-					fore = on_axis + forward * lerpf(t_min, t_max, 0.62)
-					fore.y = low + tall * 0.45
+					fore = on_axis + forward * lerpf(t_min, t_max, art.fore_along)
+					fore.y = low + tall * art.fore_up
 					# A pistol grip rakes: its top is forward of its bottom.
 					grip_axis = (up + forward * 0.3).normalized()
 					radius = box.size.x * 0.3
@@ -516,6 +516,8 @@ func _place_hands() -> void:
 	var aim := _aim_node.transform if _aim_node != null else Transform3D.IDENTITY
 	var pose := _art.pose if _art.has_model() else &"fists"
 	var fore := aim * _support_hand()
+	if "support_free" in _arms:
+		_arms.set("support_free", _has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0)
 	# A game's own arms may answer the older three-argument reach; they get no axes.
 	if _arms.get_method_argument_count("reach") >= 6:
 		_arms.call(
@@ -1007,9 +1009,10 @@ func _animate_magazine(fraction: float) -> void:
 		shown = false
 	elif f >= 0.36 and f < 0.58 and _holder != null:
 		# Where the support hand is, a little above the palm, in the holder's (model) space.
-		var hand := _support_hand() + Vector3(0.0, 0.035, 0.0)
-		var held := _holder.transform.affine_inverse() * hand
 		var settle := clampf((f - 0.36) / 0.22, 0.0, 1.0)
+		var carry := _art.magazine_carry.lerp(Vector3(0.0, 0.035, 0.0), settle * settle * settle)
+		var hand := _support_hand() + carry
+		var held := _holder.transform.affine_inverse() * hand
 		at = held if held.is_finite() else rest.origin
 		basis = rest.basis * Basis(Vector3.RIGHT, deg_to_rad(-20.0 * (1.0 - settle)))
 
