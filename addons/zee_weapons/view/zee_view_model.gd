@@ -968,6 +968,12 @@ func _animate_magazine(fraction: float) -> void:
 	var f := clampf(fraction, 0.0, 1.0)
 	var rest := _art.magazine_transform()
 
+	# The gun's own magazine node is out of the gun from when the hand pulls it (0.20) to the seat.
+	if _art.hide_during_reload != &"" and _weapon != null:
+		var own := _weapon.find_child(String(_art.hide_during_reload), true, false) as Node3D
+		if own != null:
+			own.visible = not (f >= 0.20 and f < 0.58)
+
 	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*) and the support hand
 	# (`_support_hand`): out and falling while the gun rolls onto its side (0.10-0.28), gone
 	# while the hand goes down for the next one, then IN THE HAND from 0.36, carried up to the

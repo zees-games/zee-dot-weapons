@@ -162,6 +162,12 @@ extends Resource
 ## something and puts it in the gun.
 @export var magazine_loose: bool = false
 
+## A node of the weapon's own model (a high-detail gun's `magazine`) that is hidden from the
+## moment the support hand pulls the magazine out until the fresh one is seated, so the carried
+## [member magazine_path] part replaces it instead of meeting a second magazine already in the
+## gun. Empty draws the model whole throughout.
+@export var hide_during_reload: StringName = &""
+
 ## A part built in code instead of a file (`&"cell"`, `&"ammo_box"`: `view/zee_reload_parts.gd`),
 ## used when [member magazine_path] is empty. Built, not vendored, because every game that
 ## draws this pack carries its own copy of `assets/`, and a new file there is a copy in seven
