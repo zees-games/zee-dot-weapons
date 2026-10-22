@@ -1,0 +1,10 @@
+# frame-hazards
+# Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
+addons/zee_weapons/view/zee_shot_fx.gd::_advance_marks::alloc_array	1
+addons/zee_weapons/view/zee_shot_fx.gd::_advance_shells::alloc_array	1
+addons/zee_weapons/view/zee_shot_fx.gd::advance::alloc_array	1
+addons/zee_weapons/view/zee_view_model.gd::_support_hand::alloc_array	1
+examples/zee_range.gd::_draw_readout::string_build	3
+examples/zee_range.gd::_launch::connect_unguarded	1
+examples/zee_range.gd::_launch::node_lookup	1
+examples/zee_range.gd::_mark::node_lookup	1

@@ -21,6 +21,8 @@ jobs:
     validate:
         uses: modcommunity/dot-ci/.github/workflows/validate.yml@v1
         with:
+            efficiency: true
+            hygiene: true
             suite-timeout: 900
         secrets:
             DEPS_TOKEN: ${{ secrets.DOT_DEPS_TOKEN }}
