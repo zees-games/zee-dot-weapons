@@ -12,9 +12,19 @@
 # Why the copy exists at all: addons/zee_weapons/tools/zee_art_sync.gd.
 set -euo pipefail
 
-GAME="${1:?usage: tools/sync-art.sh <game-dir> [--check] [--arms]}"
-shift
-GAME="$(cd "$GAME" && pwd)"
+# The game directory may come before or after the flags.
+GAME=""
+FLAGS=()
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --check|--arms) FLAGS+=("$arg") ;;
+        -*) echo "unknown option: $arg (usage: tools/sync-art.sh <game-dir> [--check] [--arms])" >&2; exit 2 ;;
+        *) GAME="$arg" ;;
+    esac
+done
+[ -n "$GAME" ] || { echo "usage: tools/sync-art.sh <game-dir> [--check] [--arms]" >&2; exit 2; }
+GAME="$(cd -- "$GAME" && pwd)"
 GODOT="${GODOT:-godot}"
 FROM=()
 
@@ -29,4 +39,4 @@ done
 
 timeout 300 "$GODOT" --headless --path "$GAME" --import >/dev/null 2>&1 || true
 timeout 300 "$GODOT" --headless --path "$GAME" \
-    --script res://addons/zee_weapons/tools/zee_art_sync.gd -- "${FROM[@]}" "$@"
+    --script res://addons/zee_weapons/tools/zee_art_sync.gd -- "${FROM[@]}" "${FLAGS[@]}"

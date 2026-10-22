@@ -407,6 +407,10 @@ static func marksman() -> ZeeWeaponArt:
 	art.aim_scoped = true
 	art.aim_zoom = 0.5
 	art.weight = 1.5
+	# The magazine is part of the mesh and cannot leave it, so the reload feeds rounds by hand
+	# into the receiver, as the sniper's does, instead of a hand swapping nothing.
+	art = _fed(_loose(art, ROUND_RIFLE, Vector3(0.0, 0.05, 0.04)), Vector3(0.07, 0.10, 0.0), 3, 1.0)
+	art.magazine_rotation = Vector3(90.0, 0.0, 0.0)
 	return art
 
 
@@ -471,8 +475,8 @@ static func launcher() -> ZeeWeaponArt:
 	art.weight = 1.6
 	# Broken open: the muzzle drops, a grenade goes into the breech from above and behind, and it
 	# snaps shut (ZeeWeaponPose.RELOAD_KEYS_BREAK).
-	art = _fed(_loose(art, ROUND_ROCKET, Vector3(0.0, 0.0, 0.30)), Vector3(0.0, 0.0, 0.30), 1, 1.0)
-	art.magazine_rotation = Vector3(0.0, 180.0, 0.0)
+	art = _fed(_loose(art, ROUND_ROCKET, Vector3(0.0, 0.09, 0.0)), Vector3(0.10, 0.16, 0.06), 1, 1.2)
+	art.magazine_rotation = Vector3(90.0, 0.0, 0.0)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_MUZZLE
 	return art
 
@@ -482,6 +486,10 @@ static func launcher() -> ZeeWeaponArt:
 static func beamer() -> ZeeWeaponArt:
 	var art := _blaster(ZeeWeaponIds.BEAMER, "blaster-h", POSE_RIFLE)
 	art.weight = 1.2
+	# A glowing cell under the body (built in code), dropped and replaced like the charge rifle's.
+	art.magazine_part = &"cell"
+	art.magazine_offset = Vector3(0.0, -0.18, -0.10)
+	art.magazine_scale = 1.3
 	return art
 
 

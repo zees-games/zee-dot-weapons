@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 467
+const CHECKS := 468
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -337,11 +337,21 @@ func _art() -> void:
 	# Every heavy gun carries something in on a reload: the play test's "reads as a tilt" was a
 	# heavy reload with a 5 cm dart, or nothing, in the hand.
 	var empty: Array[String] = []
-	for id in [ZeeWeaponIds.SNIPER, ZeeWeaponIds.LAUNCHER, ZeeWeaponIds.CHARGE_RIFLE, ZeeWeaponIds.MINIGUN]:
+	for id in [ZeeWeaponIds.SNIPER, ZeeWeaponIds.LAUNCHER, ZeeWeaponIds.CHARGE_RIFLE, ZeeWeaponIds.MINIGUN,
+			ZeeWeaponIds.BEAMER, ZeeWeaponIds.MARKSMAN]:
 		var art := ZeeWeaponArtTable.get_art(id)
 		if art == null or not art.has_magazine() or (art.magazine_loose and art.load_from == Vector3.ZERO):
 			empty.append(String(id))
 	_check("every heavy gun reloads with something carried into it: %s" % ", ".join(empty), empty.is_empty())
+
+	# Every gun that points down -Z (the blasters) has something to show on a reload: a gun whose
+	# magazine is baked into its mesh rolls over with an empty hand (the marksman and the beamer
+	# did, until 2026-10-22).
+	var bare: Array[String] = []
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if art.model_forward == Vector3.FORWARD and not art.has_magazine():
+			bare.append(String(art.id))
+	_check("every gun has something to show on a reload: %s" % ", ".join(bare), bare.is_empty())
 
 	var table := ZeeWeaponArtTable.table()
 	_check("one art entry per weapon", table.size() == 27)
