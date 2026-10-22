@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 468
+const CHECKS := 487
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -40,6 +40,7 @@ func _ready() -> void:
 	_art()
 	_other_packs()
 	_workshop()
+	_profiles()
 	_orientation()
 	_muzzles()
 	_arsenal()
@@ -2067,6 +2068,89 @@ func _input_bindings() -> void:
 
 
 # --- Counting ---------------------------------------------------------------
+
+func _profile_file(root: String, rel: String, text: String) -> void:
+	var path := root.path_join("addons/zee_weapons/weapon").path_join(rel)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(text)
+	f.close()
+
+
+func _by_id(defs: Array[DotWeaponDef]) -> Dictionary:
+	var out := {}
+	for d in defs:
+		out[String(d.id)] = d
+	return out
+
+
+func _profiles() -> void:
+	_begin("weapon profiles overlay only the keys a file sets")
+	var saved_roots := ZeeWeaponPack.base_roots
+	var vanilla := _by_id(ZeeWeaponPack.weapons({}, false))
+	ZeeWeaponPack.base_roots = PackedStringArray(["res://cfg"])
+	var set := ZeeWeaponPack.profile_set()
+	_check("one shipped profile per weapon", set.list_ids().size() == vanilla.size() and vanilla.size() == 27)
+	set.clear_cache()
+	var stale := PackedStringArray()
+	for id in vanilla:
+		var path := ZeeWeaponProfiles.profile_path("zee_weapons", id)
+		if FileAccess.get_file_as_string(path) != ZeeWeaponProfiles.to_yaml(vanilla[id], "Zee Weapons"):
+			stale.append(id)
+	_check("shipped profiles are what the exporter writes (run tools/export-defs.sh): %s" % ", ".join(stale), stale.is_empty())
+	var tuned := _by_id(ZeeWeaponPack.weapons())
+	var drift := PackedStringArray()
+	for id in vanilla:
+		if str(ZeeWeaponProfiles.flat_of(tuned[id])) != str(ZeeWeaponProfiles.flat_of(vanilla[id])):
+			drift.append(id)
+	_check("loading every shipped profile changes no number: %s" % ", ".join(drift), drift.is_empty())
+	_check("no shipped profile fails", ZeeWeaponPack.errors.is_empty())
+
+	var tmp := "user://zee_profiles_cfg"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(tmp))
+	_profile_file(tmp, "rifle.yml", "magazine: 12\nname: \"Test Rifle\"\nextra:\n  tuning:\n    damage: 99\n    nonsense: 1\n  params:\n    bash_damage: 7\n    fresh: 3\n")
+	_profile_file(tmp, "pistol.yml", "magazine: -5\n")
+	_profile_file(tmp, "ghost.yml", "magazine: 3\n")
+	ZeeWeaponPack.base_roots = PackedStringArray([tmp])
+	var set2 := ZeeWeaponPack.profile_set()
+	_check("a file's keys are file keys, a schema default is not", set2.load_profile("rifle").value.file_keys == PackedStringArray(["extra.params.bash_damage", "extra.params.fresh", "extra.tuning.damage", "extra.tuning.nonsense", "magazine", "name"]))
+	set2.clear_cache()
+	var t2 := _by_id(ZeeWeaponPack.weapons())
+	var r: DotWeaponDef = t2["rifle"]
+	var rv: DotWeaponDef = vanilla["rifle"]
+	_check("a common key, tuning and params key land", r.magazine == 12 and r.display_name == "Test Rifle" and is_equal_approx((r.tuning as DotWeaponBallistics).damage, 99.0) and is_equal_approx(float(r.params[&"bash_damage"]), 7.0))
+	_check("a new params key is taken as written", int(r.params[&"fresh"]) == 3)
+	_check("every key the file does not set keeps the builder's value", r.reload_ticks == rv.reload_ticks and r.deploy_ticks == rv.deploy_ticks and is_equal_approx((r.tuning as DotWeaponBallistics).spread, 0.45) and is_equal_approx((r.tuning as DotWeaponBallistics).bloom_recovery, 8.5 / 64.0))
+	_check("other weapons are untouched", str(ZeeWeaponProfiles.flat_of(t2["smg"])) == str(ZeeWeaponProfiles.flat_of(vanilla["smg"])))
+	_check("an out-of-range profile is reported and its weapon keeps the builder's numbers", ZeeWeaponPack.errors.size() == 1 and t2["pistol"].magazine == vanilla["pistol"].magazine)
+	_check("the exporter's list ignores the profiles", ZeeDefExport.own_weapons()[13].magazine == rv.magazine)
+
+	var pack_root := "user://zee_profiles_pack"
+	_profile_file(pack_root, "smg.yml", "extra:\n  tuning:\n    damage: 55\n")
+	ZeeWeaponPack.pack_cfg_root = pack_root
+	ZeeWeaponPack.base_roots = PackedStringArray([tmp.path_join("none")])
+	_check("a delivered pack's cfg root is read", is_equal_approx((_by_id(ZeeWeaponPack.weapons())["smg"].tuning as DotWeaponBallistics).damage, 55.0))
+	_profile_file(tmp.path_join("over"), "smg.yml", "extra:\n  tuning:\n    damage: 66\n")
+	ZeeWeaponPack.base_roots = PackedStringArray([tmp.path_join("over")])
+	_check("and is the weakest root", is_equal_approx((_by_id(ZeeWeaponPack.weapons())["smg"].tuning as DotWeaponBallistics).damage, 66.0))
+	ZeeWeaponPack.pack_cfg_root = ""
+
+	ZeeWeaponPack.base_roots = PackedStringArray(["res://cfg"])
+	var up := ZeeWeaponPack.upgraded(&"rifle", ["extended_mag"])
+	_check("an upgrade is applied to a copy", up.ok and up.value["def"].magazine == 40 and up.value["def"].reload_ticks == int(round(141.0 * 1.15)) and up.value["cost"] == 100 and vanilla["rifle"].magazine == 30)
+	var both := ZeeWeaponPack.upgraded(&"rifle", ["extended_mag", "hot_loads"])
+	_check("upgrades stack and reach the tuning", both.ok and is_equal_approx((both.value["def"].tuning as DotWeaponBallistics).damage, 23.0 * 1.2) and both.value["cost"] == 250)
+	_check("an upgrade whose requirement is missing is refused", not ZeeWeaponPack.upgraded(&"rifle", ["hot_loads"]).ok)
+	var choke := ZeeWeaponPack.upgraded(&"shotgun", ["choke"])
+	_check("a set upgrade changes an int field", choke.ok and (choke.value["def"].tuning as DotWeaponBallistics).pellets == 8)
+	_check("an unknown weapon is refused", not ZeeWeaponPack.upgraded(&"ghost", []).ok)
+
+	var out := "user://zee_profiles_export"
+	var wrote := ZeeDefExport.write_cfg(out, "zee_weapons", "Zee Weapons", ZeeDefExport.own_weapons())
+	_check("the export writes every profile and the upgrade folders", wrote.ok and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/rifle/rifle.yml")) and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/rifle/upgrades/hot_loads.yml")) and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/pistol.yml")))
+	ZeeWeaponPack.base_roots = saved_roots
+	_end()
+
 
 func _begin(name: String) -> void:
 	_section = name

@@ -1,0 +1,55 @@
+# Zee Weapons: frag. Durations are ticks at 64 Hz; delete a key to keep the builder's value.
+name: "Frag Grenade"
+description: ""
+tags: ["thrown", "explosive"]
+behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_thrown.gd"
+slot: 5
+authored_tick_rate: 64
+deploy_ticks: 22
+holster_ticks: 16
+fire_mode: "charge"
+use_interval_ticks: 64
+burst_count: 3
+burst_interval_ticks: 3
+charge_ticks: 192
+charge_requires_min: false
+min_charge: 0.35
+ammo_type: "grenades"
+magazine: 0
+reserve: 2
+reserve_max: 4
+cost_per_use: 1
+infinite_reserve: false
+reload_ticks: 0
+reload_per_round: false
+reload_start_ticks: 22
+auto_reload: false
+mounts: []
+extra:
+  tuning:
+    damage: 0.0
+    min_charge_damage: 0.25
+    max_range: 100.0
+    pellets: 1
+    fixed_pattern: false
+    spread: 0.5
+    spread_moving: 2.0
+    spread_speed_ref: 6.0
+    spread_airborne: 4.0
+    spread_crouched: 0.5
+    bloom: 0.0
+    bloom_max: 5.0
+    bloom_recovery: 0.15
+    recoil_pitch: 0.4
+    recoil_yaw: 0.15
+    splash_radius: 5.2
+    splash_damage: 115.0
+    splash_hurts_owner: true
+    speed: 19.0
+    min_speed: 19.0
+    gravity_scale: 1.0
+    radius: 0.12
+    life_ticks: 768
+  params:
+    fuse_ticks: 192
+    speed_scales_with_cook: false

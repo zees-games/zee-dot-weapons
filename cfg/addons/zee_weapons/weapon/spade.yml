@@ -1,0 +1,55 @@
+# Zee Weapons: spade. Durations are ticks at 64 Hz; delete a key to keep the builder's value.
+name: "Spade"
+description: ""
+tags: ["melee"]
+behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
+slot: 1
+authored_tick_rate: 64
+deploy_ticks: 16
+holster_ticks: 12
+fire_mode: "semi"
+use_interval_ticks: 45
+burst_count: 3
+burst_interval_ticks: 3
+charge_ticks: 64
+charge_requires_min: false
+min_charge: 0.35
+ammo_type: ""
+magazine: 0
+reserve: 0
+reserve_max: 0
+cost_per_use: 0
+infinite_reserve: false
+reload_ticks: 0
+reload_per_round: false
+reload_start_ticks: 22
+auto_reload: false
+mounts: []
+extra:
+  tuning:
+    damage: 56.0
+    min_charge_damage: 0.25
+    max_range: 2.3
+    pellets: 1
+    fixed_pattern: false
+    spread: 0.0
+    spread_moving: 0.0
+    spread_speed_ref: 6.0
+    spread_airborne: 0.0
+    spread_crouched: 0.5
+    bloom: 0.0
+    bloom_max: 5.0
+    bloom_recovery: 0.15
+    recoil_pitch: 0.0
+    recoil_yaw: 0.15
+    splash_radius: 0.0
+    splash_damage: 0.0
+    splash_hurts_owner: true
+    speed: 60.0
+    min_speed: 20.0
+    gravity_scale: 0.0
+    radius: 0.1
+    life_ticks: 384
+  params:
+    arc_degrees: 55.0
+    rays: 5

@@ -1,0 +1,7 @@
+# Hotter rounds hit harder and kick harder; needs the longer magazine first.
+name: "Hot Loads"
+cost: 150
+requires: [extended_mag]
+mul:
+  tuning.damage: 1.2
+  tuning.recoil_pitch: 1.25

@@ -1,0 +1,7 @@
+# A choke tightens the pattern and gives up a pellet.
+name: "Choke"
+cost: 120
+mul:
+  tuning.spread: 0.7
+set:
+  tuning.pellets: 8

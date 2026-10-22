@@ -1,0 +1,57 @@
+# Zee Weapons: sniper. Durations are ticks at 64 Hz; delete a key to keep the builder's value.
+name: "Sniper Rifle"
+description: ""
+tags: ["heavy", "scoped", "primary"]
+behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+slot: 4
+authored_tick_rate: 64
+deploy_ticks: 45
+holster_ticks: 32
+fire_mode: "semi"
+use_interval_ticks: 85
+burst_count: 3
+burst_interval_ticks: 3
+charge_ticks: 64
+charge_requires_min: false
+min_charge: 0.35
+ammo_type: "darts_heavy"
+magazine: 5
+reserve: 25
+reserve_max: 50
+cost_per_use: 1
+infinite_reserve: false
+reload_ticks: 205
+reload_per_round: false
+reload_start_ticks: 22
+auto_reload: true
+mounts: []
+extra:
+  tuning:
+    damage: 118.0
+    min_charge_damage: 0.25
+    max_range: 1000.0
+    pellets: 1
+    fixed_pattern: false
+    spread: 0.0
+    spread_moving: 8.0
+    spread_speed_ref: 6.0
+    spread_airborne: 14.0
+    spread_crouched: 0.0
+    bloom: 0.0
+    bloom_max: 5.0
+    bloom_recovery: 0.15
+    recoil_pitch: 4.0
+    recoil_yaw: 0.15
+    splash_radius: 0.0
+    splash_damage: 0.0
+    splash_hurts_owner: true
+    speed: 60.0
+    min_speed: 20.0
+    gravity_scale: 0.0
+    radius: 0.1
+    life_ticks: 384
+  params:
+    bash_damage: 42.0
+    bash_reach: 1.9
+    bash_cooldown_ticks: 51
+    death_power: 1.0

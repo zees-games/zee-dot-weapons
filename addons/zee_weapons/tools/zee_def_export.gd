@@ -33,7 +33,7 @@ static func own_weapons() -> Array[DotWeaponDef]:
 	var types := ZeeWeaponDamage.table()
 	var out: Array[DotWeaponDef] = []
 
-	for def in ZeeWeaponPack.weapons(types):
+	for def in ZeeWeaponPack.weapons(types, false):
 		if ZeeWeaponIds.all().has(def.id):
 			out.append(def)
 
@@ -95,6 +95,10 @@ static func export_to(root: String) -> DotResult:
 		if saved != OK:
 			return DotResult.fail(DotError.CODE_IO, "Cannot save %s (error %d)." % [path, saved])
 
+	var cfg := write_cfg(root, ZeeWeaponPack.ADDON, "Zee Weapons", defs)
+	if not cfg.ok:
+		return cfg
+
 	var json_path := root.path_join("provides.json")
 	var f := FileAccess.open(json_path, FileAccess.WRITE)
 	if f == null:
@@ -102,4 +106,35 @@ static func export_to(root: String) -> DotResult:
 
 	f.store_string(JSON.stringify(provides(defs), "\t", false) + "\n")
 	f.close()
+	return DotResult.success(defs.size())
+
+
+## Writes `cfg/addons/<addon>/weapon/<id>.yml` for [param defs] under [param root] from the builders'
+## numbers (never from a server's cfg), and copies the hand-written upgrade folders along when
+## [param root] is not the project. A weapon that has a folder in the project's cfg keeps its folder form.
+static func write_cfg(root: String, addon: String, title: String, defs: Array[DotWeaponDef]) -> DotResult:
+	var rel := "cfg/addons/%s/weapon" % addon
+	var from := "res://".path_join(rel)
+	var to := root.path_join(rel)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(to))
+	for def in defs:
+		var id := String(def.id)
+		var folder := DirAccess.dir_exists_absolute(from.path_join(id))
+		var dir := to.path_join(id) if folder else to
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+		var f := FileAccess.open(dir.path_join("%s.yml" % id), FileAccess.WRITE)
+		if f == null:
+			return DotResult.fail(DotError.CODE_IO, "Cannot write %s profile." % id)
+		f.store_string(ZeeWeaponProfiles.to_yaml(def, title))
+		f.close()
+		if folder and to != from and DirAccess.dir_exists_absolute(from.path_join(id).path_join("upgrades")):
+			var ups := to.path_join(id).path_join("upgrades")
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ups))
+			for u in DirAccess.get_files_at(from.path_join(id).path_join("upgrades")):
+				if u.get_extension() == "yml":
+					var o := FileAccess.open(ups.path_join(u), FileAccess.WRITE)
+					if o == null:
+						return DotResult.fail(DotError.CODE_IO, "Cannot write upgrade %s." % u)
+					o.store_string(FileAccess.get_file_as_string(from.path_join(id).path_join("upgrades").path_join(u)))
+					o.close()
 	return DotResult.success(defs.size())

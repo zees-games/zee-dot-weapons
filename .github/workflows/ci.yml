@@ -23,6 +23,7 @@ jobs:
         with:
             efficiency: true
             hygiene: true
+            profiles: true
             suite-timeout: 900
         secrets:
             DEPS_TOKEN: ${{ secrets.DOT_DEPS_TOKEN }}

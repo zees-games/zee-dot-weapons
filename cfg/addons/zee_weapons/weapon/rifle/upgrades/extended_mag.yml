@@ -1,0 +1,7 @@
+# A longer magazine and a slower reload.
+name: "Extended Magazine"
+cost: 100
+add:
+  magazine: 10
+mul:
+  reload_ticks: 1.15
