@@ -589,8 +589,6 @@ func _reload_fraction(tick: int) -> float:
 	if _reload_started < 0 or _reload_ticks <= 0 or not arsenal.is_reloading():
 		return 0.0
 
-	# Wrapped rather than clamped, so a shell-at-a-time reload plays one animation per
-	# shell instead of one stretched across the whole magazine.
 	return fposmod(float(tick - _reload_started) / float(_reload_ticks), 1.0)
 
 
@@ -658,14 +656,16 @@ func _on_reload_started(slot: int) -> void:
 	_reload_sound(ZeeWeaponSound.RELOAD_OUT)
 
 	_reload_started = _last_tick
-	_reload_ticks = maxi(
-		1,
-		arsenal.ticks_for(
-			carried.def,
-			carried.def.reload_ticks if not carried.def.reload_per_round
-			else carried.def.reload_start_ticks
-		)
-	)
+	_reload_ticks = reload_motion_ticks(carried.def, carried.magazine_space())
+
+
+## Ticks the reload motion spans: a per-round reload is the start plus one round time per missing
+## round, so the motion must cover all of it, not wrap every start-length.
+func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
+	var ticks := def.reload_ticks
+	if def.reload_per_round:
+		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space, 1)
+	return maxi(1, arsenal.ticks_for(def, ticks))
 
 
 func _on_reload_finished(_slot: int, _rounds: int) -> void:

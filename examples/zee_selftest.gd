@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 465
+const CHECKS := 467
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1220,6 +1220,33 @@ func _rig() -> void:
 	)
 	_check("but not on a server", (reloads.call(ZeeWeaponRig.Role.SERVER, false) as Array).is_empty())
 	_check("and not in a replay", (reloads.call(ZeeWeaponRig.Role.LOCAL, true) as Array).is_empty())
+
+	# The reload motion spans the profile's whole reload (a per-round one is the start plus a round
+	# time per missing round) and its keys end at the rest pose.
+	var timing := ZeeWeaponRig.new()
+	timing.tick_rate = ZeeWeaponPack.TICK_RATE
+	add_child(timing)
+	timing.setup()
+	var drift: PackedStringArray = []
+	var unrested: PackedStringArray = []
+	for def in ZeeWeaponPack.weapons():
+		if not def.uses_magazine() or def.reload_ticks <= 0:
+			continue
+		var want := def.reload_ticks
+		if def.reload_per_round:
+			want = def.reload_start_ticks + def.reload_ticks * def.magazine
+		if absi(timing.reload_motion_ticks(def, def.magazine) - want) > 1:
+			drift.append(str(def.id))
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		var keys: Array = art.reload_keys if not art.reload_keys.is_empty() else ZeeWeaponArtTable.reload_keys(art.pose)
+		if keys.is_empty():
+			continue
+		var last: Array = keys[keys.size() - 1]
+		if absf(float(last[0]) - 1.0) > 0.0001 or (last[1] as Vector3).length() > 0.0001 or (last[2] as Vector3).length() > 0.0001:
+			unrested.append(str(art.id))
+	_cleanup(timing)
+	_check("every reload motion lasts the profile's reload time (%s)" % ", ".join(drift), drift.is_empty())
+	_check("every reload motion ends at the rest pose (%s)" % ", ".join(unrested), unrested.is_empty())
 
 	_cleanup(rig)
 	_end()
