@@ -125,7 +125,7 @@ static func write_cfg(root: String, addon: String, title: String, defs: Array[Do
 		var f := FileAccess.open(dir.path_join("%s.yml" % id), FileAccess.WRITE)
 		if f == null:
 			return DotResult.fail(DotError.CODE_IO, "Cannot write %s profile." % id)
-		f.store_string(ZeeWeaponProfiles.to_yaml(def, title))
+		f.store_string(DotWeaponProfiles.to_yaml(def, title))
 		f.close()
 		if folder and to != from and DirAccess.dir_exists_absolute(from.path_join(id).path_join("upgrades")):
 			var ups := to.path_join(id).path_join("upgrades")
