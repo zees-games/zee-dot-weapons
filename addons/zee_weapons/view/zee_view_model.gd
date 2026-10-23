@@ -263,6 +263,10 @@ static func vertical_from_horizontal_4_3(horizontal: float) -> float:
 	return rad_to_deg(2.0 * atan(tan(half) * 3.0 / 4.0))
 
 
+func _init() -> void:
+	add_to_group(&"dot_view_model")
+
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
