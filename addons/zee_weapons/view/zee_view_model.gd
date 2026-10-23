@@ -236,6 +236,32 @@ var _aim_fraction: float = 0.0
 ## is read through the same transform, so a shot still leaves the drawn barrel.
 @export var hands_fov: float = 90.0
 
+## How much of the size a narrower [member hands_fov] adds is given back by drawing the hands
+## farther away, 0 to 1. 0 leaves the gun larger the narrower the lens (the old behaviour);
+## 1 keeps it the size it has at [constant REFERENCE_FOV], so a flat lens means a flatter
+## gun (less foreshortening) rather than a bigger one. Wider than the reference pulls the hands
+## in by the same rule, a little, never past [constant MAX_PULL_IN].
+@export_range(0.0, 1.0, 0.05) var hands_depth_comp: float = 1.0
+
+## The field of view the pack's poses were authored under, vertical degrees.
+const REFERENCE_FOV := 90.0
+## The depth the gun's middle sits at under the reference lens, in metres.
+const REFERENCE_DEPTH := 0.55
+## The most the hands are drawn closer than authored, in metres.
+const MAX_PULL_IN := 0.1
+
+
+## Sets [member hands_fov] from a horizontal field of view measured on a 4:3 frame, the
+## convention a game's `field_of_view` setting already uses, so the two are comparable.
+func set_hands_fov_at_4_3(horizontal: float) -> void:
+	hands_fov = vertical_from_horizontal_4_3(horizontal)
+
+
+## The vertical field of view that is [param horizontal] degrees across a 4:3 frame.
+static func vertical_from_horizontal_4_3(horizontal: float) -> float:
+	var half := deg_to_rad(clampf(horizontal, 20.0, 170.0) * 0.5)
+	return rad_to_deg(2.0 * atan(tan(half) * 3.0 / 4.0))
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -759,6 +785,9 @@ func _apply_hands_lens() -> void:
 	var camera := get_parent() as Camera3D
 	var k := lens_scale(camera.fov, hands_fov) if camera != null else 1.0
 	scale = Vector3(k, k, 1.0)
+	# Size under this lens relative to the reference lens, given back as distance.
+	var size := lens_scale(REFERENCE_FOV, hands_fov) if camera != null else 1.0
+	position = Vector3(0.0, 0.0, -maxf((size - 1.0) * REFERENCE_DEPTH * hands_depth_comp, -MAX_PULL_IN))
 
 
 ## How much X and Y are scaled to draw at [param hands] degrees under a [param camera]-degree

@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 487
+const CHECKS := 492
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -1499,6 +1499,26 @@ func _view_models() -> void:
 
 func _aim() -> void:
 	_begin("aiming down")
+
+	_check("100 horizontal on 4:3 is 83.6 vertical",
+		absf(ZeeViewModel.vertical_from_horizontal_4_3(100.0) - 83.6) < 0.1)
+	_check("the same lens is a scale of 1", is_equal_approx(ZeeViewModel.lens_scale(70.0, 70.0), 1.0))
+	_check("a narrower hands lens draws them larger", ZeeViewModel.lens_scale(80.0, 60.0) > 1.0)
+	var lensed := ZeeViewModel.new()
+	lensed.show_arms = false
+	var camera := Camera3D.new()
+	add_child(camera)
+	camera.add_child(lensed)
+	camera.fov = 80.0
+	lensed.hands_fov = 60.0
+	lensed._apply_hands_lens()
+	var size_90 := ZeeViewModel.lens_scale(90.0, 60.0)
+	_check("a narrower lens is drawn farther off by the size it adds",
+		is_equal_approx(lensed.position.z, -(size_90 - 1.0) * ZeeViewModel.REFERENCE_DEPTH))
+	camera.fov = 30.0
+	lensed._apply_hands_lens()
+	_check("and a zoom leaves the hands where they were", is_equal_approx(lensed.position.z, -(size_90 - 1.0) * ZeeViewModel.REFERENCE_DEPTH))
+	camera.queue_free()
 
 	var aimable := 0
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
