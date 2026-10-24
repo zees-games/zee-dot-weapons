@@ -31,6 +31,9 @@ const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_mult
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
 
+## DotClientLink skips a replicated cvar over 1024 bytes without a word; warn from here.
+const WIRE_WARN_BYTES := 1000
+
 const CHANNEL := "zee.ads"
 const ADDON := "zee_weapons"
 
@@ -220,6 +223,9 @@ func adopt_wire(text: String) -> bool:
 ## Registers the replicated cvar on the server ([param add] is the module's `add_cvar`, taking flags
 ## as a fourth argument; [param flags] should carry REPLICATED). Returns the cvars made.
 func bind_cvars(add: Callable, flags: int = 0) -> Array:
+	var size := to_wire().length()
+	if size > WIRE_WARN_BYTES:
+		DotLog.warn(CHANNEL, "ads rules too long to replicate; clients will not receive them", {"bytes": size, "limit": WIRE_WARN_BYTES})
 	var made: Variant = add.call(CVAR, to_wire(), "Aim-down-sights numbers the simulation uses (JSON). Players follow it, so their prediction agrees.", flags)
 	if not (made is Object):
 		return []

@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 511
+const CHECKS := 512
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -2099,6 +2099,17 @@ func _ads_rules() -> void:
 	_check("while garbage is refused and changes nothing", not clone.adopt_wire("nope") and not clone.enabled_for(&"pistol"))
 	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
 	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))
+	var warned: Array = []
+	var catch := func(rec: Dictionary) -> void: warned.append(rec)
+	DotLog.signals().record.connect(catch)
+	var fat := ZeeAdsRules.new()
+	for n in 60:
+		var _f := fat.set_value(StringName("some_long_weapon_id_%d" % n), "move_speed_multiplier", 0.5)
+	var _b := fat.bind_cvars(func(_n: String, _v: String, _d: String, _f2: int) -> Variant: return null)
+	var _b2 := ZeeAdsRules.new().bind_cvars(func(_n: String, _v: String, _d: String, _f2: int) -> Variant: return null)
+	DotLog.signals().record.disconnect(catch)
+	var long_warns := warned.filter(func(r: Dictionary) -> bool: return str(r.get("message", r.get("msg", ""))).contains("too long to replicate"))
+	_check("a wire over 1000 bytes warns once at bind and a short one does not (%d, %d bytes)" % [long_warns.size(), fat.to_wire().length()], long_warns.size() == 1 and fat.to_wire().length() > 1000)
 	carrier.queue_free()
 	_end()
 
