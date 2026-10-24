@@ -111,6 +111,19 @@ enum Role {
 ## with its own effects turns it off and listens to [signal used].
 @export var effects: bool = true
 
+@export_group("Aiming")
+
+## The aim button in the command (a `DotWeaponCommand.BUTTON_USER_*` bit the game sets while its
+## aim key is held), so the server sees aiming and scales spread and walk speed. 0 leaves both alone.
+@export var ads_button: int = DotWeaponCommand.BUTTON_USER_0
+
+## Aiming rules: assign a [ZeeAdsRules] (usually `ZeeAdsRules.load_config()`); null keeps the art's own.
+var ads_rules: ZeeAdsRules = null:
+	set(value):
+		ads_rules = value
+		if _view != null:
+			_view.ads_rules = value
+
 # --- State ------------------------------------------------------------------
 
 ## The arsenal, once [method setup] has run.
@@ -133,6 +146,7 @@ var _player: Node = null
 var _art: Dictionary = {}
 
 var _bash: ZeeWeaponBash = null
+var _ads_move: float = 1.0
 
 ## The tick the carrier may next bash on.
 var _bash_ready_tick: int = 0
@@ -273,6 +287,7 @@ func _resolve_presentation() -> void:
 		var view := view_model_ref.resolve(self)
 		if view.ok and view.value is ZeeViewModel:
 			_view = view.value
+			_view.ads_rules = ads_rules
 			# Cvars bound before the view model existed keep their object.
 			if _standalone_feel != null:
 				_view.feel_rules = _standalone_feel
@@ -355,7 +370,7 @@ func simulate_tick(
 
 	_notice_holster(tick)
 
-	var outcome := arsenal.simulate_tick(command, context, _previous_command)
+	var outcome := _simulate_aimed(command, context)
 
 	_notice_switch_end()
 
@@ -374,6 +389,41 @@ func simulate_tick(
 
 	_previous_command = command.duplicate_command()
 	return outcome
+
+
+## The arsenal's tick with the spread scaled while the command holds the aim button. The scale
+## is put back after, so the def is never left changed; it follows the command, so a replay agrees.
+func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> DotWeaponOutcome:
+	_ads_move = 1.0
+	var def := arsenal.current_def()
+	if ads_rules == null or ads_button == 0 or def == null or (command.buttons & ads_button) == 0 \
+			or not ads_rules.enabled_for(def.id) or arsenal.is_switching():
+		return arsenal.simulate_tick(command, context, _previous_command)
+	var art: ZeeWeaponArt = _art.get(def.id, null)
+	if art != null and not art.aim_enabled:
+		return arsenal.simulate_tick(command, context, _previous_command)
+	_ads_move = ads_rules.move_speed_for(def.id)
+	var b := def.tuning as DotWeaponBallistics
+	if b == null:
+		return arsenal.simulate_tick(command, context, _previous_command)
+	var k := ads_rules.spread_for(def.id)
+	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom]
+	b.spread *= k
+	b.spread_moving *= k
+	b.spread_airborne *= k
+	b.bloom *= k
+	var outcome := arsenal.simulate_tick(command, context, _previous_command)
+	b.spread = kept[0]
+	b.spread_moving = kept[1]
+	b.spread_airborne = kept[2]
+	b.bloom = kept[3]
+	return outcome
+
+
+## The walk-speed multiplier of the last simulated command: [member ZeeAdsRules] move speed while it
+## held the aim button, else 1. A game multiplies its motor's speed by it on the server and in prediction.
+func ads_move_scale() -> float:
+	return _ads_move
 
 
 ## Marks the start of a reconciliation replay.

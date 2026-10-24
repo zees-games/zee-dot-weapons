@@ -453,6 +453,9 @@ var aim_shift := Vector3.ZERO
 ## back is left alone; it does not move the sight on the screen.
 var aim_kick_steadiness: float = 0.6
 
+## What is left of the sway and bob at full aim, on top of the feel rules' steadiness (1 leaves them).
+var aim_sway_scale: float = 1.0
+
 
 static func make(p_weight: float = 1.0) -> ZeeWeaponPose:
 	var pose := ZeeWeaponPose.new()
@@ -627,7 +630,7 @@ func offset() -> Transform3D:
 
 	# Aiming steadies what the hands add, and leaves what the weapon does (kick, reload,
 	# deploy) alone: a reload at full aim still has to be seen to happen.
-	var steady := 1.0 - _aim * clampf(rules.aim_steadiness, 0.0, 1.0)
+	var steady := (1.0 - _aim * clampf(rules.aim_steadiness, 0.0, 1.0)) * lerpf(1.0, clampf(aim_sway_scale, 0.0, 1.0), _aim)
 	var carried := maxf(0.1, weight) * maxf(0.0, feel)
 
 	# The trail behind a strafe: opposite the move, so a step right leaves the gun to the left.

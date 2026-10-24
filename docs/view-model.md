@@ -80,6 +80,12 @@ Each of these is its own line in `ZeeWeaponPose`:
 - Melee and throwables have `aim_enabled` off; the sniper is x0.3 and the marksman x0.5, the bullpup and the charge rifle x0.6, all four scoped; everything else aims at x0.8 down an iron sight.
 - Right mouse is the bash's button too; which one it is, is a game setting. The alt-fire is `BUTTON_ALT` in the command; the aim is a local hold.
 
+## ADS rules: a profile the server owns
+
+`ZeeAdsRules` (`content/zee_ads_rules.gd`) is a Resource: a default profile plus per-weapon overrides by weapon id. Keys: `enabled`, `aim_time`, `zoom` (FOV multiplier), `move_speed_multiplier`, `spread_multiplier`, `sway_multiplier`, `toggle`, `view_scale`, `view_shift_x/y/z`; 0 for `aim_time` or `zoom` means the art table's value. `ZeeAdsRules.load_config()` layers the shipped `cfg/addons/zee_weapons/ads.yml` < `cfg/server/addons/zee_weapons/ads.yml` < env `ZEE_WEAPONS_ADS_...` < argv `--zee_weapons.ads...`. The game assigns it to `ZeeWeaponRig.ads_rules` (which hands it to the view model) and `ZeeViewModel.ads_rules`.
+
+Server side the rig scales spread and bloom while the command holds `ads_button` (default `BUTTON_USER_0`), and `ads_move_scale()` gives the walk-speed multiplier the game applies to its motor. A disabled weapon cannot aim and is neither slowed nor tightened. `ZeeViewModel.aim_input(pressed)` honours hold versus toggle. `view_scale` and `view_shift_*` size the gun on screen per weapon; the hands reach for grip points capped by the measured body span, so they stay on the gun at any scale.
+
 ## Aiming down the sight is a line measured on the gun
 
 **The picture is a sight on the crosshair with the gun's top running away below it.** Aim was one written place for every blaster (`aim_offset` 0 / -0.135 / -0.46, straight): the eye level with the middle of the gun's back, so the screen showed the pale rear face of the gun as a block under the crosshair. No single place can be right for eighteen shapes, and no blaster in the kit has a readable iron sight (they are toys: fins and drums).

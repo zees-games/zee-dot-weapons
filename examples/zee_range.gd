@@ -133,6 +133,9 @@ func _build_weapons() -> void:
 	# how you tell an arm drawn wrongly from a weapon drawn wrongly, and the two look
 	# identical in a screenshot until one of them is switched off.
 	_view.show_arms = _argument("--no-arms") == ""
+	# `--ads-rules` draws with the layered aiming rules (size, place, zoom) a game would assign.
+	if OS.get_cmdline_user_args().has("--ads-rules"):
+		_view.ads_rules = ZeeAdsRules.load_config()
 	_camera.add_child(_view)
 
 	_always_aim = OS.get_cmdline_user_args().has("--aim")

@@ -1,0 +1,22 @@
+# Aiming down sights (ZeeAdsRules). Override on a server in cfg/server/addons/zee_weapons/ads.yml.
+# aim_time and zoom of 0 take the weapon's own art; zoom is a field-of-view multiplier;
+# view_scale multiplies the gun's hip size, view_shift_* moves it (metres, view space).
+ads:
+  default:
+    enabled: true
+    aim_time: 0.0
+    zoom: 0.0
+    move_speed_multiplier: 0.8
+    spread_multiplier: 0.6
+    sway_multiplier: 0.5
+    toggle: false
+    view_scale: 1.2
+    view_shift_x: 0.0
+    view_shift_y: 0.03
+    view_shift_z: 0.0
+# A weapon override lists only what it changes, by weapon id:
+#  weapons:
+#    sniper:
+#      zoom: 0.25
+#    pistol:
+#      enabled: false

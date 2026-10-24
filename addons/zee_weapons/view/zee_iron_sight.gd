@@ -119,6 +119,54 @@ static func measure(weapon: Node, space: Node3D, forward: Vector3) -> Dictionary
 	}, ring)
 
 
+## The gun's vertical extent at [param fraction] of its length (0 stock, 1 muzzle), measured with
+## rays down and up through the mesh near the centre line: `{low, high, length}` in [param space],
+## or `{}`. The hands take their height from it, because the bounds' height includes a scope on
+## top or a magazine below that the hand never touches.
+static func span(weapon: Node, space: Node3D, forward: Vector3, fraction: float) -> Dictionary:
+	var f := forward.normalized()
+	if f == Vector3.ZERO or absf(f.dot(Vector3.UP)) > 0.5:
+		return {}
+	var side := Vector3.UP.cross(f).normalized()
+	var triangles := _triangles(weapon, space)
+	if triangles.is_empty():
+		return {}
+	var t_min := INF
+	var t_max := -INF
+	var s_min := INF
+	var s_max := -INF
+	var y_min := INF
+	var y_max := -INF
+	for tri: Dictionary in triangles:
+		for p: Vector3 in [tri.a, tri.b, tri.c]:
+			t_min = minf(t_min, p.dot(f))
+			t_max = maxf(t_max, p.dot(f))
+			s_min = minf(s_min, p.dot(side))
+			s_max = maxf(s_max, p.dot(side))
+			y_min = minf(y_min, p.y)
+			y_max = maxf(y_max, p.y)
+	var length := t_max - t_min
+	if length <= 0.0:
+		return {}
+	var low := INF
+	var high := -INF
+	var centre := (s_min + s_max) * 0.5
+	var width := s_max - s_min
+	for shift: float in [0.0, -0.02, 0.02, -0.04, 0.04]:
+		for lateral: float in [0.0, -0.15, 0.15]:
+			var at := f * (lerpf(t_min, t_max, fraction) + shift * length) + side * (centre + lateral * width)
+			for tri: Dictionary in triangles:
+				var up: Variant = Geometry3D.ray_intersects_triangle(at + Vector3.DOWN * (at.y - y_min + 1.0), Vector3.UP, tri.a, tri.b, tri.c)
+				if up != null:
+					low = minf(low, (up as Vector3).y)
+				var down: Variant = Geometry3D.ray_intersects_triangle(at + Vector3.UP * (y_max - at.y + 1.0), Vector3.DOWN, tri.a, tri.b, tri.c)
+				if down != null:
+					high = maxf(high, (down as Vector3).y)
+	if low == INF or high == -INF:
+		return {}
+	return {"low": low, "high": high, "length": length}
+
+
 ## The line a model marks for itself: two nodes named [constant MARK_REAR] and
 ## [constant MARK_FRONT] (a gun with real sights, modelled; zed-dot-weapons' baked carbine),
 ## in [param space]. Empty when the model has no marks. The line is used as it is: no ring

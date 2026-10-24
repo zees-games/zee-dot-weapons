@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 492
+const CHECKS := 507
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -56,6 +56,7 @@ func _ready() -> void:
 	_tick_rate()
 	_view_models()
 	_aim()
+	_ads_rules()
 	_effects()
 	_input_bindings()
 
@@ -2020,6 +2021,85 @@ func _run(arsenal: DotWeaponArsenal, from: int, to: int, buttons: int) -> int:
 		previous = command
 
 	return used
+
+
+func _ads_rules() -> void:
+	_begin("aiming rules")
+
+	var rules := ZeeAdsRules.new()
+	_check("defaults: every weapon may aim, hold, by its art", rules.enabled_for(&"rifle") and not rules.toggle_for(&"rifle")
+		and is_equal_approx(rules.zoom_for(&"rifle", 0.8), 0.8) and is_equal_approx(rules.aim_time_for(&"rifle", 0.16), 0.16))
+	rules.apply_tree({
+		"default": {"spread_multiplier": 0.5, "zoom": 0.7},
+		"weapons": {"pistol": {"enabled": false}, "sniper": {"zoom": 0.25, "toggle": true}, "rifle": {"spread_multiplier": 5.0}},
+	})
+	_check("a default applies to every weapon", is_equal_approx(rules.spread_for(&"rifle_x"), 0.5)
+		and is_equal_approx(rules.zoom_for(&"smg", 0.8), 0.7))
+	_check("a weapon override beats the default", is_equal_approx(rules.zoom_for(&"sniper", 0.3), 0.25) and rules.toggle_for(&"sniper"))
+	_check("a disabled weapon does not aim and is not slowed or tightened",
+		not rules.enabled_for(&"pistol") and is_equal_approx(rules.move_speed_for(&"pistol"), 1.0)
+		and is_equal_approx(rules.spread_for(&"pistol"), 1.0))
+	_check("an out-of-range value is refused and the old one stands", is_equal_approx(rules.spread_for(&"rifle"), 0.5))
+	_check("an unknown key and a wrong type are refused", not rules.set_value(&"", "bogus", 1.0) and not rules.set_value(&"", "enabled", 1.0))
+
+	var loaded := ZeeAdsRules.load_config()
+	_check("the shipped file loads to the defaults", loaded.enabled_for(&"rifle")
+		and is_equal_approx(float(loaded.base["move_speed_multiplier"]), 0.8))
+
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"pistol"))
+	view.ads_rules = rules
+	view.aim(true)
+	view._advance_aim(1.0)
+	_check("the view model of a disabled weapon cannot aim", not view.can_aim() and view.aim_fraction() == 0.0)
+	var _eq2 := view.equip(ZeeWeaponArtTable.get_art(&"sniper"))
+	view.aim_input(true)
+	view.aim_input(false)
+	view._advance_aim(1.0)
+	_check("a toggle weapon stays aimed after the button is released", view.aim_fraction() > 0.99)
+	_check("its zoom is the profile's", is_equal_approx(view.aim_fov_scale(), 0.25))
+	view.aim_input(true)
+	view.aim_input(false)
+	view._advance_aim(1.0)
+	_check("a second press lowers it", view.aim_fraction() < 0.01)
+	view.queue_free()
+
+	var carrier := Node3D.new()
+	add_child(carrier)
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.SERVER
+	rig.authority = true
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.player_ref = DotNodeRef.of_path(^"..")
+	carrier.add_child(rig)
+	var _setup := rig.setup()
+	var _given := rig.give_everything()
+	rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
+	_run_rig(rig, 0, 60, 0)
+	(rig.arsenal.current_def().tuning as DotWeaponBallistics).bloom = 0.0
+	var plain := _first_spread(rig, 60, 0)
+	rig.ads_rules = rules
+	var held := _first_spread(rig, 300, DotWeaponCommand.BUTTON_USER_0)
+	_check("a shot while aiming is tighter by the multiplier (%.3f -> %.3f)" % [plain, held],
+		plain > 0.0 and is_equal_approx(held, plain * 0.5))
+	_check("walk speed drops while the aim button is held", is_equal_approx(rig.ads_move_scale(), 0.8))
+	var after := _first_spread(rig, 600, 0)
+	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
+	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))
+	carrier.queue_free()
+	_end()
+
+
+func _first_spread(rig: ZeeWeaponRig, from: int, buttons: int) -> float:
+	for tick in range(from, from + 120):
+		var command := DotWeaponCommand.new()
+		command.buttons = (DotWeaponCommand.BUTTON_ATTACK if tick % 2 == 0 else 0) | buttons
+		var outcome := rig.simulate_tick(command, tick)
+		if outcome != null and not outcome.shots.is_empty():
+			return (outcome.shots[0] as DotShot).spread
+	return -1.0
 
 
 func _run_rig(rig: ZeeWeaponRig, from: int, to: int, buttons: int) -> int:

@@ -119,6 +119,19 @@ var feel_rules := ZeeViewFeel.new():
 		if _pose != null:
 			_pose.rules = feel_rules
 
+## The server's aiming rules (enabled, time, zoom, sway, hold or toggle); null aims by the art alone.
+var ads_rules: ZeeAdsRules = null:
+	set(value):
+		ads_rules = value
+		if _source_art != null and _art != null:
+			var _again := equip(_source_art)
+
+var _source_art: ZeeWeaponArt = null
+
+## How far above the body's underside a hand's centre may sit, as a fraction of the gun's length.
+const HAND_REACH := 0.06
+
+var _aim_button_was: bool = false
 var _arms: ZeeViewArms = null
 var _light: DirectionalLight3D = null
 var _animated: Node3D = null
@@ -368,7 +381,9 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	_clear_models()
 
-	_art = art
+	_source_art = art
+	_art = _sized(art)
+	art = _art
 	_id = art.id
 	_pose.weight = art.weight
 	_pose.rules = feel_rules
@@ -489,6 +504,14 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					grip.y = low + tall * 0.30
 					fore = on_axis + forward * lerpf(t_min, t_max, art.fore_along)
 					fore.y = low + tall * art.fore_up
+					# A scope on top or a magazine below inflates the bounds' height; the hand
+					# takes the body at its own station, never higher than a hand's span.
+					var under := IronSight.span(_weapon, _holder, forward, art.fore_along)
+					if not under.is_empty():
+						fore.y = minf(fore.y, float(under.low) + float(under.length) * HAND_REACH)
+					var rear := IronSight.span(_weapon, _holder, forward, 0.30)
+					if not rear.is_empty():
+						grip.y = minf(grip.y, float(rear.low) + float(rear.length) * HAND_REACH * 1.6)
 					# A pistol grip rakes: its top is forward of its bottom.
 					grip_axis = (up + forward * 0.3).normalized()
 					radius = box.size.x * 0.3
@@ -809,6 +832,35 @@ func aim(held: bool) -> void:
 	_aim_held = held
 
 
+## The aim button's raw state, every frame: held follows it, or a press flips it when the
+## weapon's rules say toggle. Prefer this to [method aim] when the rules can toggle.
+func aim_input(pressed: bool) -> void:
+	if _toggles():
+		if pressed and not _aim_button_was:
+			_aim_held = not _aim_held
+	else:
+		_aim_held = pressed
+	_aim_button_was = pressed
+
+
+## [param art] at the rules' size and place for it: a copy, the table's own is never changed.
+func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
+	if ads_rules == null:
+		return art
+	var k := ads_rules.view_scale_for(art.id)
+	var shift := ads_rules.view_shift_for(art.id)
+	if is_equal_approx(k, 1.0) and shift == Vector3.ZERO:
+		return art
+	var sized := art.duplicate() as ZeeWeaponArt
+	sized.view_scale = art.view_scale * k
+	sized.view_offset = art.view_offset + shift
+	return sized
+
+
+func _toggles() -> bool:
+	return ads_rules != null and _art != null and ads_rules.toggle_for(_art.id)
+
+
 ## 0 at the hip to 1 at full aim.
 func aim_fraction() -> float:
 	return _aim_fraction
@@ -816,7 +868,7 @@ func aim_fraction() -> float:
 
 ## Whether the weapon in hand can be aimed at all (melee and throwables cannot).
 func can_aim() -> bool:
-	return _art != null and _art.aim_enabled
+	return _art != null and _art.aim_enabled and (ads_rules == null or ads_rules.enabled_for(_art.id))
 
 
 ## The field-of-view multiplier for this frame: 1 at the hip, the art's zoom at full aim.
@@ -827,7 +879,8 @@ func can_aim() -> bool:
 func aim_fov_scale() -> float:
 	if _art == null:
 		return 1.0
-	return lerpf(1.0, _art.aim_zoom, _ease(_aim_fraction))
+	var zoom := _art.aim_zoom if ads_rules == null else ads_rules.zoom_for(_art.id, _art.aim_zoom)
+	return lerpf(1.0, zoom, _ease(_aim_fraction))
 
 
 ## Whether the view is through a scope right now: a scoped weapon at (nearly) full aim.
@@ -842,6 +895,11 @@ func _advance_aim(delta: float) -> void:
 	var reloading := _reload_fraction > 0.0 and _reload_fraction < 1.0
 	var target := 1.0 if (_aim_held and can_aim() and not reloading) else 0.0
 	var time := _art.aim_time if _art != null else 0.16
+	if ads_rules != null and _art != null:
+		time = ads_rules.aim_time_for(_art.id, time)
+		_pose.aim_sway_scale = ads_rules.sway_for(_art.id)
+	if not can_aim():
+		_aim_held = false
 	_aim_fraction = move_toward(_aim_fraction, target, delta / maxf(time, 0.01))
 	_pose.set_aim(_ease(_aim_fraction))
 	_apply_aim(_ease(_aim_fraction))
