@@ -26,7 +26,7 @@ extends Resource
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
-const PREDICTED := ["enabled", "move_speed_multiplier", "spread_multiplier"]
+const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier"]
 
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
@@ -190,7 +190,11 @@ func wire_hash() -> String:
 ## Replaces the simulation-side numbers with a server's [method to_wire]; false (state unchanged)
 ## when the text is not that. The view-side keys are left alone.
 func adopt_wire(text: String) -> bool:
-	var parsed: Variant = JSON.parse_string(text)
+	# JSON.new().parse, not parse_string: a bad value from the wire is an answer here, not an engine error.
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return false
+	var parsed: Variant = json.data
 	if not (parsed is Dictionary) or not ((parsed as Dictionary).get("d", {}) is Dictionary) or not ((parsed as Dictionary).get("w", {}) is Dictionary):
 		return false
 	if text == to_wire():
@@ -217,7 +221,17 @@ func adopt_wire(text: String) -> bool:
 ## as a fourth argument; [param flags] should carry REPLICATED). Returns the cvars made.
 func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	var made: Variant = add.call(CVAR, to_wire(), "Aim-down-sights numbers the simulation uses (JSON). Players follow it, so their prediction agrees.", flags)
-	return [made] if made is Object else []
+	if not (made is Object):
+		return []
+	var cv := made as Object
+	# An operator's edit of the cvar reaches the simulation; the handler holds no reference to `cv`.
+	if cv.has_signal(&"changed"):
+		cv.connect(&"changed", func(_old: Variant, new_value: Variant) -> void: var _ok := adopt_wire(str(new_value)))
+	if cv.has_method(&"get_string"):
+		var held := String(cv.call(&"get_string"))
+		if held != "" and held != to_wire():
+			var _ok := adopt_wire(held)
+	return [cv]
 
 
 ## Follows a server's value through its link; false for a link that cannot replicate cvars.
