@@ -123,12 +123,13 @@ static func measure(weapon: Node, space: Node3D, forward: Vector3) -> Dictionary
 ## rays down and up through the mesh near the centre line: `{low, high, length}` in [param space],
 ## or `{}`. The hands take their height from it, because the bounds' height includes a scope on
 ## top or a magazine below that the hand never touches.
-static func span(weapon: Node, space: Node3D, forward: Vector3, fraction: float) -> Dictionary:
+## [param gathered] is the result of [method triangles_of], so several spans of one mesh walk it once.
+static func span(weapon: Node, space: Node3D, forward: Vector3, fraction: float, gathered: Array[Dictionary] = []) -> Dictionary:
 	var f := forward.normalized()
 	if f == Vector3.ZERO or absf(f.dot(Vector3.UP)) > 0.5:
 		return {}
 	var side := Vector3.UP.cross(f).normalized()
-	var triangles := _triangles(weapon, space)
+	var triangles := gathered if not gathered.is_empty() else _triangles(weapon, space)
 	if triangles.is_empty():
 		return {}
 	var t_min := INF
@@ -261,6 +262,10 @@ static func build(line: Dictionary, forward: Vector3) -> Node3D:
 ## Every triangle under [param node], in [param space], with its surface's material and the
 ## mean of its corners' UVs (the kit paints with one colour atlas, so a face's UVs sit in one
 ## swatch).
+static func triangles_of(node: Node, space: Node3D) -> Array[Dictionary]:
+	return _triangles(node, space)
+
+
 static func _triangles(node: Node, space: Node3D) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var stack: Array[Node] = [node]

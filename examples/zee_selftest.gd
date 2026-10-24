@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 507
+const CHECKS := 511
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -2081,11 +2081,22 @@ func _ads_rules() -> void:
 	(rig.arsenal.current_def().tuning as DotWeaponBallistics).bloom = 0.0
 	var plain := _first_spread(rig, 60, 0)
 	rig.ads_rules = rules
-	var held := _first_spread(rig, 300, DotWeaponCommand.BUTTON_USER_0)
+	var fresh := _first_spread(rig, 240, DotWeaponCommand.BUTTON_USER_0)
+	_run_rig(rig, 300, 360, DotWeaponCommand.BUTTON_USER_0)
+	var held := _first_spread(rig, 360, DotWeaponCommand.BUTTON_USER_0)
+	_check("the aim bit is a ramp: a first tick of aiming is still nearly the hip spread (%.3f)" % fresh, fresh > plain * 0.8)
 	_check("a shot while aiming is tighter by the multiplier (%.3f -> %.3f)" % [plain, held],
 		plain > 0.0 and is_equal_approx(held, plain * 0.5))
 	_check("walk speed drops while the aim button is held", is_equal_approx(rig.ads_move_scale(), 0.8))
 	var after := _first_spread(rig, 600, 0)
+	var wire := rules.to_wire()
+	var clone := ZeeAdsRules.new()
+	_check("the rules cross the wire: a client adopting the server's text predicts the same", clone.adopt_wire(wire) and clone.to_wire() == wire and clone.wire_hash() == rules.wire_hash())
+	var tweaked := ZeeAdsRules.new()
+	var _s := tweaked.set_value(&"", "spread_multiplier", 0.1)
+	var _p := tweaked.set_value(&"pistol", "enabled", false)
+	_check("and a changed server value replaces the client's (%s)" % tweaked.wire_hash(), clone.adopt_wire(tweaked.to_wire()) and is_equal_approx(float(clone.value_for(&"rifle", "spread_multiplier")), 0.1) and not clone.enabled_for(&"pistol"))
+	_check("while garbage is refused and changes nothing", not clone.adopt_wire("nope") and not clone.enabled_for(&"pistol"))
 	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
 	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))
 	carrier.queue_free()

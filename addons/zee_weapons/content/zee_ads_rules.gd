@@ -24,6 +24,13 @@ extends Resource
 ##       enabled: false
 ## [/codeblock]
 
+## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
+## them, so they are replicated; the rest is the view model's own and stays local.
+const PREDICTED := ["enabled", "move_speed_multiplier", "spread_multiplier"]
+
+## The replicated cvar holding [method to_wire].
+const CVAR := "zee_ads_rules"
+
 const CHANNEL := "zee.ads"
 const ADDON := "zee_weapons"
 
@@ -157,6 +164,79 @@ func view_scale_for(id: StringName) -> float:
 func view_shift_for(id: StringName) -> Vector3:
 	return Vector3(float(value_for(id, "view_shift_x")), float(value_for(id, "view_shift_y")),
 		float(value_for(id, "view_shift_z")))
+
+
+## The simulation-side numbers as one canonical JSON line, for a replicated cvar or a handshake.
+func to_wire() -> String:
+	var d := {}
+	for key: String in PREDICTED:
+		d[key] = base.get(key, SPECS[key]["default"])
+	var w := {}
+	for id: String in weapons:
+		var row := {}
+		for key: String in PREDICTED:
+			if (weapons[id] as Dictionary).has(key):
+				row[key] = weapons[id][key]
+		if not row.is_empty():
+			w[id] = row
+	return JSON.stringify({"d": d, "w": w}, "", true)
+
+
+## A short hash of [method to_wire], to compare two ends cheaply.
+func wire_hash() -> String:
+	return to_wire().sha256_text().left(12)
+
+
+## Replaces the simulation-side numbers with a server's [method to_wire]; false (state unchanged)
+## when the text is not that. The view-side keys are left alone.
+func adopt_wire(text: String) -> bool:
+	var parsed: Variant = JSON.parse_string(text)
+	if not (parsed is Dictionary) or not ((parsed as Dictionary).get("d", {}) is Dictionary) or not ((parsed as Dictionary).get("w", {}) is Dictionary):
+		return false
+	if text == to_wire():
+		return true
+	for key: String in PREDICTED:
+		base[key] = SPECS[key]["default"]
+	for id: String in weapons:
+		for key: String in PREDICTED:
+			(weapons[id] as Dictionary).erase(key)
+	var tree: Dictionary = parsed
+	for key: String in tree["d"]:
+		if key in PREDICTED:
+			var _ok := set_value(&"", key, tree["d"][key])
+	for id: String in tree["w"]:
+		if tree["w"][id] is Dictionary:
+			for key: String in tree["w"][id]:
+				if key in PREDICTED:
+					var _ok := set_value(StringName(id), key, tree["w"][id][key])
+	changed.emit()
+	return true
+
+
+## Registers the replicated cvar on the server ([param add] is the module's `add_cvar`, taking flags
+## as a fourth argument; [param flags] should carry REPLICATED). Returns the cvars made.
+func bind_cvars(add: Callable, flags: int = 0) -> Array:
+	var made: Variant = add.call(CVAR, to_wire(), "Aim-down-sights numbers the simulation uses (JSON). Players follow it, so their prediction agrees.", flags)
+	return [made] if made is Object else []
+
+
+## Follows a server's value through its link; false for a link that cannot replicate cvars.
+func follow_cvars(source: Object) -> bool:
+	if source == null or not is_instance_valid(source):
+		return false
+	if not source.has_method(&"replicated_cvar") or not source.has_signal(&"replicated_cvar_changed"):
+		return false
+	var held := String(source.call(&"replicated_cvar", CVAR, ""))
+	if held != "":
+		var _ok := adopt_wire(held)
+	if not source.is_connected(&"replicated_cvar_changed", _on_replicated):
+		source.connect(&"replicated_cvar_changed", _on_replicated)
+	return true
+
+
+func _on_replicated(cvar_name: String, value: String) -> void:
+	if cvar_name == CVAR:
+		var _ok := adopt_wire(value)
 
 
 func describe() -> Dictionary:

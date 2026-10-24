@@ -115,6 +115,8 @@ enum Role {
 
 ## The aim button in the command (a `DotWeaponCommand.BUTTON_USER_*` bit the game sets while its
 ## aim key is held), so the server sees aiming and scales spread and walk speed. 0 leaves both alone.
+## [b]USER_0 is also what several games use for their own button (use, launch)[/b]: set this to a
+## bit nothing else in the game's command uses.
 @export var ads_button: int = DotWeaponCommand.BUTTON_USER_0
 
 ## Aiming rules: assign a [ZeeAdsRules] (usually `ZeeAdsRules.load_config()`); null keeps the art's own.
@@ -147,6 +149,7 @@ var _art: Dictionary = {}
 
 var _bash: ZeeWeaponBash = null
 var _ads_move: float = 1.0
+var _aim_ticks: int = 0
 
 ## The tick the carrier may next bash on.
 var _bash_ready_tick: int = 0
@@ -396,17 +399,19 @@ func simulate_tick(
 func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> DotWeaponOutcome:
 	_ads_move = 1.0
 	var def := arsenal.current_def()
-	if ads_rules == null or ads_button == 0 or def == null or (command.buttons & ads_button) == 0 \
-			or not ads_rules.enabled_for(def.id) or arsenal.is_switching():
+	if not _can_aim(command, def):
+		_aim_ticks = 0
 		return arsenal.simulate_tick(command, context, _previous_command)
 	var art: ZeeWeaponArt = _art.get(def.id, null)
-	if art != null and not art.aim_enabled:
-		return arsenal.simulate_tick(command, context, _previous_command)
-	_ads_move = ads_rules.move_speed_for(def.id)
 	var b := def.tuning as DotWeaponBallistics
 	if b == null:
 		return arsenal.simulate_tick(command, context, _previous_command)
-	var k := ads_rules.spread_for(def.id)
+	_aim_ticks += 1
+	_ads_move = ads_rules.move_speed_for(def.id)
+	# The spread closes as the sights come up, over the weapon's aim time, counted in ticks so a replay agrees.
+	var seconds := ads_rules.aim_time_for(def.id, art.aim_time if art != null else 0.16)
+	var ramp := clampf(float(_aim_ticks) / maxf(seconds * float(tick_rate), 1.0), 0.0, 1.0)
+	var k := lerpf(1.0, ads_rules.spread_for(def.id), ramp)
 	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom]
 	b.spread *= k
 	b.spread_moving *= k
@@ -418,6 +423,17 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.spread_airborne = kept[2]
 	b.bloom = kept[3]
 	return outcome
+
+
+## Whether the aim bit counts: the server does not take it on trust. Needs rules, a weapon that
+## aims (rules and art), and a rifle that is neither being switched to nor reloaded.
+func _can_aim(command: DotWeaponCommand, def: DotWeaponDef) -> bool:
+	if ads_rules == null or ads_button == 0 or def == null or (command.buttons & ads_button) == 0:
+		return false
+	if not ads_rules.enabled_for(def.id) or arsenal.is_switching() or arsenal.is_reloading():
+		return false
+	var art: ZeeWeaponArt = _art.get(def.id, null)
+	return art == null or art.aim_enabled
 
 
 ## The walk-speed multiplier of the last simulated command: [member ZeeAdsRules] move speed while it
@@ -811,6 +827,7 @@ func snapshot() -> Dictionary:
 		# keeping one; the rig keeps one, so the rig has to save it.
 		"prev_buttons": _previous_command.buttons if _previous_command != null else 0,
 		"prev_slot": _previous_command.slot if _previous_command != null else 0,
+		"aim_ticks": _aim_ticks,
 	}
 
 
@@ -828,6 +845,7 @@ func restore(state: Dictionary) -> DotResult:
 	fire_seq = int(state.get("fire_seq", fire_seq))
 	fire_kind = int(state.get("fire_kind", ZeeWeaponNet.KIND_NONE))
 
+	_aim_ticks = int(state.get("aim_ticks", 0))
 	_previous_command = DotWeaponCommand.new()
 	_previous_command.buttons = int(state.get("prev_buttons", 0))
 	_previous_command.slot = int(state.get("prev_slot", 0))

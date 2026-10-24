@@ -506,10 +506,11 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					fore.y = low + tall * art.fore_up
 					# A scope on top or a magazine below inflates the bounds' height; the hand
 					# takes the body at its own station, never higher than a hand's span.
-					var under := IronSight.span(_weapon, _holder, forward, art.fore_along)
+					var spans := _spans_for(art, forward)
+					var under: Dictionary = spans[0]
 					if not under.is_empty():
 						fore.y = minf(fore.y, float(under.low) + float(under.length) * HAND_REACH)
-					var rear := IronSight.span(_weapon, _holder, forward, 0.30)
+					var rear: Dictionary = spans[1]
 					if not rear.is_empty():
 						grip.y = minf(grip.y, float(rear.low) + float(rear.length) * HAND_REACH * 1.6)
 					# A pistol grip rakes: its top is forward of its bottom.
@@ -1263,3 +1264,15 @@ func describe_lines() -> PackedStringArray:
 	])
 	out.append("  %s" % str(_pose.describe()))
 	return out
+
+
+# The two ray-cast spans cost a triangle walk of the whole mesh each; a weapon's art does not change, so a re-equip reuses them.
+var _span_cache: Dictionary = {}
+
+
+func _spans_for(art: ZeeWeaponArt, forward: Vector3) -> Array:
+	var key := art.get_instance_id()
+	if not _span_cache.has(key):
+		var tris := IronSight.triangles_of(_weapon, _holder)
+		_span_cache[key] = [IronSight.span(_weapon, _holder, forward, art.fore_along, tris), IronSight.span(_weapon, _holder, forward, 0.30, tris)]
+	return _span_cache[key]
