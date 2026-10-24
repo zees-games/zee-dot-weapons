@@ -843,6 +843,11 @@ func aim_input(pressed: bool) -> void:
 	_aim_button_was = pressed
 
 
+## Whether the sights are being held up (the key, or the toggle's state): what a game sends as its aim button.
+func is_aim_held() -> bool:
+	return _aim_held
+
+
 ## [param art] at the rules' size and place for it: a copy, the table's own is never changed.
 func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
 	if ads_rules == null:
