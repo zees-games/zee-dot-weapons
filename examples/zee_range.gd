@@ -147,6 +147,7 @@ func _build_weapons() -> void:
 	_rig = ZeeWeaponRig.new()
 	_rig.name = "WeaponRig"
 	_rig.role = ZeeWeaponRig.Role.LOCAL
+	_rig.ads_rules = _view.ads_rules
 	# A single-player range is its own authority. A client joining a server would set
 	# this false and let the server's copy of the same rig decide.
 	_rig.authority = true

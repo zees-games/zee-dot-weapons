@@ -163,6 +163,10 @@ extends Resource
 @export var fore_along: float = 0.62
 @export var fore_up: float = 0.45
 
+## The firing hand's place, in the same fractions as [member fore_along]: a long gun's trigger is not 30% from its back.
+@export var grip_along: float = 0.30
+@export var grip_up: float = 0.30
+
 ## Where a magazine is held from the support hand while it is carried in, in the view's space
 ## (+Y up, +Z toward the eye): above the palm by default. A gun whose well is under the fist
 ## (a pistol's grip) lifts it and brings it toward the eye, or the glove is in front of it from

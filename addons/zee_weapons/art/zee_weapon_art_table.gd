@@ -428,6 +428,10 @@ static func sniper() -> ZeeWeaponArt:
 	# arm's length (the 2026-10-19 sheet).
 	# No scope attachment: the mesh has its own, and the one added sat in the air above it.
 	art.weight = 1.8
+	art.grip_along = 0.40
+	art.grip_up = 0.28
+	art.fore_along = 0.66
+	art.fore_up = 0.28
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
 	art.aim_time = 0.22

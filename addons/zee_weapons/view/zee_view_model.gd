@@ -500,8 +500,8 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					# sit a third and a half of the way up from the bottom of the model.
 					var low := box.position.y
 					var tall := box.size.y
-					grip = on_axis + forward * lerpf(t_min, t_max, 0.30)
-					grip.y = low + tall * 0.30
+					grip = on_axis + forward * lerpf(t_min, t_max, art.grip_along)
+					grip.y = low + tall * art.grip_up
 					fore = on_axis + forward * lerpf(t_min, t_max, art.fore_along)
 					fore.y = low + tall * art.fore_up
 					# A scope on top or a magazine below inflates the bounds' height; the hand
