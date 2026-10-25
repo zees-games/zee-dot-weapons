@@ -9,6 +9,7 @@
 # bootstrap.sh derives this project's dependencies from the lines below, so a
 # dependency added here is a dependency it links on the next run.
 /addons/dot_core
+/addons/dot_profile
 /addons/dot_combat
 /addons/dot_weapon
 /addons/dot_net
