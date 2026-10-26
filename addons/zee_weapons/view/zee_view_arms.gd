@@ -44,10 +44,13 @@ const ARM_RIGHT := "arm-right"
 @export var style: StringName = &"rigged"
 
 ## The glove's colour (the hands).
-@export var glove_color: Color = Color(0.27, 0.27, 0.3)
+@export var glove_color: Color = Color(0.17, 0.16, 0.15)
 
 ## The sleeve's colour (the forearms). A game hands in its team or the player's colour.
-@export var sleeve_color: Color = Color(0.22, 0.32, 0.44)
+@export var sleeve_color: Color = Color(0.16, 0.2, 0.15)
+
+## Cloth and leather detail on the rigged arms (a triplanar bump, tone variation, a rim light). Off is the flat colour.
+@export var arm_detail: bool = true
 
 @export_group("Model")
 
@@ -392,6 +395,7 @@ func _build_rigged() -> bool:
 			return false
 		var arm := ZeeRiggedArm.new()
 		arm.name = arm_name
+		arm.detail = arm_detail
 		add_child(arm)
 		if not arm.setup(model, glove_color, sleeve_color, view_layer):
 			arm.queue_free()

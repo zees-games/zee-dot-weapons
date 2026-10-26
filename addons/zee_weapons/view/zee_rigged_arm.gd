@@ -61,6 +61,10 @@ var _seg_len := {}                  # bone index -> its segment length
 var _glove_mat: StandardMaterial3D = null
 var _sleeve_mat: StandardMaterial3D = null
 var _ready_ok := false
+## Cloth and leather detail (a triplanar bump, tone variation, a rim); false is the flat colour. Set before [method setup].
+var detail := true
+
+static var _noise_cache := {}
 
 
 ## Takes an instantiated model and finds its parts. False if it is not the arm this expects.
@@ -93,8 +97,8 @@ func setup(model: Node3D, glove: Color, sleeve: Color, layer: int) -> bool:
 			return false
 
 	_measure_rest()
-	_glove_mat = _material(glove, 0.85, layer)
-	_sleeve_mat = _material(sleeve, 0.9, layer)
+	_glove_mat = _material(glove, 0.8, layer, 28.0)
+	_sleeve_mat = _material(sleeve, 0.95, layer, 40.0)
 	_paint(model, layer)
 	_ready_ok = true
 	return true
@@ -285,10 +289,22 @@ func _child_of(bone: int) -> int:
 	return children[0]
 
 
-func _material(colour: Color, roughness: float, _layer: int) -> StandardMaterial3D:
+func _material(colour: Color, roughness: float, _layer: int, weave: float = 0.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = colour
 	m.roughness = roughness
+	if detail:
+		# The mesh has no UVs, so the cloth is triplanar in the arm's own space: a fine bump and
+		# a faint tone variation, plus a soft rim that gives the flat colour a form.
+		m.uv1_triplanar = true
+		m.uv1_scale = Vector3.ONE * weave
+		m.normal_enabled = true
+		m.normal_texture = _noise(true, 0.9)
+		m.normal_scale = 0.6
+		m.albedo_texture = _noise(false, 0.0)
+		m.rim_enabled = true
+		m.rim = 0.25
+		m.rim_tint = 0.4
 	# The view model gets no world shadow, for ZeeViewModel's reason.
 	m.disable_receive_shadows = true
 	return m
@@ -309,3 +325,28 @@ func _paint(root: Node, layer: int) -> void:
 			var source := mi.mesh.surface_get_material(s)
 			var is_sleeve := source != null and source.resource_name == SURFACE_SLEEVE
 			mi.set_surface_override_material(s, _sleeve_mat if is_sleeve else _glove_mat)
+
+
+## A tileable noise, as a normal map or as a tone near white (so the colour stays the material's).
+static func _noise(as_normal: bool, bump: float) -> Texture2D:
+	var key := "n" if as_normal else "t"
+	if _noise_cache.has(key):
+		return _noise_cache[key]
+	var n := FastNoiseLite.new()
+	n.noise_type = FastNoiseLite.TYPE_CELLULAR if as_normal else FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	n.frequency = 0.08 if as_normal else 0.02
+	var t := NoiseTexture2D.new()
+	t.width = 128
+	t.height = 128
+	t.seamless = true
+	t.noise = n
+	if as_normal:
+		t.as_normal_map = true
+		t.bump_strength = bump * 4.0
+	else:
+		var g := Gradient.new()
+		g.set_color(0, Color(0.82, 0.82, 0.82))
+		g.set_color(1, Color(1, 1, 1))
+		t.color_ramp = g
+	_noise_cache[key] = t
+	return t

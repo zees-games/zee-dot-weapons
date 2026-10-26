@@ -411,6 +411,11 @@ static func marksman() -> ZeeWeaponArt:
 	# into the receiver, as the sniper's does, instead of a hand swapping nothing.
 	art = _fed(_loose(art, ROUND_RIFLE, Vector3(0.0, 0.05, 0.04)), Vector3(0.07, 0.10, 0.0), 3, 1.0)
 	art.magazine_rotation = Vector3(90.0, 0.0, 0.0)
+	# The scope inflates the bounds' height: at the default fractions the support hand floated above the handguard.
+	art.grip_along = 0.36
+	art.grip_up = 0.28
+	art.fore_along = 0.64
+	art.fore_up = 0.26
 	return art
 
 
