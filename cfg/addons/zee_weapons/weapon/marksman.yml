@@ -2,6 +2,7 @@
 name: "Marksman Rifle"
 description: ""
 tags: ["primary", "scoped"]
+weight: 5
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
 slot: 3
 authored_tick_rate: 64

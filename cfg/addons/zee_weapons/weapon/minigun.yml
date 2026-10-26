@@ -2,6 +2,7 @@
 name: "Minigun"
 description: ""
 tags: ["heavy", "automatic", "primary"]
+weight: 7.5
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
 slot: 4
 authored_tick_rate: 64

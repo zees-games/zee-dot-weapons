@@ -2,6 +2,7 @@
 name: "Beamer"
 description: ""
 tags: ["heavy", "energy", "primary"]
+weight: 6
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_beam.gd"
 slot: 4
 authored_tick_rate: 64

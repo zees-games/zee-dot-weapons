@@ -2,6 +2,7 @@
 name: "Pickaxe"
 description: ""
 tags: ["melee"]
+weight: 1.5
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
 slot: 1
 authored_tick_rate: 64

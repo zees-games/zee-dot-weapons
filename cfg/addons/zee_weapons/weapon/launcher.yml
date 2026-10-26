@@ -2,6 +2,7 @@
 name: "Launcher"
 description: ""
 tags: ["heavy", "explosive"]
+weight: 6
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_projectile.gd"
 slot: 4
 authored_tick_rate: 64

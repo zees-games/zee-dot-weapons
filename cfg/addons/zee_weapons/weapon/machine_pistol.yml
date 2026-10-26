@@ -2,6 +2,7 @@
 name: "Machine Pistol"
 description: ""
 tags: ["sidearm", "automatic", "silenced"]
+weight: 1
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
 slot: 2
 authored_tick_rate: 64
