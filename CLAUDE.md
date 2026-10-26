@@ -62,6 +62,7 @@ Short forms; the reasoning is in the linked file.
 - A game sets `ZeeModelCache.set_asset_root` on load and puts `res://` back when it goes. [design](docs/design.md#the-art-inside-a-delivered-game)
 - A game vendors the art because a pack carries only the game's tree; the list is `ZeeWeaponArtTable.model_paths()`, the check is `validate_models()` (one line in the game's suite), the copy is `tools/sync-art.sh <game>`. Never hand-copy a folder. [design](docs/design.md#why-a-game-still-vendors-the-art-and-what-keeps-the-copy-honest)
 - A loadout card's numbers are read off the weapon's document (`ZeeWeaponCards`), scaled to fixed ceilings, never a second table; the line under the name is `BLURB`. [design](docs/design.md#loadout-cards)
+- A game that wants only part of this pack calls `ZeeWeaponPack.keep_only(ids)` before any rig is built (it also drops the art table's cache); the rest never enters a catalogue. [design](docs/design.md#a-second-pack-adds-to-this-one)
 - A second pack registers through `add_source` / `set_class`; this pack's ids win; **a source is a static method's Callable, never a lambda** (exit 134). [design](docs/design.md#a-second-pack-adds-to-this-one)
 
 **The view model** (every one found by rendering)

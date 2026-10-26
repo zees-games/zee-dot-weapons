@@ -67,6 +67,7 @@ A pack is the game's tracked tree with `addons/` left out (dot-ci's `package.sh 
 
 `ZeeWeaponPack.add_source`, `ZeeWeaponArtTable.add_source` and `ZeeWeaponSound.set_class` let a second pack (zed-dot-weapons) register a callable once in its own install, and `weapons()` / `all()` append what it returns, so one rig carries both packs without a fork or every game handing a second catalogue everywhere.
 
+- **A game can drop part of this pack**: `ZeeWeaponPack.keep_only(ids)` leaves only those weapons in `weapons()` and `all()`, and `ZeeWeaponArtTable.drop_cache()` forgets art built for the full set. Call it before the first rig, because a rig reads its catalogue once (game-zombie-zone keeps only `fists`).
 - **This pack's ids win**: a source bringing `pistol` loses it with a WARN, because changing what "pistol" means on a running server is a change nobody asked for.
 - **`ZeeWeaponArtTable.validate()`**, which refuses art for an id the pack does not define, still passes with another pack's art in the table.
 - **Sources are statics**, so a game installs a pack when it loads and removes it when it goes, as with `set_asset_root`.
