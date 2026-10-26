@@ -61,7 +61,31 @@ static func weapons(types: Dictionary = {}, profiled: bool = true) -> Array[DotW
 
 	if profiled:
 		errors = DotWeaponProfiles.tune(out, profile_set())
-	return _with_sources(out, t)
+	return _with_sources(_kept(out), t)
+
+
+## Ids of this pack's own weapons that stay when [method keep_only] was called; null keeps all.
+static var _keep: Variant = null
+
+
+## Drops every built-in weapon but [param ids] from [method weapons], so a game with its own weapon packs carries none of the
+## blasters (and never needs their art). Pass null to bring them all back. Call before any rig is built: a rig reads its catalogue once.
+static func keep_only(ids: Variant) -> void:
+	_keep = ids
+	ZeeWeaponArtTable.drop_cache()
+
+
+static func _kept(own: Array[DotWeaponDef]) -> Array[DotWeaponDef]:
+	if _keep == null:
+		return own
+
+	var out: Array[DotWeaponDef] = []
+
+	for def in own:
+		if (_keep as Array).has(def.id):
+			out.append(def)
+
+	return out
 
 
 ## The config addon name profiles are read under (`cfg/addons/zee_weapons/weapon`).

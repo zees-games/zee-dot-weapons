@@ -210,6 +210,11 @@ static func table() -> Dictionary:
 static var _table: Dictionary = {}
 
 
+## Forgets the cached table, after [method ZeeWeaponPack.keep_only] changed what [method all] returns.
+static func drop_cache() -> void:
+	_table = {}
+
+
 static func all() -> Array[ZeeWeaponArt]:
 	var out: Array[ZeeWeaponArt] = [
 		fists(), knife(), shiv(), hatchet(), mallet(), pickaxe(), spade(),
@@ -219,6 +224,9 @@ static func all() -> Array[ZeeWeaponArt]:
 		sniper(), minigun(), launcher(), beamer(), charge_rifle(),
 		frag(), sticky(),
 	]
+
+	if ZeeWeaponPack._keep != null:
+		out = out.filter(func(art: ZeeWeaponArt) -> bool: return (ZeeWeaponPack._keep as Array).has(art.id))
 
 	var taken := {}
 
