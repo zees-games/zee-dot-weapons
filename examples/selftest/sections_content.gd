@@ -258,7 +258,7 @@ func _art() -> void:
 
 	# Every gun that points down -Z (the blasters) has something to show on a reload: a gun whose
 	# magazine is baked into its mesh rolls over with an empty hand (the marksman and the beamer
-	# did, until 2026-10-22).
+	# did).
 	var bare: Array[String] = []
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
 		if art.model_forward == Vector3.FORWARD and not art.has_magazine():

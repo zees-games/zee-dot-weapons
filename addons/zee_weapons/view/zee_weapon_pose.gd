@@ -1,23 +1,9 @@
 class_name ZeeWeaponPose
 extends RefCounted
 
-## Where a first-person weapon actually sits this frame: sway, bob, recoil, deploy,
-## reload and charge, as one transform.
-##
-## [b]Separated from the node on purpose, and the reason is that no assertion can see a
-## picture.[/b] Everything about a view model is motion, and motion is one of the two
-## things this family has learned it cannot test — so the part that [i]can[/i] be tested
-## is pulled out and made into arithmetic with no [Node], no viewport and no clock in
-## it. A headless suite can then assert the things that actually break: that a spring
-## settles rather than oscillating for ever, that nothing here can produce a NaN, that a
-## weapon which has been deployed and holstered a thousand times is where it started.
-## Whether it [i]looks[/i] right is still a screenshot's job, and always will be.
-##
-## [b]Nothing here is part of the netcode contract.[/b] This runs on render frames at
-## whatever rate the display does, reads a delta in seconds rather than a tick, and
-## never writes to anything the simulation reads. That is the same line dot-player-
-## controller draws between its motor and its view, and it is why a player with view bob
-## switched off still simulates identically to one who has not.
+## Where a first-person weapon sits this frame: sway, bob, recoil, deploy, reload and charge, as one transform.
+## Pure arithmetic with no Node, viewport or clock, so a headless suite can assert it settles, never makes a NaN and returns to where it started.
+## Not part of the netcode contract: it runs on render frames and never writes to anything the simulation reads.
 
 ## How the springs behave. One resource for the whole rig; a weapon scales it by its own
 ## [member ZeeWeaponArt.weight] rather than carrying its own copy.

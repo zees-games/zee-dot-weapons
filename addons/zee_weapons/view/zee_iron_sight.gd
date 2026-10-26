@@ -1,29 +1,8 @@
 extends RefCounted
 
-## A gun's sight line, measured from its own mesh, and the iron sight that marks it.
-##
-## No `class_name`, on purpose: [ZeeViewModel] preloads it by path. A new global class in an
-## addon makes every project that links the addon fail until it is re-imported, and a class
-## added by an addon pack overlaid at boot is never registered at all.
-##
-## [b]Why aiming needs a line and not a place.[/b] Aim used to be one hand-written place
-## (`aim_offset`) shared by every blaster: the eye level with the middle of the gun's back,
-## which drew the pale rear face of the gun across the bottom of the screen. Aiming down
-## sights is the eye on a line through two points on top of the gun, a rear sight and a
-## front one; centre that line on the screen and the front sight sits on the crosshair and
-## the top of the gun runs away below it, whatever the model's shape. So the line is
-## measured, per model, like the muzzle.
-##
-## [b]Measured by casting down onto the mesh, not from its bounds.[/b] The kit's guns are
-## low-poly with long faces, so a slice of vertices at a station along the barrel is often
-## empty, and the bounds' top is a fin or a drum somewhere else on the gun. A ray straight
-## down at a station hits the face that is really there.
-##
-## [b]Every gun gets the sight built, rather than looking for one in the model.[/b] Not one
-## blaster in the kit has a readable iron sight (they are toys: fins and drums), and a sight
-## guessed from a bump on the top is a bump the eye cannot line anything up with. The sight
-## is the line drawn: a ring round a post at the front, a notch at the rear, both rising from
-## the gun's own top to the line, in the colour of the part they stand on.
+## A gun's sight line, measured from its own mesh, and the iron sight that marks it. No `class_name`: [ZeeViewModel] preloads it by path.
+## Aiming is the eye on a line through a rear and a front point on top of the gun, measured per model by casting rays down onto the mesh, not from its bounds.
+## The sight is built, not found: the kit's guns have no readable sight, so a ring round a post and a notch rise from the gun's top to the line.
 
 ## How far back along the gun the rear sight stands, from its back end. Behind the grip
 ## (0.30), where a rear sight is: further back, it was so close to the eye that the notch

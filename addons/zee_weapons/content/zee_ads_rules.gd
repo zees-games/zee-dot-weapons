@@ -1,28 +1,9 @@
 class_name ZeeAdsRules
 extends Resource
 
-## Aiming down sights, as a server owner sets it: one default profile and overrides by weapon id.
-##
-## A game assigns one to the rig (`rig.ads_rules = ZeeAdsRules.load_config()`); with none, every
-## aimable weapon aims by its art's own numbers. The server-side numbers (spread, move speed) are
-## applied by [ZeeWeaponRig] from the command's aim button, so they hold on the server and in
-## prediction alike; the rest (time, zoom, sway, toggle) is the view model's.
-##
-## [b]Layers[/b] (through [DotAddonConfig], addon `zee_weapons`): the defaults below < every
-## `cfg/addons/zee_weapons/*.yml` < `cfg/game/<game>/...` < `cfg/server/addons/zee_weapons/*.yml`
-## < environment (`ZEE_WEAPONS_ADS_DEFAULT_ZOOM`) < argv (`--zee_weapons.ads.default.zoom=0.7`).
-## Shape of the file, weapon keys by weapon id:
-## [codeblock]
-## ads:
-##   default:
-##     zoom: 0.0
-##     spread_multiplier: 0.6
-##   weapons:
-##     sniper:
-##       zoom: 0.25
-##     pistol:
-##       enabled: false
-## [/codeblock]
+## Aiming down sights, as a server owner sets it: one default profile and overrides by weapon id, assigned as `rig.ads_rules = ZeeAdsRules.load_config()`.
+## Spread and move speed apply in [ZeeWeaponRig] from the command's aim bit (server and prediction alike); time, zoom, sway and toggle are the view model's.
+## Layered through [DotAddonConfig] (`cfg/addons/zee_weapons/*.yml`, env, argv); shape: `ads: {default: {zoom: 0.0}, weapons: {sniper: {zoom: 0.25}}}`.
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.

@@ -1,38 +1,15 @@
 class_name ZeeWeaponPack
 extends RefCounted
 
-## Twenty-seven weapons, as one [DotWeaponCatalogue] a server can check at boot.
-##
-## [b]Every duration here is in ticks, and the conversions are at the top.[/b] A weapon
-## tuned in seconds fires at two different rates on a 64 Hz server and a 128 Hz one,
-## which is two different games. Designers think in rounds per minute, the simulation
-## runs on ticks, so [method rpm_ticks] does the conversion once instead of in
-## twenty-seven hand-computed numbers that drift the first time the tick rate changes.
-##
-## [b]Nothing in this file mentions a mesh.[/b] A [DotWeaponDef] is what a dedicated
-## server validates with none of the content installed; [ZeeWeaponArtTable] is what a
-## client draws. Keeping them apart is what lets a server boot, validate the whole table
-## and refuse a bad row without ever owning a single model.
-##
-## [b]Roles, not statistics, are what makes a weapon set.[/b] Twenty-seven weapons that
-## are all "a gun with slightly different numbers" is one weapon with twenty-seven
-## skins, and players find the best one inside an hour. Each row below is an answer to a
-## different question — how do I win a corridor, how do I win a rooftop, how do I move,
-## how do I open a door — and the comments say which.
+## Twenty-seven weapons, as one [DotWeaponCatalogue] a server can check at boot. Every duration is in ticks ([method rpm_ticks] converts once).
+## Nothing here mentions a mesh: a [DotWeaponDef] validates with no content installed; [ZeeWeaponArtTable] is what a client draws.
+## Each row answers a different question (a corridor, a rooftop, movement, a door), and the comments say which.
 
 # No CHANNEL: a table of documents built by static functions. It refuses nothing itself;
 # DotWeaponCatalogue.validate() returns a DotResult and the caller decides who hears it.
 
-## The tick rate everything below is tuned for.
-##
-## Every duration below is a count of ticks at this rate, and every row says so in
-## [member DotWeaponDef.authored_tick_rate]. dot-weapon's arsenal scales each count to the
-## rate it runs at, so a weapon fires, reloads and deploys in the same wall-clock time on
-## a 128 Hz server as on a 64 Hz one. Without that field the rows ran at double speed at
-## 128 Hz, and the one game at that rate had patched only its grenade fuses by hand.
-##
-## [b]Set on the row by every builder below, not afterwards in [method weapons][/b], so a
-## game that builds one weapon on its own ([code]ZeeWeaponPack.rifle()[/code]) gets it too.
+## The tick rate everything below is tuned for; every row says so in [member DotWeaponDef.authored_tick_rate].
+## dot-weapon scales each count to the rate it runs at. Set on the row by every builder, so [code]ZeeWeaponPack.rifle()[/code] alone gets it too.
 const TICK_RATE := 64
 
 const HITSCAN := "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
@@ -115,18 +92,9 @@ static func upgraded(id: StringName, ids: Array, types: Dictionary = {}) -> DotR
 	return res
 
 
-# --- Other packs ------------------------------------------------------------
-#
-# [b]A second pack adds to this one rather than replacing it.[/b] Every rig, world model
-# and loot table in a game asks this file for "the weapons" (a rig's default catalogue is
-# [method catalogue]), so a pack that wanted its weapons usable had either to be handed to
-# every one of those by the game, or to be here. Here is one line in the pack's own
-# install and nothing in any game. The art goes the same way, through
-# [method ZeeWeaponArtTable.add_source].
-#
-# [b]This pack's own weapons win an id.[/b] A source that brings an id already taken
-# (by this pack or by a source added earlier) loses it, with a WARN, rather than quietly
-# changing what "pistol" means on a server that had it.
+# A second pack adds to this one rather than replacing it, so every rig, world model and loot table asking for "the weapons"
+# ([method catalogue]) sees it, art through [method ZeeWeaponArtTable.add_source]. This pack's own weapons win an id;
+# a source bringing a taken id loses it with a WARN.
 
 const CHANNEL := "zee.pack"
 
@@ -134,14 +102,9 @@ const CHANNEL := "zee.pack"
 static var _sources: Dictionary = {}
 
 
-## Adds another pack's weapons after this one's, under [param name]. Adding the same name
-## again replaces that source.
-##
-## [b]Pass a static method's Callable (`Callable(MyPack, &"weapons")`), never a lambda.[/b]
-## This is a static variable, which the engine clears after it has freed the scripts at exit,
-## and a lambda held here outlives the script it was written in: the process aborts on the way
-## out (`double free or corruption`, exit 134) after everything else has passed. Measured with
-## zed-dot-weapons, three runs of each, every lambda run aborting and every static one clean.
+## Adds another pack's weapons after this one's, under [param name]. Adding the same name again replaces that source.
+## Pass a static method's Callable (`Callable(MyPack, &"weapons")`), never a lambda: a lambda held in this static outlives its script
+## and the process aborts on exit (`double free or corruption`, exit 134).
 static func add_source(name: StringName, source: Callable) -> void:
 	_sources[name] = source
 

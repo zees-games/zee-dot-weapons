@@ -2,28 +2,9 @@
 class_name ZeeWeaponRig
 extends Node
 
-## One player's weapons: the arsenal, the bash, the view model and the world model,
-## driven from one command a tick.
-##
-## [b]This is the node a game adds, and ideally the only one.[/b] Everything under it is
-## wired together here because the wiring is the part every game gets subtly wrong: the
-## arsenal has to be simulated before the presentation is updated, the presentation has
-## to be skipped during a replay, the bash has to roll back with everything else, and the
-## view model has to be told how far through a switch it is by somebody who is counting.
-## Four rules, none of them obvious, all of them silent when broken.
-##
-## [codeblock]
-## var outcome := rig.simulate_tick(command, tick)
-## for shot in outcome.shots:
-##     combat.resolve(shot)          # the game's, on the authority only
-## [/codeblock]
-##
-## [b]The same node runs in all three roles.[/b] A server simulating thirty carriers, a
-## client predicting its own, and a client drawing somebody else's are the same code with
-## [member role] set differently — because the moment they are three code paths, two of
-## them are wrong and nobody notices until a player reports that hit registration feels
-## bad. What the role changes is only what is [i]drawn[/i]: a server draws nothing, a
-## remote player has no view model, and a local player has both.
+## One player's weapons: the arsenal, the bash, the view model and the world model, driven from one command a tick.
+## The one node a game adds. The same code runs in all three roles; [member role] only changes what is drawn.
+## Order matters (arsenal before presentation, no drawing in a replay, the bash rolls back) and breaking it is silent.
 
 const CHANNEL := "zee.rig"
 
@@ -58,11 +39,8 @@ enum Role {
 @export var role: Role = Role.LOCAL
 
 ## True on the machine that decides. Handed to every context and to the arsenal.
-##
-## [b]Not the same question as [member role].[/b] A listen server's own player is LOCAL
-## and authoritative; a dedicated server is SERVER and authoritative; a client predicting
-## itself is LOCAL and is not. Folding the two into one flag is how a client ends up
-## resolving its own damage.
+## Not the same as [member role]: a listen server's own player is LOCAL and authoritative, a predicting client LOCAL and not;
+## folding the two is how a client resolves its own damage.
 @export var authority: bool = false
 
 ## The rate the carrier's world runs at, handed to the arsenal, which scales every row
@@ -92,9 +70,7 @@ enum Role {
 @export var world_model_ref: DotNodeRef = null
 
 ## The player this carrier is, for the origin and the aim direction.
-##
-## Duck-typed through [DotWeaponPlayerBridge], so this addon names no player class and
-## works with a game's own.
+## Duck-typed through [DotWeaponPlayerBridge], so this addon names no player class.
 @export var player_ref: DotNodeRef = null
 
 @export_group("Rules")
@@ -105,18 +81,13 @@ enum Role {
 @export_group("Presentation")
 
 ## Whether a use draws a tracer, a flash and an impact, and plays a report.
-##
-## [b]On by default, because off was the only setting there was and every game built on
-## the pack shipped with weapons that fired nothing anybody could see or hear.[/b] A game
-## with its own effects turns it off and listens to [signal used].
+## On by default: a game with its own effects turns it off and listens to [signal used].
 @export var effects: bool = true
 
 @export_group("Aiming")
 
-## The aim button in the command (a `DotWeaponCommand.BUTTON_USER_*` bit the game sets while its
-## aim key is held), so the server sees aiming and scales spread and walk speed. 0 leaves both alone.
-## [b]USER_0 is also what several games use for their own button (use, launch)[/b]: set this to a
-## bit nothing else in the game's command uses.
+## The aim button in the command (a `DotWeaponCommand.BUTTON_USER_*` bit set while the aim key is held), so the server sees aiming
+## and scales spread and walk speed. 0 leaves both alone. Pick a bit nothing else in the game's command uses.
 @export var ads_button: int = DotWeaponCommand.BUTTON_USER_0
 
 ## Aiming rules: assign a [ZeeAdsRules] (usually `ZeeAdsRules.load_config()`); null keeps the art's own.
@@ -129,9 +100,7 @@ var ads_rules: ZeeAdsRules = null:
 # --- State ------------------------------------------------------------------
 
 ## The arsenal, once [method setup] has run.
-##
-## Public because [ZeeWeaponNet] reads it by name, and because a game will want to ask
-## it about ammunition for its HUD.
+## Public because [ZeeWeaponNet] reads it by name and a HUD asks it about ammunition.
 var arsenal: DotWeaponArsenal = null
 
 ## Uses so far, for the replication counter. Wraps in [ZeeWeaponNet], not here.
@@ -172,11 +141,7 @@ var _charge_started: int = -1
 var _shown: StringName = &""
 
 ## The tick most recently simulated, so a signal handler knows when it fired.
-##
-## [b]Signals arrive from inside [method DotWeaponArsenal.simulate_tick] and carry no
-## tick of their own.[/b] A handler reading a clock instead would be a handler that is
-## wrong during a replay, which is where a reload animation would start over on every
-## correction.
+## Arsenal signals carry no tick; a handler reading a clock would be wrong during a replay.
 var _last_tick: int = 0
 
 ## Whether the arsenal was mid-switch last tick, so the holster half can be noticed.
@@ -246,25 +211,9 @@ func _resolve_arsenal() -> DotResult:
 	return DotResult.success(null)
 
 
-## Who is carrying this, which is NOT presentation and must not be skipped on a server.
-##
-## [b]This was inside [method _resolve_presentation], behind its `role == SERVER` early
-## return, and that made every shot on every dedicated server come out of the world
-## origin.[/b] The view model and the world model genuinely are presentation and are
-## genuinely right to skip on a server; the player is where [method
-## DotWeaponPlayerBridge.context_for] takes the muzzle position and the aim direction from,
-## so a null one produces a [DotWeaponContext] holding its defaults — origin
-## `(0, 0, 0)`, direction `(0, 0, -1)` — and dot-combat then traces from the middle of the
-## map, due north, for every player at once.
-##
-## Nothing reports it. The weapon fires, the ammunition goes down, the use counter
-## increments and replicates, the hit registration runs, and it finds nothing because there
-## is nothing where it looked. A game built on this has a showdown in which nobody can be
-## shot and every number about it is correct.
-##
-## Found by mg-smash-copter, whose bots fought each other for twenty rounds and ended every
-## single one with exactly two players alive — one per side, a draw, every time. A number
-## that is identical every round is a number nothing is deciding.
+## Who is carrying this: not presentation, so it must not be skipped on a server.
+## A null player makes [method DotWeaponPlayerBridge.context_for] return defaults, so every shot traces from the world origin.
+## Nothing else reports it: the weapon fires and the counters move, but hit registration finds nothing.
 func _resolve_carrier() -> void:
 	if player_ref == null:
 		return
@@ -348,15 +297,8 @@ func current_art() -> ZeeWeaponArt:
 # --- The tick ---------------------------------------------------------------
 
 ## One tick of one command: the arsenal, then the bash, then the picture.
-##
-## [param command] is what the player asked for; [param tick] is the tick it happens on.
-## [param ctx] is optional — left null, one is built from the player through
-## [DotWeaponPlayerBridge], which is what a game with a dot-player player wants.
-##
-## [b]The order is load-bearing.[/b] The arsenal simulates, then the bash gets its turn
-## on the state the arsenal left behind, then the presentation is updated from both. A
-## presentation updated first shows the previous tick, and a bash run first can fire
-## through a weapon the arsenal was about to holster.
+## [param ctx] is optional; left null, one is built from the player through [DotWeaponPlayerBridge].
+## The order is load-bearing: presentation first shows the previous tick, and a bash first can fire through a weapon being holstered.
 func simulate_tick(
 	command: DotWeaponCommand,
 	tick: int,
@@ -465,11 +407,7 @@ func ads_move_scale() -> float:
 
 
 ## Marks the start of a reconciliation replay.
-##
-## Everything still simulates; what stops is the drawing. A replay that re-equipped the
-## view model would rebuild the weapon's meshes several times a second on every
-## correction, and a replay that re-punched the recoil spring would shake the screen
-## once per replayed tick.
+## Everything still simulates; the drawing stops, or the view model would rebuild its meshes and the recoil spring re-punch on every correction.
 func begin_replay() -> void:
 	_replaying = true
 	arsenal.begin_replay()
@@ -486,12 +424,8 @@ func is_replaying() -> bool:
 
 # --- The bash ---------------------------------------------------------------
 
-## The alt-fire, simulated here because dot-weapon's arsenal routes one button.
-##
-## See [ZeeWeaponBash] for why that is the arsenal being right rather than incomplete.
-## The cooldown lives in [member _bash_ready_tick], travels in [method snapshot] and
-## rolls back with everything else, which is what stops a corrected client from bashing
-## twice.
+## The alt-fire, simulated here because dot-weapon's arsenal routes one button (see [ZeeWeaponBash]).
+## The cooldown lives in [member _bash_ready_tick], travels in [method snapshot] and rolls back, so a correction cannot bash twice.
 func _advance_bash(
 	command: DotWeaponCommand, context: DotWeaponContext, tick: int
 ) -> DotWeaponOutcome:
@@ -530,9 +464,7 @@ func _advance_bash(
 # --- Presentation -----------------------------------------------------------
 
 ## Everything the player sees, from state the simulation has already settled.
-##
-## [b]Skipped entirely during a replay.[/b] The simulation must re-run after a
-## correction; a model rebuild, a recoil punch and a sound must not.
+## Skipped during a replay: the simulation re-runs after a correction, a model rebuild, punch and sound must not.
 func _update_presentation(tick: int) -> void:
 	if _replaying or role == Role.SERVER:
 		return
@@ -562,14 +494,8 @@ func _update_presentation(tick: int) -> void:
 
 
 ## Drives the view model's sway and bob from the carrier's motion.
-##
-## [b]Called on a render frame, not on a tick.[/b] Sway and bob are interpolation
-## between ticks and doing them on the tick quantises them to the tick rate, which is the
-## same reason dot-player-controller runs its view in `_process`. A game already calling
-## the controller's own view each frame calls this beside it.
-##
-## [param strafe] is the sideways speed in metres a second, positive right; left out, the view
-## model measures it from its own movement.
+## Called on a render frame, not a tick, so sway is not quantised to the tick rate.
+## [param strafe] is sideways speed in m/s, positive right; left out, the view model measures it.
 func drive_view(look: Vector2, speed: float, on_floor: bool, crouched: bool, strafe: float = NAN) -> void:
 	if _view != null:
 		_view.drive(look, speed, on_floor, crouched, strafe)
@@ -599,9 +525,7 @@ func on_reset() -> void:
 
 
 ## Hangs the world model off the carrier's character, if they have one.
-##
-## Duck-typed, and false is not an error — a server has no model and a 2D game has no
-## hand.
+## Duck-typed; false is not an error (a server has no model).
 func attach_world_model(character: Object = null) -> bool:
 	if _world == null:
 		return false
@@ -621,11 +545,7 @@ func shot_fx() -> ZeeShotFx:
 
 
 ## How far recoil should turn the camera this frame, in degrees: x pitch up, y yaw.
-##
-## [b]Presentation, added to the camera after the controller writes it, never to the
-## command's angles.[/b] The shot already went where the command pointed; this is the view
-## jolting as it does, and it is back inside a fifth of a second. See
-## [method ZeeViewModel.view_punch] for why the rig cannot apply it itself.
+## Presentation, added after the controller writes the camera and never to the command's angles; see [method ZeeViewModel.view_punch].
 func view_punch() -> Vector2:
 	return _view.view_punch() if _view != null else Vector2.ZERO
 
@@ -646,14 +566,8 @@ func muzzle_transform() -> Transform3D:
 	return Transform3D.IDENTITY
 
 
-# --- Progress -------------------------------------------------------------
-#
-# [b]Counted here rather than read off the arsenal, and deliberately.[/b] The arsenal
-# knows exactly how far through a reload it is and keeps it private, which is correct:
-# exposing a fraction would make an animation's needs part of a simulation's public
-# interface, and the next game to want a different animation would want a different
-# fraction. So the rig listens to the signals the arsenal does emit and counts the ticks
-# itself, which costs three integers and forks nothing.
+# Counted here, not read off the arsenal: it keeps reload progress private, and exposing a fraction would tie
+# the simulation's interface to one animation. The rig listens to the signals and counts ticks itself.
 
 func _deploy_fraction(tick: int) -> float:
 	if _switch_started < 0 or _switch_ticks <= 0:
@@ -669,11 +583,8 @@ func _deploy_fraction(tick: int) -> float:
 
 
 func _reload_fraction(tick: int) -> float:
-	# The arsenal decides whether a reload is running; this rig only times it. Firing, a
-	# switch, a drop and a rollback all end a reload without announcing it (`reload_finished`
-	# fires only for a reload that completes), so a start tick kept past the end of its
-	# reload wrapped below for ever: the reload pose played constantly, on a full magazine,
-	# while firing.
+	# The arsenal decides whether a reload runs; this rig only times it. Firing, a switch, a drop and a rollback end a reload
+	# without announcing it, so a start tick kept past its end would play the reload pose for ever.
 	if _reload_started < 0 or _reload_ticks <= 0 or not arsenal.is_reloading():
 		return 0.0
 
@@ -706,12 +617,8 @@ func _advance_charge(command: DotWeaponCommand, tick: int) -> void:
 
 
 ## Catches the start of a switch, which no signal announces.
-##
-## [b][signal DotWeaponArsenal.switched] fires between the holster and the deploy, not
-## at the start of the holster.[/b] A rig that waited for it would draw the weapon at
-## rest for the whole of the way down and then snap it to the bottom of the screen the
-## instant the swap happened — so the holster half is noticed by watching
-## [method DotWeaponArsenal.is_switching] go true, on the tick before the arsenal runs.
+## [signal DotWeaponArsenal.switched] fires between holster and deploy, so the holster half is noticed by watching
+## [method DotWeaponArsenal.is_switching] go true on the tick before the arsenal runs.
 func _notice_holster(tick: int) -> void:
 	var switching := arsenal.is_switching()
 
@@ -725,10 +632,7 @@ func _notice_holster(tick: int) -> void:
 
 
 ## Puts the switch animation away once the arsenal says the switch is over.
-##
-## Without this the deploy fraction stays pinned at 1.0 from a stale start tick, which
-## is correct by accident — until the tick counter wraps or a rollback moves it
-## backwards, and then the weapon animates itself back down for no reason.
+## Otherwise the deploy fraction stays pinned at 1.0 from a stale start tick, and a rollback animates the weapon back down.
 func _notice_switch_end() -> void:
 	if _switch_started >= 0 and not arsenal.is_switching():
 		_switch_started = -1
@@ -776,10 +680,7 @@ func _reload_sound(stage: StringName) -> void:
 
 
 ## The holster half finished and the deploy half began.
-##
-## [b]The arsenal emits this in the middle of a switch, not at the end of one.[/b]
-## Treating it as "the switch is over" leaves the weapon drawn at the bottom of the
-## screen until the next switch, which reads as the weapon having disappeared.
+## The arsenal emits this mid-switch, not at its end; treating it as the end leaves the weapon at the screen bottom.
 func _on_switched(_from: int, to: int) -> void:
 	var carried := arsenal.slot_at(to)
 
@@ -829,11 +730,7 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 # --- Netcode ----------------------------------------------------------------
 
 ## Everything that has to travel and everything a rollback has to restore.
-##
-## [b]The arsenal's snapshot plus the rig's own.[/b] The bash cooldown and the charge are
-## simulation state that lives here rather than in the arsenal, so a snapshot carrying
-## only the arsenal's half reconciles a correction by handing the player a free bash —
-## which is the exact bug dot-weapon's own slot snapshot exists to prevent, one level up.
+## The arsenal's snapshot plus the rig's own: the bash cooldown and charge live here, and omitting them hands a free bash on correction.
 func snapshot() -> Dictionary:
 	return {
 		"arsenal": arsenal.snapshot() if arsenal != null else {},
@@ -841,12 +738,8 @@ func snapshot() -> Dictionary:
 		"charge_started": _charge_started,
 		"fire_seq": fire_seq,
 		"fire_kind": fire_kind,
-		# [b]The previous command's buttons, and they are simulation state.[/b] The bash,
-		# the reload and every semi-automatic weapon are edge-triggered against this, so a
-		# snapshot that left it out restores a rig which thinks the alt-fire button was
-		# already down — and then refuses the next press, once, silently. The arsenal does
-		# not have this problem because it is HANDED the previous command rather than
-		# keeping one; the rig keeps one, so the rig has to save it.
+		# The previous command's buttons are simulation state: the bash, reload and semi-automatic weapons are edge-triggered against them,
+		# so a snapshot without them refuses the next press once. The arsenal is handed the previous command; the rig keeps one, so it saves it.
 		"prev_buttons": _previous_command.buttons if _previous_command != null else 0,
 		"prev_slot": _previous_command.slot if _previous_command != null else 0,
 		"aim_ticks": _aim_ticks,

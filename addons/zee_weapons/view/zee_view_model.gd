@@ -6,61 +6,26 @@ extends Node3D
 const IronSight := preload("zee_iron_sight.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
 
-## The weapon you see in your own hands, and everything it does while you hold it.
-##
-## Parent it to the camera. It builds the arms once, swaps the weapon model whenever the
-## arsenal switches, and every render frame asks [ZeeWeaponPose] where the thing should
-## actually be.
-##
-## [b]It is told what happened; it never asks.[/b] Nothing here reads an input device, a
-## clock or the arsenal's internals — a game calls [method on_used],
-## [method on_reload_started] and the rest from the signals it is already handling. That
-## is what lets exactly the same node draw a remote player's weapon in third person,
-## driven by replicated events rather than by local ones, with no branch anywhere in it.
-##
-## [b]Nothing here is part of the netcode contract.[/b] It runs on render frames, never
-## writes to the simulation, and a player who turns it off simulates identically to one
-## who does not — which is the whole reason dot-player-controller keeps its view in a
-## separate node, and this is the same line drawn in the same place.
-##
-## [b]Structure, and why it is four nodes deep.[/b]
-## [codeblock]
-## ZeeViewModel          at the camera, identity
-##   Animated            the pose's transform: sway, bob, kick, deploy, reload
-##     Arms              the hands: shoulders fixed, reaching every frame for the weapon
-##     Aim               hip to sight: the move from the art's hip hold to its aim hold
-##       Holder          the art's resting transform: offset, orientation, scale
-##         Weapon        the mesh, in its own +Z-forward space
-##         Magazine      a sibling, so a reload can animate it independently
-##         Attachment(s) siblings too, in the same model space
-## [/codeblock]
-## The split between Animated and Holder is what lets the art's placement and the frame's
-## animation be authored independently: fold them together and every weapon's resting
-## offset has to be re-derived every time the sway changes.
+## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
+## and never reads a device, a clock or the arsenal, so it draws a remote player's gun the same way.
+## Presentation only: it runs on render frames and never writes to the simulation.
 
 const CHANNEL := "zee.view"
 
 ## Emitted once the weapon model for [param id] is in the tree and placed.
-##
-## For a game hanging a muzzle flash, a laser sight or a scope overlay off it, which
-## cannot be done until the model exists.
+## For a muzzle flash, laser or scope overlay that cannot be hung before the model exists.
 signal model_ready(id: StringName, weapon: Node3D)
 
 @export_group("Wiring")
 
 ## The arms. Left null, the view model builds its own on first use.
-##
-## A [DotNodeRef] rather than a path, family-wide rule: the host decides per instance,
-## in the inspector, and nothing in this addon hardcodes a scene path.
+## A [DotNodeRef], not a path: the host decides per instance.
 @export var arms_ref: DotNodeRef = null
 
 @export_group("Behaviour")
 
 ## Whether to build and show hands at all.
-##
-## Off is a real configuration, not a debug switch: a game whose characters are not
-## humanoid, or one drawing a weapon with no holder at all, wants the model and not the
-## arms.
+## A real configuration (non-humanoid characters, a gun with no holder), not a debug switch.
 @export var show_arms: bool = true
 
 ## Which skin the hands wear. Passed to [ZeeViewArms] when this builds its own.
@@ -79,14 +44,8 @@ signal model_ready(id: StringName, weapon: Node3D)
 ## layer and builds no light. A game whose camera culls this layer does not see its hands.
 @export_range(0, 20) var view_layer: int = 20
 
-## The energy of the view model's own key light, a directional light that turns with the
-## camera and lights nothing but the view model. 0 builds none.
-##
-## [b]Why the hands carry a light.[/b] The world's sun is fixed in the world, so turning
-## round puts it behind the gun and leaves the gun lit by the ambient alone, flat and dark;
-## turning back, bright. A key light from over the shoulder keeps the side the hold shows
-## lit and shaded the same way whichever way the player faces. The world's lights still
-## reach the view model too, so it is not lifted out of the place it is in.
+## The energy of the view model's own key light, which turns with the camera and lights only the view model. 0 builds none.
+## The world's sun is fixed, so turning round leaves the gun lit by ambient alone; a key light keeps its side lit the same way.
 @export_range(0.0, 4.0, 0.05) var view_light_energy: float = 0.3
 
 ## Where that light comes from, as Euler degrees of the light's own rotation in the camera's
@@ -205,12 +164,8 @@ var _look_seen := false
 
 var _built: bool = false
 
-## Posture for this frame, written by whoever is driving the rig.
-##
-## [b]Plain fields rather than a call into the controller.[/b] The rig has to work for a
-## remote player, a bot and a replay, none of which have a controller to ask — so the
-## driver pushes what it knows, and the default is somebody standing still looking
-## straight ahead, which draws correctly rather than not at all.
+## Posture for this frame, written by whoever drives the rig.
+## Plain fields, because a remote player, bot or replay has no controller to ask; the default is standing still.
 var _speed: float = 0.0
 var _on_floor: bool = true
 var _crouched: bool = false
@@ -224,36 +179,17 @@ var _last_origin := Vector3.ZERO
 var _origin_seen := false
 
 ## Whether the aim button is held, and how far the weapon has come up to the eye.
-##
-## [b]Presentation only.[/b] Aiming changes what the player sees — the weapon centred, the
-## view zoomed, a scope — and nothing the server simulates, so it is never part of a
-## command or a snapshot. A game that wants aim to tighten spread puts that in its own
-## command; this is the half that draws.
+## Presentation only: never part of a command or a snapshot.
 var _aim_held: bool = false
 var _aim_fraction: float = 0.0
 
-## The vertical field of view, in degrees, the hands are drawn at whatever the camera's is.
-## 0 draws them through the camera's own lens.
-##
-## [b]Why the hands have a lens of their own.[/b] Every pose in [ZeeWeaponArtTable] was set
-## under a 90-degree camera, and the games hold them under 83, 92 and 100: through a wider
-## lens the same pose is a smaller gun drifting toward the middle of the screen, through a
-## narrower one a bigger gun pushed to the edge, and a zoom to aim magnified the gun with
-## the world. This genre draws the hands at a fixed field of view for exactly that reason.
-##
-## [b]Done with a scale, not a second camera.[/b] Scaling the view model's X and Y by
-## `tan(camera / 2) / tan(this / 2)` in the camera's own space, with Z left alone, gives
-## every vertex the screen position it would have under this lens -- exactly, because a
-## perspective projection divides X and Y by Z and nothing else. Depth is untouched, so the
-## hands still sort against the world the way they did, and the muzzle a tracer starts from
-## is read through the same transform, so a shot still leaves the drawn barrel.
+## The vertical field of view, in degrees, the hands are drawn at whatever the camera's is. 0 uses the camera's lens.
+## Poses were set under 90 degrees; a different lens would make the same pose a different gun.
+## Done by scaling X and Y by tan(camera/2)/tan(this/2) with Z alone, which is exact for a perspective projection and keeps depth sorting.
 @export var hands_fov: float = 90.0
 
-## How much of the size a narrower [member hands_fov] adds is given back by drawing the hands
-## farther away, 0 to 1. 0 leaves the gun larger the narrower the lens (the old behaviour);
-## 1 keeps it the size it has at [constant REFERENCE_FOV], so a flat lens means a flatter
-## gun (less foreshortening) rather than a bigger one. Wider than the reference pulls the hands
-## in by the same rule, a little, never past [constant MAX_PULL_IN].
+## How much of the size a narrower [member hands_fov] adds is given back by drawing the hands farther away, 0 to 1.
+## 1 keeps the size at [constant REFERENCE_FOV]; wider than the reference pulls the hands in, never past [constant MAX_PULL_IN].
 @export_range(0.0, 1.0, 0.05) var hands_depth_comp: float = 1.0
 
 ## The field of view the pack's poses were authored under, vertical degrees.
@@ -297,10 +233,8 @@ func _build_structure() -> void:
 	_animated.name = "Animated"
 	add_child(_animated)
 
-	# [b]Aim is a node of its own, because the aim hold is turned as well as moved.[/b] The hip
-	# hold is canted and turned to show the weapon's side; the aim hold is straight down the
-	# sight. Moving only the position (as the pose's aim_shift did) brought a canted gun to
-	# the middle of the screen end-on.
+	# Aim is a node of its own because the aim hold is turned as well as moved: the hip hold is canted,
+	# the aim hold is straight down the sight, and moving only the position brought a canted gun end-on to the middle.
 	_aim_node = Node3D.new()
 	_aim_node.name = "Aim"
 	_animated.add_child(_aim_node)
@@ -328,12 +262,8 @@ func _build_arms() -> void:
 	_arms.view_layer = view_layer
 	_arms.name = "Arms"
 	_arms.skin = arm_skin
-	# [b]Under Animated, so the hands move with the gun.[/b] They were the view model's own
-	# child, and every reload, draw and kick moved the gun out of hands that stayed where
-	# they were: the contact sheet's draw frames had the rifle sliding away from two
-	# forearms holding nothing. [b]Not under Aim[/b]: carried rigidly to the sight, the
-	# shoulders went with the gun and the left arm lay across the screen. They reach for the
-	# aimed hands every frame instead (_place_hands).
+	# Under Animated so the hands move with the gun (a reload would otherwise slide it out of them).
+	# Not under Aim: carried rigidly to the sight, the shoulders went with the gun; they reach for the aimed hands each frame (_place_hands).
 	_animated.add_child(_arms)
 
 	var res := _arms.build()
@@ -367,11 +297,7 @@ func _build_light() -> void:
 # --- Weapons ----------------------------------------------------------------
 
 ## Draws [param art]'s weapon, replacing whatever was in hand.
-##
-## [b]Rebuilds rather than hides.[/b] Keeping every weapon in the tree and toggling
-## visibility is the obvious optimisation and it costs more than it saves here:
-## twenty-seven models, their magazines and their attachments is a hundred-odd nodes per
-## player, all of them being culled and sorted every frame to draw one.
+## Rebuilds rather than hides: keeping all twenty-seven models in the tree is a hundred-odd culled nodes per player.
 func equip(art: ZeeWeaponArt) -> DotResult:
 	_build_structure()
 
@@ -451,19 +377,9 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	return DotResult.success(null)
 
 
-## Puts the hands on this weapon, measured from the weapon itself, in the holder's (the
-## model's own) space: a blaster's right hand round its grip under the body 30% of the way
-## from the back, the left round the fore-end at 62%; a melee weapon's hand round its handle;
-## a grenade's round its middle. Each hand also gets the axis of what it is holding, so a
-## gripping hand can wrap round it.
-##
-## [b]Measured, because the holder's origin is not the grip for every weapon.[/b] The long
-## ones are slid back along their length in the art table, and a right hand put on the
-## origin closed on air a hand's length in front of the stock.
-##
-## [b]In the model's own space, not the view's.[/b] The hold is canted thirty degrees, so the
-## view's "down" is no longer under the gun, and a view-space bounding box of a canted gun is
-## a box round a diagonal: a hand put "under the middle" of it closed on air beside the gun.
+## Puts the hands on this weapon, measured from the weapon itself in the holder's space: a blaster's right hand round its grip,
+## the left on the fore-end at 62%, a melee hand round its handle, a grenade's round its middle, each with the held axis.
+## Measured, in the model's own space: the origin is not the grip, and a view-space box of a canted gun is a box round a diagonal.
 func _reach_for(art: ZeeWeaponArt) -> void:
 	var to_aim := _holder.transform
 	var forward := art.model_forward.normalized()
@@ -607,14 +523,8 @@ func _support_hand() -> Vector3:
 	return ZeeWeaponPose.sample_keys(keys, f)[0]
 
 
-## The support hand's keys for a gun fed by hand ([member ZeeWeaponArt.load_from]): the bolt
-## drawn back (when there is one), each round fetched, carried to where its push starts and
-## pushed home, the bolt closed, the hand back on the fore-end. Built once per weapon.
-##
-## [b]The round is drawn at the hand ([constant FEED_CARRY] above it) for its whole trip[/b], so
-## the two cannot part company: the hand's keys put it at the entry and then the seat, and
-## [method _animate_magazine] reads the hand. A round that slid on its own line while the hand
-## followed a curve was a round floating a finger's width off the glove.
+## The support hand's keys for a gun fed by hand ([member ZeeWeaponArt.load_from]): bolt back, each round fetched, carried and pushed home, bolt closed. Built once per weapon.
+## The round is drawn at the hand ([constant FEED_CARRY] above it) for the whole trip, because [method _animate_magazine] reads the hand and the two must not part.
 func _build_feed_keys(art: ZeeWeaponArt) -> Array:
 	var carry := FEED_CARRY
 	var keys: Array = [[0.0, _fore_at, Vector3.ZERO], [0.06, _fore_at, Vector3.ZERO]]
@@ -672,14 +582,8 @@ func equipped() -> StringName:
 	return _id
 
 
-## Where the muzzle is right now, in world space.
-##
-## [b]What a muzzle flash, a tracer and a shell ejection hang off, and nothing the
-## simulation ever reads.[/b] A shot's real origin is the player's eye, decided on the
-## server; this is where the effect should be drawn so that it comes out of the barrel
-## rather than out of the player's face. Using this as a shot origin would mean a
-## weapon's reach depended on its model, and a player with the view model turned off
-## would shoot from somewhere else.
+## Where the muzzle is right now, in world space: what a flash, a tracer and a shell ejection hang off.
+## Nothing the simulation reads; a shot's origin is the eye, decided on the server, or reach would depend on the model.
 func muzzle_transform() -> Transform3D:
 	if _weapon == null:
 		return global_transform
@@ -692,10 +596,8 @@ func ejects() -> bool:
 	return _art != null and _art.ejects and _weapon != null
 
 
-## Where the ejection port is right now, in world space: on the receiver's right side, a little
-## below the top and about 45% of the way from the stock to the muzzle, measured from the mesh's
-## bounds like the muzzle (never authored). The basis is the weapon's, unscaled: +X is out of the
-## gun's right side, +Y up, -Z toward the muzzle. Effects only, like [method muzzle_transform].
+## Where the ejection port is right now, in world space: the receiver's right side, 45% from stock to muzzle, measured from the mesh bounds.
+## The basis is the weapon's, unscaled (+X out of the right side, +Y up, -Z to the muzzle). Effects only.
 func eject_transform() -> Transform3D:
 	if _weapon == null:
 		return global_transform
@@ -736,12 +638,8 @@ func on_swing() -> void:
 
 
 ## How far recoil should turn the camera this frame, in degrees: x pitch up, y yaw.
-##
-## [b]This node cannot apply it, and that is not an omission.[/b] It is a child of the
-## camera, and every controller in this family writes the camera's angles from scratch
-## each frame — so anything added here is overwritten, or, under a controller that adds
-## rather than writes, never taken back off. The game adds it where it writes the camera:
-## `DotFpsView.external_angles`, or its own line.
+## This node cannot apply it: controllers write the camera's angles from scratch each frame, so the game adds it
+## where it writes the camera (`DotFpsView.external_angles`).
 func view_punch() -> Vector2:
 	return _pose.view_punch()
 
@@ -795,11 +693,8 @@ func advance(delta: float) -> void:
 	_animated.transform = _pose.offset()
 	_place_hands()
 	_apply_hands_lens()
-	# Through a scope the weapon is not drawn at all: the scope IS the view, and a barrel
-	# across the bottom of it is a weapon held in front of the eye that should be at it.
-	# The built arms are under Animated and go with it; a game's own arms (arms_ref) may live
-	# anywhere, so they are hidden by name too, or they are drawn across the bottom of the
-	# scope.
+	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
+	# a game's own arms (arms_ref) may live anywhere, so they are hidden by name too.
 	var scoped := is_scoped()
 	_animated.visible = not scoped
 	if _arms != null:
@@ -878,10 +773,7 @@ func can_aim() -> bool:
 
 
 ## The field-of-view multiplier for this frame: 1 at the hip, the art's zoom at full aim.
-##
-## [b]The game applies it to its own camera[/b] (dot-player-controller's
-## `DotFpsView.external_fov_scale`), for the same reason as [method view_punch]: the view
-## model is a child of the camera and has no business setting the camera's lens.
+## The game applies it to its own camera (`DotFpsView.external_fov_scale`); this node is a child of it.
 func aim_fov_scale() -> float:
 	if _art == null:
 		return 1.0
@@ -911,13 +803,9 @@ func _advance_aim(delta: float) -> void:
 	_apply_aim(_ease(_aim_fraction))
 
 
-## Moves and turns the Aim node so the holder sits [param f] of the way from the art's hip
-## hold to its aim hold, and tells the pose where the grip now is so a kick still turns
-## about it.
-##
-## [b]The rotation is slerped, the position lerped.[/b] Interpolating the two transforms'
-## bases component by component would shrink the weapon half way (the average of two
-## rotations is not a rotation).
+## Moves and turns the Aim node so the holder sits [param f] of the way from the art's hip hold to its aim hold,
+## and tells the pose where the grip now is so a kick turns about it.
+## Slerped rotation, lerped position: blending basis components would shrink the weapon half way.
 func _apply_aim(f: float) -> void:
 	if _art == null or _aim_node == null:
 		return
@@ -950,14 +838,8 @@ func _aim_target() -> Transform3D:
 	return _sight_aim if not _sight_line.is_empty() else _art.aim_transform()
 
 
-## Measures [param art]'s sight line on the mesh just built, builds the sight on it, and
-## works out the aim hold that puts the line through the eye.
-##
-## [b]The hold is derived, not written.[/b] One written aim place for every blaster put the
-## eye level with the middle of each gun's back, and the screen showed the gun's pale rear
-## face. With the line, `origin = (0, 0, -relief) - B * rear` (B the orientation, scaled,
-## with no aim rotation: the line is the rotation) puts the rear sight straight ahead of the
-## eye and the front sight on the crosshair, for any model's shape.
+## Measures [param art]'s sight line on the mesh just built, builds the sight on it, and derives the aim hold that puts the line through the eye.
+## Derived, not written: one aim place for every blaster showed the gun's pale rear face. `origin = (0, 0, -relief) - B * rear` puts the rear sight ahead of the eye and the front on the crosshair.
 func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_line = {}
 	if not art.iron_sight or not art.aim_enabled or art.aim_scoped or _weapon == null:
@@ -1007,13 +889,8 @@ static func _ease(x: float) -> float:
 
 
 ## Tells the rig how the holder is moving and looking this frame.
-##
-## [param look] is absolute yaw and pitch in degrees; the rig takes the difference
-## itself, because the difference is what sway is made of and two callers computing it
-## independently is two chances to compute it differently.
-##
-## [param strafe] is the sideways ground speed in metres a second, positive to the right; left
-## out, it is measured from this node's own movement.
+## [param look] is absolute yaw and pitch in degrees (the rig takes the difference itself, so sway is computed once);
+## [param strafe] is sideways ground speed in m/s, positive right; left out, measured from this node's own movement.
 func drive(look: Vector2, speed: float, on_floor: bool, crouched: bool = false, strafe: float = NAN) -> void:
 	_strafe_given = strafe
 	_look = look
@@ -1073,12 +950,8 @@ func _animate_magazine(fraction: float) -> void:
 		if own != null:
 			own.visible = not (f >= 0.20 and f < 0.58)
 
-	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*) and the support hand
-	# (`_support_hand`): out and falling while the gun rolls onto its side (0.10-0.28), gone
-	# while the hand goes down for the next one, then IN THE HAND from 0.36, carried up to the
-	# well and seated with the jolt at 0.58. A magazine visible throughout is a reload that reads
-	# as the gun shaking; one that rose out of nothing under the gun (the first version) was a
-	# hand reaching for a magazine that was already there.
+	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*) and `_support_hand`: out while the gun rolls onto its side (0.10-0.28),
+	# in the hand from 0.36, seated with the jolt at 0.58. Visible throughout it reads as the gun shaking; rising from nothing, as a hand reaching for air.
 	var shown := true
 	var at := rest.origin
 	var basis := rest.basis
@@ -1153,42 +1026,19 @@ func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 
 
 ## Draws a part so it reads as a view model without breaking its own depth.
-##
-## [b]Depth testing stays ON, and switching it off is the obvious mistake.[/b] The
-## tempting fix for a weapon poking through a wall is `no_depth_test`, and it works —
-## right up until the hands and the gun are drawn against each other, at which point
-## neither can occlude the other and whichever sorts last wins. The first render of this
-## rig had a forearm painted flat over the rifle it was supposed to be holding.
-##
-## What is set instead is a sorting offset, which biases the draw order without throwing
-## the depth buffer away, so the arms and the weapon occlude each other correctly.
-##
-## [b]The cost, stated plainly:[/b] a view model can still clip into a wall the player is
-## pressed against. The pack's offsets keep everything within about 0.6 m of the camera
-## and a player capsule is 0.35 m across, so it is rare rather than impossible. A game
-## that wants it gone renders the view model through its own [SubViewport] with its own
-## camera and composites the result — which is the real fix, is more machinery than a
-## weapons pack should impose, and needs no change here to adopt.
+## Depth testing stays ON: `no_depth_test` stops a wall clipping but lets the arms and gun paint over each other. A sorting offset biases the order instead.
+## The cost: it can still clip a wall the player is pressed against (offsets stay within 0.6 m); a game wanting it gone renders through its own SubViewport camera.
 func _set_on_top(root: Node) -> void:
 	for mesh in _meshes(root):
 		mesh.sorting_offset = 100.0
 
-		# [b]A view model casts no shadow.[/b] It is drawn half a metre from the camera at
-		# well under life size, so the shadow it casts is a large dark smear on the ground
-		# a couple of metres ahead of the player — an object-shaped shadow with no object,
-		# because the thing casting it is only visible to one viewer. The third-person
-		# world model is what casts the shadow other people see.
+		# A view model casts no shadow: it is drawn half a metre from the camera at under life size, so its shadow
+		# would be a large dark smear ahead of the player with no object; the world model casts the shadow others see.
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-		# [b]Each surface is its own material[/b]: a gun has metal, polymer and wood, and one
-		# override on the mesh flattened all of them to the first surface's colour (a rifle that
-		# was one tan plank). Duplicated from the imported material rather than replaced by a
-		# fresh one (a new StandardMaterial3D turns the model flat white), because the imported
-		# one is shared with the third-person copy of the same mesh, which must not be edited.
-		# [b]A view model receives no shadow[/b]: it is drawn where the camera is, so the
-		# world's shadow map darkened it whenever the player's head was in shade, the gun
-		# flipping bright and dark along a wall. Lit, not flat: the sun, the ambient and the
-		# view's own key light all still shade it.
+		# Each surface is its own material (one override flattened a rifle to a tan plank), duplicated from the imported one
+		# because a fresh StandardMaterial3D turns flat white and the import is shared with the third-person copy.
+		# It receives no shadow (the world's shadow map darkened it whenever the head was in shade); sun, ambient and key light still shade it.
 		if mesh.mesh != null and mesh.material_override == null:
 			for surface in mesh.mesh.get_surface_count():
 				var source := mesh.get_active_material(surface)

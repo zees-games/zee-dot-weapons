@@ -1,32 +1,8 @@
 extends Node
 
-## A firing range you can walk around, holding every weapon in the pack.
-##
-## [codeblock]
-## godot --path . res://examples/zee_range.tscn
-##
-## # Exits on its own, so a screenshot sweep can open it:
-## godot --path . res://examples/zee_range.tscn -- --seconds 3 --weapon sniper
-## godot --path . res://examples/zee_range.tscn -- --weapon smg --fire   # trigger held
-## ... -- --weapon smg --fire --capture /tmp/smg   # frames 1-14 after the first shot
-## ... -- --weapon rifle --sheet /tmp/rifle          # the contact sheet's frames, then quit
-## ... -- --weapon rifle --sheet /tmp/rifle --dummy  # the same, with a character in the line of fire
-## [/codeblock]
-##
-## WASD to move, space to jump, ctrl to crouch, mouse to look, left click to fire, right
-## click to bash, R to reload, 1-5 for the slots, Q for the last weapon, wheel to cycle,
-## F1 to dump the rig's state, escape to release the mouse.
-##
-## [b]This is the half of the test suite no assertion reaches.[/b] `zee_selftest.tscn`
-## proves every weapon loads, measures and simulates; not one of its 133 checks can tell
-## you whether the sniper is held at a sensible angle, whether the arms are in front of
-## the gun or through it, or whether a reload reads as a reload. Those are decided by
-## opening this and looking, which is what `tools/screenshot.sh` automates.
-##
-## [b]The controller is wired by nothing.[/b] `zee_range.tscn` sets no [DotNodeRef]s at
-## all: the view finds the camera by type, the controller finds the collider and the
-## view by type, and the rig finds the view model the same way. An inspector-configured
-## project overrides any of them; this is what the defaults cost.
+## A firing range you can walk around, holding every weapon in the pack: `godot --path . res://examples/zee_range.tscn`.
+## Options after `--`: `--seconds N --weapon ID --fire --capture DIR --sheet DIR --dummy`. WASD, space, ctrl, mouse, R, 1-5, Q, wheel; F1 dumps the rig.
+## The half of the suite no assertion reaches: look at it (`tools/screenshot.sh`). It sets no [DotNodeRef]s; the defaults find everything by type.
 
 const CHANNEL := "zee.range"
 

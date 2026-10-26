@@ -91,12 +91,8 @@ func _rig() -> void:
 	_run_rig(rig, 60, 90, DotWeaponCommand.BUTTON_ATTACK)
 	_check("firing advances the replication counter", rig.fire_seq > before)
 
-	# A bash is the alt-fire the arsenal has no path for.
-	# [b]An Array, not an int.[/b] A GDScript lambda captures the enclosing locals by
-	# value, so a counter incremented inside a signal handler stays zero outside it and
-	# the check fails for a signal that fired perfectly — or worse, passes, because the
-	# value it was initialised with happened to be the answer. A container is shared by
-	# reference and is the honest way to count in a handler.
+	# A bash is the alt-fire the arsenal has no path for. An Array, not an int: a lambda captures locals by value,
+	# so a counter bumped in a handler stays zero outside it.
 	var bashes: Array[int] = []
 	rig.bashed.connect(func(_outcome: DotWeaponOutcome) -> void: bashes.append(1))
 	_run_rig(rig, 200, 204, DotWeaponCommand.BUTTON_ALT)
@@ -151,29 +147,9 @@ func _rig_reload_motion() -> void:
 	_check("every reload motion ends at the rest pose (%s)" % ", ".join(unrested), unrested.is_empty())
 
 
-## [b]A SERVER rig has to know who is carrying it, and for a long time it did not.[/b]
-##
-## `player_ref` was resolved inside `_resolve_presentation()`, behind that function's
-## `role == SERVER` early return. The view model and the world model belong there — they
-## are drawing, and a server draws nothing. The player does not: it is where
-## [method DotWeaponPlayerBridge.context_for] takes the muzzle position and the aim
-## direction from, so a rig that skipped it built every [DotWeaponContext] with the
-## defaults, and every shot on every dedicated server came out of `(0, 0, 0)` pointing
-## `(0, 0, -1)`.
-##
-## **Nothing reported it, and the 133 checks above could not.** The weapon fires, the
-## ammunition goes down, the use counter increments and replicates, and the hit
-## registration runs and finds nothing, because there is nothing where it looked. What a
-## game built on this has is a fight in which nobody can be shot and every number about it
-## is correct.
-##
-## It was found in a game, by running bots against each other for twenty rounds: every
-## single round ended with exactly two players alive, one per side, a draw. A number that is
-## identical every round is a number nothing is deciding.
-##
-## The carrier here is a bare [Node3D] with no `component` method, so the bridge falls all
-## the way through to the body transform — which is the weakest of its three answers and is
-## the right one to test against, because it is the only one every game has.
+## A SERVER rig has to know who is carrying it: with no player the bridge falls back to defaults and every shot comes out of (0, 0, 0).
+## Nothing else reports it (the weapon fires and the counters move), so this checks the origin directly.
+## The carrier is a bare [Node3D], the weakest of the bridge's three answers and the one every game has.
 func _rig_carrier() -> void:
 	_begin("the rig knows who is carrying it")
 
@@ -283,10 +259,7 @@ func _rig_rollback() -> void:
 
 
 ## The pack is written at 64 Hz; on a 128 Hz server it must take the same wall-clock time.
-##
-## [b]Before dot-weapon honoured authored_tick_rate, every zee weapon fired, reloaded and
-## deployed twice as fast in the 128 Hz sandbox[/b], and the only part anybody had patched
-## was the grenade fuse, by hand, in that game. These compare a second at each rate.
+## These compare a second at each rate.
 func _tick_rate() -> void:
 	_begin("the pack keeps its timing at 128 Hz")
 

@@ -1,25 +1,9 @@
 class_name ZeeViewArms
 extends Node3D
 
-## The hands holding the weapon, in first person.
-##
-## [b]Two meshes lifted out of a whole character, not an arms model.[/b] Kenney's blocky
-## characters are six rigid parts — head, torso, two arms, two legs — and the two arms
-## are usable on their own, which is the only reason this pack has first-person hands at
-## all without anybody modelling any. Everything else in the character is deleted on
-## load, because a torso at the camera's own position fills the screen with somebody's
-## chest.
-##
-## [b]All eighteen characters share byte-identical arm geometry and differ only by a
-## texture atlas[/b], so a game changing whose hands these are changes one texture path
-## and no mesh. That is why [member skin] is a path and not a model.
-##
-## [b]Poses are hand-authored numbers, and they are numbers because there is no rig.[/b]
-## These arms have no skeleton and no animation track — they are rigid boxes on a
-## transform each. So a "pose" here is a position and a rotation per arm, which is
-## enough for the four ways this pack holds things and is honestly all the kit can
-## support. A game with a skinned first-person rig replaces this node entirely; the
-## view model only requires that something answers [method set_pose].
+## The hands holding the weapon, in first person: two arm meshes lifted out of a Kenney character (the rest is deleted on load).
+## All eighteen characters share the arm geometry and differ by a texture atlas, so [member skin] is a path, not a model.
+## Poses are a position and rotation per arm (no skeleton); a game with a skinned rig replaces this node and answers [method set_pose].
 
 const CHANNEL := "zee.arms"
 
