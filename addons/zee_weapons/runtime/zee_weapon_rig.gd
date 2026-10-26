@@ -367,6 +367,10 @@ func simulate_tick(
 
 	_last_tick = tick
 
+	# A shooter with nothing pressed and nothing under way: no context to build, no command to copy.
+	if ctx == null and arsenal.is_idle_for(command, _previous_command):
+		return _idle_tick(command, tick)
+
 	var context := ctx if ctx != null else _context_for(tick)
 	context.tick = tick
 	context.authority = authority
@@ -391,6 +395,24 @@ func simulate_tick(
 	_update_presentation(tick)
 
 	_previous_command = command.duplicate_command()
+	return outcome
+
+
+## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button
+## down there is no aim, bash or use, so only the bookkeeping that every tick does is left.
+func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
+	_notice_holster(tick)
+	_ads_move = 1.0
+	_aim_ticks = 0
+	var outcome := arsenal.idle_tick()
+	_notice_switch_end()
+	_advance_charge(command, tick)
+	_update_presentation(tick)
+
+	# The previous command is only read for its buttons and slot; copy it only when they differ.
+	if _previous_command == null or _previous_command.buttons != 0 or _previous_command.slot != command.slot:
+		_previous_command = command.duplicate_command()
+
 	return outcome
 
 

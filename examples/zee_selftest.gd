@@ -20,7 +20,7 @@ extends Node
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 512
+const CHECKS := 513
 
 var _sections_entered: int = 0
 var _sections_finished: int = 0
@@ -53,6 +53,7 @@ func _ready() -> void:
 	_rig()
 	_rig_carrier()
 	_rig_rollback()
+	_rig_idle()
 	_tick_rate()
 	_view_models()
 	_aim()
@@ -1989,6 +1990,49 @@ func _tick_rate() -> void:
 	_check("the holster is drawn as far along after the same time (%.2f, %.2f)" % [deploy_fraction[0], deploy_fraction[1]],
 		absf(deploy_fraction[0] - deploy_fraction[1]) < 0.1)
 
+	_end()
+
+
+func _rig_idle() -> void:
+	_begin("an idle rig skips the context and changes nothing")
+
+	# A given context takes the full path; none takes the idle one when nothing is pressed.
+	var full := _make_rig()
+	var quick := _make_rig()
+
+	for rig: ZeeWeaponRig in [full, quick]:
+		var _setup: DotResult = rig.setup()
+		var _given: Variant = rig.give_everything()
+		rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var same := true
+
+	for tick in range(900):
+		var command := DotWeaponCommand.new()
+
+		if (tick / 40) % 3 == 0:
+			command.set_button(DotWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
+			command.set_button(DotWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
+			command.set_button(DotWeaponCommand.BUTTON_ALT, rng.randf() < 0.05)
+			command.slot = rng.randi_range(1, 4) if rng.randf() < 0.04 else 0
+
+		var ctx := DotWeaponContext.new()
+		ctx.authority = true
+		var want := full.simulate_tick(command, tick, ctx)
+		var got := quick.simulate_tick(command.duplicate_command(), tick)
+
+		if want.used != got.used or want.kind != got.kind or want.shots.size() != got.shots.size() \
+				or var_to_str(full.snapshot()) != var_to_str(quick.snapshot()) \
+				or full.ads_move_scale() != quick.ads_move_scale():
+			same = false
+			break
+
+	_check("outcomes and snapshots agree on every tick of a mixed stream", same)
+
+	_cleanup(full)
+	_cleanup(quick)
 	_end()
 
 
