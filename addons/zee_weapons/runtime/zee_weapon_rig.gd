@@ -490,6 +490,9 @@ func _update_presentation(tick: int) -> void:
 	if id != _shown:
 		_shown = id
 		var art: ZeeWeaponArt = _art.get(id, null)
+		# A profile's `extra: art:` overrides the table's art, as a figure's held gun does.
+		if art != null and def != null and def.params.get("art") is Dictionary:
+			art = art.with_overrides(def.params["art"])
 
 		if _view != null:
 			_view.equip(art)

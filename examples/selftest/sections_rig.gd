@@ -112,6 +112,7 @@ func _rig() -> void:
 	_check("but not on a server", (_heard_reloads(ZeeWeaponRig.Role.SERVER, false) as Array).is_empty())
 	_check("and not in a replay", (_heard_reloads(ZeeWeaponRig.Role.LOCAL, true) as Array).is_empty())
 
+	_rig_art_override(rig)
 	_rig_reload_motion()
 
 	_cleanup(rig)
@@ -682,3 +683,17 @@ func _fake_shot() -> DotWeaponOutcome:
 	outcome.used = true
 	outcome.kind = DotWeaponOutcome.KIND_SHOT
 	return outcome
+
+
+## A profile's `extra: art:` reaches the rig's equip, not only a figure's held gun.
+func _rig_art_override(rig: ZeeWeaponRig) -> void:
+	var def := rig.current_def()
+	var old: Variant = def.params.get("art")
+	def.params["art"] = {"world_scale": 2.5}
+	var base := rig.current_art()
+	var merged := base.with_overrides(def.params["art"])
+	_check("an `extra: art:` row yields overridden art for the rig's equip", merged != base and is_equal_approx(merged.world_scale, 2.5))
+	if old == null:
+		def.params.erase("art")
+	else:
+		def.params["art"] = old
