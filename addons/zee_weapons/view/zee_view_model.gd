@@ -1066,21 +1066,49 @@ func _set_on_top(root: Node) -> void:
 		# It receives no shadow (the world's shadow map darkened it whenever the head was in shade); sun, ambient and key light still shade it.
 		if mesh.mesh != null and mesh.material_override == null:
 			for surface in mesh.mesh.get_surface_count():
-				var source := mesh.get_active_material(surface)
-				var material: Material = (source as StandardMaterial3D).duplicate() \
-					if source is StandardMaterial3D else StandardMaterial3D.new()
-				if material is BaseMaterial3D:
-					var base := material as BaseMaterial3D
-					base.disable_receive_shadows = true
-					if finish_materials:
-						ZeeWeaponFinish.apply(base, finish_metal, finish_metal_roughness,
-							finish_polymer_roughness, finish_wood_roughness, finish_lift)
-				mesh.set_surface_override_material(surface, material)
+				mesh.set_surface_override_material(surface, _view_material(mesh.get_active_material(surface)))
 		elif mesh.material_override is BaseMaterial3D:
 			(mesh.material_override as BaseMaterial3D).disable_receive_shadows = true
 
 		if view_layer > 0:
 			mesh.layers = 1 << (view_layer - 1)
+
+
+## The view copy of [param source], made once per source and finish and kept for good.
+## A copy dies with the weapon that held it, and with the last copy goes the shader the engine
+## built for its flags: the next equip of that weapon generated and compiled it again, a 60 ms
+## stall on every switch to a knife or a grenade.
+func _view_material(source: Material) -> Material:
+	var key := "%d|%s|%s|%s|%s|%s|%s" % [source.get_instance_id() if source != null else 0, finish_materials,
+		finish_metal, finish_metal_roughness, finish_polymer_roughness, finish_wood_roughness, finish_lift]
+	if _view_materials.has(key):
+		return _view_materials[key]
+	var material: Material = (source as StandardMaterial3D).duplicate() \
+		if source is StandardMaterial3D else StandardMaterial3D.new()
+	if material is BaseMaterial3D:
+		var base := material as BaseMaterial3D
+		base.disable_receive_shadows = true
+		if finish_materials:
+			ZeeWeaponFinish.apply(base, finish_metal, finish_metal_roughness,
+				finish_polymer_roughness, finish_wood_roughness, finish_lift)
+	_view_materials[key] = material
+	# The source is pinned with its copy: an id of a freed material could be handed to another.
+	_view_sources.append(source)
+	return material
+
+
+## Every view material made so far, for a loading cover to draw once so their shaders compile
+## under it.
+static func prepared_materials() -> Array:
+	return _view_materials.values()
+
+
+## Builds [param art]'s view of the weapon once and drops it again, so the model is loaded,
+## its materials made and its hand spans measured before the weapon is first drawn in play.
+## Call it on a spare view model under a loading cover, one weapon a frame.
+func prewarm(art: ZeeWeaponArt) -> void:
+	var _r := equip(art)
+	clear()
 
 
 func _meshes(node: Node) -> Array[MeshInstance3D]:
@@ -1142,11 +1170,14 @@ func describe_lines() -> PackedStringArray:
 
 
 # The two ray-cast spans cost a triangle walk of the whole mesh each; a weapon's art does not change, so a re-equip reuses them.
-var _span_cache: Dictionary = {}
+static var _span_cache: Dictionary = {}
+static var _view_materials: Dictionary = {}
+static var _view_sources: Array = []
 
 
 func _spans_for(art: ZeeWeaponArt, forward: Vector3) -> Array:
-	var key := art.get_instance_id()
+	# Not the art's instance id: `_sized` makes a new art per equip, and that id is reused.
+	var key := "%s|%s|%s|%s|%s" % [art.id, art.model_path, _holder.transform, forward, art.fore_along]
 	if not _span_cache.has(key):
 		var tris := IronSight.triangles_of(_weapon, _holder)
 		_span_cache[key] = [IronSight.span(_weapon, _holder, forward, art.fore_along, tris), IronSight.span(_weapon, _holder, forward, 0.30, tris)]
