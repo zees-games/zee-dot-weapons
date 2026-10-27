@@ -130,6 +130,34 @@ func _pack_source() -> void:
 	_end()
 
 
+func _pack_scan() -> void:
+	_begin("ZeePackScan and ZeePackRoles")
+
+	var provider := GDScript.new()
+	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[DotWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"sc_gun\"\n\ta.tags = [&\"ranged\"]\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"sc_blade\"\n\tb.tags = [&\"melee\"]\n\treturn [a, b]\n"
+	provider.reload()
+	var defs := ZeePackScan.defs_of({}, provider)
+	_check("defs_of hands the provider's defs through", defs.size() == 2)
+	_check("kept drops excluded ids", ZeePackScan.kept(defs, ["sc_gun"]).size() == 1)
+	_check("kept drops ids already taken", ZeePackScan.kept(defs, [], [&"sc_blade"]).size() == 1)
+	var tiers: Array[StringName] = [&"sidearm", &"primary", &"melee"]
+	var tiered := ZeePackRoles.tiered({}, provider, tiers, {})
+	_check("an untiered ranged def joins the fallback", tiered[0].tags.has(&"primary"))
+	_check("an untiered melee def joins melee", tiered[1].tags.has(&"melee"))
+	var forced := ZeePackRoles.tiered({}, provider, tiers, {"sc_gun": "sidearm"})
+	_check("an override wins", forced[0].tags.has(&"sidearm") and not forced[0].tags.has(&"primary"))
+	var by_id := {}
+
+	for def in defs:
+		by_id[def.id] = def
+
+	_check("first_for_slot picks by slot", ZeePackRoles.first_for_slot([&"sc_gun", &"sc_blade"], by_id, ZeeWeaponIds.SLOT_MELEE, &"knife") == &"sc_blade")
+	_check("none in the slot is empty", ZeePackRoles.first_for_slot([&"sc_gun"], by_id, ZeeWeaponIds.SLOT_HEAVY, &"launcher") == &"")
+	_check("a missing folder has no providers", ZeePackScan.provider_dirs("res://no_such_dir", "spawn_provider.gd").is_empty())
+
+	_end()
+
+
 func _damage() -> void:
 	_begin("damage types")
 
