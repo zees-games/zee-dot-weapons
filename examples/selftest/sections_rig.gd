@@ -493,7 +493,7 @@ func _input_bindings() -> void:
 	DotLog.signals().record.connect(listen)
 
 	var first := ZeeWeaponInput.register_default_actions()
-	_check("registering the defaults adds all thirteen", first == 13)
+	_check("registering the defaults adds all fourteen", first == 14)
 	_check(
 		"and says so once, on zee.input, at INFO (heard %d)" % heard.size(),
 		heard.size() == 1 and int(heard[0].get("level", -1)) == DotLog.Level.INFO

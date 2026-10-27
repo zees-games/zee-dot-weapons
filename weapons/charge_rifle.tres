@@ -43,6 +43,7 @@ deploy_ticks = 32
 holster_ticks = 23
 fire_mode = 3
 use_interval_ticks = 43
+fire_modes = PackedStringArray()
 charge_ticks = 70
 charge_requires_min = true
 min_charge = 0.34

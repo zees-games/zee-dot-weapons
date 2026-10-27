@@ -38,6 +38,7 @@ authored_tick_rate = 64
 deploy_ticks = 10
 holster_ticks = 6
 use_interval_ticks = 26
+fire_modes = PackedStringArray()
 cost_per_use = 0
 reload_ticks = 0
 auto_reload = false

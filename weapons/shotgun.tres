@@ -43,6 +43,7 @@ slot = 3
 deploy_ticks = 24
 holster_ticks = 18
 use_interval_ticks = 51
+fire_modes = PackedStringArray()
 ammo_type = &"shells"
 magazine = 8
 reserve = 32

@@ -44,6 +44,7 @@ slot = 3
 deploy_ticks = 23
 holster_ticks = 17
 use_interval_ticks = 13
+fire_modes = PackedStringArray()
 ammo_type = &"darts_heavy"
 magazine = 20
 reserve = 80

@@ -8,6 +8,7 @@ authored_tick_rate: 64
 deploy_ticks: 26
 holster_ticks: 19
 fire_mode: "hold"
+fire_modes: []
 use_interval_ticks: 4
 burst_count: 3
 burst_interval_ticks: 3
@@ -38,6 +39,7 @@ extra:
     spread_speed_ref: 6.0
     spread_airborne: 0.0
     spread_crouched: 0.5
+    crosshair_scale: 0.0
     bloom: 0.0
     bloom_max: 5.0
     bloom_recovery: 0.15
