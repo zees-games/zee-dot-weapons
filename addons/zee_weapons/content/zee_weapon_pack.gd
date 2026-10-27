@@ -46,6 +46,36 @@ static func catalogue(damage: Dictionary = {}) -> DotWeaponCatalogue:
 	return out
 
 
+## Carry weight in kg by weapon id; a weapon not listed falls back to its tier.
+const WEIGHTS := {
+	"battle_rifle": 4,
+	"derringer": 1,
+	"bullpup": 5,
+	"launcher": 6,
+	"charge_rifle": 6,
+	"carbine": 4,
+	"beamer": 6,
+	"knife": 0.4,
+	"hatchet": 1.5,
+	"burst_rifle": 4,
+	"fists": 1.5,
+	"drum_shotgun": 4,
+	"frag": 0.4,
+	"minigun": 7.5,
+	"machine_pistol": 1,
+	"mallet": 1.5,
+	"marksman": 5,
+	"pickaxe": 1.5,
+	"pistol": 1,
+	"revolver": 1,
+	"smg": 2.8,
+	"shiv": 1.5,
+	"spade": 1.5,
+	"sniper": 6,
+	"sticky": 0.4,
+}
+
+
 ## [param profiled] false skips the cfg profiles (the Workshop export writes the builders' own numbers).
 static func weapons(types: Dictionary = {}, profiled: bool = true) -> Array[DotWeaponDef]:
 	var t := types if not types.is_empty() else ZeeWeaponDamage.table()
@@ -58,6 +88,10 @@ static func weapons(types: Dictionary = {}, profiled: bool = true) -> Array[DotW
 		sniper(t), minigun(t), launcher(t), beamer(t), charge_rifle(t),
 		frag(t), sticky(t),
 	]
+
+	for def in out:
+		if WEIGHTS.has(String(def.id)):
+			def.weight = float(WEIGHTS[String(def.id)])
 
 	if profiled:
 		errors = DotWeaponProfiles.tune(out, profile_set())

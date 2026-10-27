@@ -2,7 +2,6 @@
 name: "Launcher"
 description: ""
 tags: ["heavy", "explosive"]
-weight: 6
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_projectile.gd"
 slot: 4
 authored_tick_rate: 64
@@ -25,6 +24,7 @@ reload_ticks: 179
 reload_per_round: false
 reload_start_ticks: 22
 auto_reload: true
+weight: 6.0
 mounts: []
 extra:
   tuning:
@@ -43,6 +43,10 @@ extra:
     bloom_recovery: 0.15
     recoil_pitch: 3.0
     recoil_yaw: 0.15
+    recoil_build: 0.06
+    recoil_build_max: 0.8
+    recoil_recovery: 6.0
+    recoil_seed: 0
     splash_radius: 4.5
     splash_damage: 88.0
     splash_hurts_owner: true

@@ -2,7 +2,6 @@
 name: "Knife"
 description: ""
 tags: ["melee"]
-weight: 0.4
 behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
 slot: 1
 authored_tick_rate: 64
@@ -25,6 +24,7 @@ reload_ticks: 0
 reload_per_round: false
 reload_start_ticks: 22
 auto_reload: false
+weight: 0.4
 mounts: []
 extra:
   tuning:
@@ -43,6 +43,10 @@ extra:
     bloom_recovery: 0.15
     recoil_pitch: 0.0
     recoil_yaw: 0.15
+    recoil_build: 0.06
+    recoil_build_max: 0.8
+    recoil_recovery: 6.0
+    recoil_seed: 0
     splash_radius: 0.0
     splash_damage: 0.0
     splash_hurts_owner: true

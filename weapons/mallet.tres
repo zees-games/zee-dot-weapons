@@ -34,6 +34,7 @@ params = {
 &"rays": 5
 }
 tuning = SubResource("Resource_lug2p")
+weight = 1.5
 authored_tick_rate = 64
 deploy_ticks = 32
 holster_ticks = 26

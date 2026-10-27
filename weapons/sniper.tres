@@ -39,6 +39,7 @@ params = {
 &"death_reaction": &"power_launch"
 }
 tuning = SubResource("Resource_xmfyc")
+weight = 6.0
 authored_tick_rate = 64
 slot = 4
 deploy_ticks = 45

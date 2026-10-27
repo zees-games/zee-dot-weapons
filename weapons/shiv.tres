@@ -33,6 +33,7 @@ params = {
 &"rays": 2
 }
 tuning = SubResource("Resource_obie8")
+weight = 1.5
 authored_tick_rate = 64
 deploy_ticks = 8
 holster_ticks = 5

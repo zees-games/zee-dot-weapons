@@ -33,6 +33,7 @@ params = {
 &"rays": 4
 }
 tuning = SubResource("Resource_8onbr")
+weight = 1.5
 authored_tick_rate = 64
 deploy_ticks = 16
 holster_ticks = 12

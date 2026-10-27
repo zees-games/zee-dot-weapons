@@ -363,7 +363,7 @@ func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
 func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> DotWeaponOutcome:
 	_ads_move = 1.0
 	var def := arsenal.current_def()
-	if not _can_aim(command, def):
+	if not _can_aim(command, def, context):
 		_aim_ticks = 0
 		return arsenal.simulate_tick(command, context, _previous_command)
 	var art: ZeeWeaponArt = _art.get(def.id, null)
@@ -390,9 +390,11 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 
 
 ## Whether the aim bit counts: the server does not take it on trust. Needs rules, a weapon that
-## aims (rules and art), and a rifle that is neither being switched to nor reloaded.
-func _can_aim(command: DotWeaponCommand, def: DotWeaponDef) -> bool:
+## aims (rules and art), and a rifle that is neither being switched to nor reloaded, and a carrier not sprinting under `sv_sprint_noaim`.
+func _can_aim(command: DotWeaponCommand, def: DotWeaponDef, context: DotWeaponContext = null) -> bool:
 	if ads_rules == null or ads_button == 0 or def == null or (command.buttons & ads_button) == 0:
+		return false
+	if context != null and context.sprinting and context.sprint_blocks_aim:
 		return false
 	if not ads_rules.enabled_for(def.id) or arsenal.is_switching() or arsenal.is_reloading():
 		return false

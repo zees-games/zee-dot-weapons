@@ -443,6 +443,15 @@ func _ads_rules() -> void:
 	_check("while garbage is refused and changes nothing", not clone.adopt_wire("nope") and not clone.enabled_for(&"pistol"))
 	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
 	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))
+	var sprint_ctx := DotWeaponContext.new()
+	var aim_cmd := DotWeaponCommand.new()
+	aim_cmd.buttons = DotWeaponCommand.BUTTON_USER_0
+	var cur := rig.arsenal.current_def()
+	var open_aim := rig._can_aim(aim_cmd, cur, sprint_ctx)
+	sprint_ctx.sprinting = true
+	var free_sprint := rig._can_aim(aim_cmd, cur, sprint_ctx)
+	sprint_ctx.sprint_blocks_aim = true
+	_check("sprinting refuses the aim bit only under sv_sprint_noaim", open_aim and free_sprint and not rig._can_aim(aim_cmd, cur, sprint_ctx))
 	_ads_wire_warning()
 	carrier.queue_free()
 	_end()

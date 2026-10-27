@@ -37,6 +37,7 @@ params = {
 &"bash_reach": 1.9
 }
 tuning = SubResource("Resource_y055s")
+weight = 1.0
 authored_tick_rate = 64
 slot = 2
 deploy_ticks = 19

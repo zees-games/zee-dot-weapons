@@ -38,6 +38,7 @@ params = {
 &"bash_reach": 1.9
 }
 tuning = SubResource("Resource_qmpkw")
+weight = 4.0
 authored_tick_rate = 64
 slot = 3
 deploy_ticks = 23

@@ -38,6 +38,7 @@ params = {
 &"death_power": 0.6
 }
 tuning = SubResource("Resource_lynnl")
+weight = 4.0
 authored_tick_rate = 64
 slot = 3
 deploy_ticks = 27

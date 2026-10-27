@@ -36,6 +36,7 @@ params = {
 &"death_power": 0.9
 }
 tuning = SubResource("Resource_i5l6e")
+weight = 6.0
 authored_tick_rate = 64
 slot = 4
 deploy_ticks = 32
