@@ -131,6 +131,9 @@ var catalogue: DotWeaponCatalogue = null
 ## Play reports.
 @export var sounds: bool = true
 
+## The game's roof probe ([code]DotAmbienceRoof[/code], which the game steps); roofed means indoors, so a shot is followed by a room tail.
+var roof: RefCounted = null
+
 ## The audio bus reports are played on.
 @export var bus: StringName = &"Master"
 
@@ -822,6 +825,18 @@ func _report(id: StringName, kind: StringName, at: Vector3) -> void:
 		heard = ZeeWeaponSound.far_for(id, kind)
 
 	_play(heard if heard != null else ZeeWeaponSound.stream_for(id, kind), at, 0.0)
+	_play_tail(id, kind, at)
+
+
+## Indoors the class's distant recording follows the report, [constant DotWeaponSound.TAIL_DELAY] late.
+func _play_tail(id: StringName, kind: StringName, at: Vector3) -> void:
+	var indoors := roof != null and bool(roof.get(&"roofed"))
+	var tail := DotWeaponSound.pick_tail(ZeeWeaponSound.class_for(id, kind), indoors, randi())
+	if tail == null or not is_inside_tree():
+		return
+	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY).timeout
+	if is_instance_valid(self) and is_inside_tree():
+		_play(tail, at, DotWeaponSound.TAIL_GAIN_DB)
 
 
 func _play(stream: AudioStream, at: Vector3, extra_db: float) -> void:

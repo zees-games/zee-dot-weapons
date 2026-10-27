@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 553
+const CHECKS := 556
 
 
 func _ready() -> void:
@@ -56,7 +56,7 @@ func _ready() -> void:
 	_ads_rules()
 	_effects()
 	_input_bindings()
-	_stock_sounds()
+	await _stock_sounds()
 
 	print("")
 	print("%d sections entered, %d finished, %d checks, %d failed" % [

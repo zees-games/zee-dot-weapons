@@ -630,9 +630,17 @@ func _stock_sounds() -> void:
 	var before := heard.size()
 	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
 	_check("a shot plays a stock report", heard.size() == before + 1 and _stock_path(heard[-1], "rifle_fire"))
+	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY + 0.1).timeout
+	_check("outdoors a shot has no tail", heard.size() == before + 1)
+	fx.roof = _FakeRoof.new()
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	_check("indoors the report is alone until the delay", heard.size() == before + 2)
+	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY + 0.1).timeout
+	_check("indoors the _far tail follows the report", heard.size() == before + 3 and _stock_path(heard[-1], "rifle_far"))
+	fx.roof = null
 	fx.sounds = false
 	fx.play_equip(Vector3.ZERO)
-	_check("and with sounds off nothing plays", heard.size() == before + 1)
+	_check("and with sounds off nothing plays", heard.size() == before + 3)
 	fx.queue_free()
 
 	# The rig wires the arsenal's dry signal and a tube magazine's shells to the effects.
@@ -697,3 +705,7 @@ func _rig_art_override(rig: ZeeWeaponRig) -> void:
 		def.params.erase("art")
 	else:
 		def.params["art"] = old
+
+
+class _FakeRoof extends RefCounted:
+	var roofed := true
