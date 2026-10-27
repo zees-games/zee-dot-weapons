@@ -63,6 +63,8 @@ Sway, bob and kick are reactions, and a spring is the right model of a reaction.
 
 Each of these is its own line in `ZeeWeaponPose`:
 
+- **Every kick number is a profile param.** `extra: params: view_kick_pitch|knee|yaw|roll|back|back_max|response|rate_ref|rate_max` and `view_camera_share` (`ZeeWeaponPose.Tunables.KICK_PARAMS`) override the rig-wide defaults per weapon, so a server tunes the feel in cfg; the builders write the defaults (`_gun`), the rig applies them on equip (`ZeeViewModel.set_kick_params`).
+
 - **Weight does not scale the kick.** A behaviour's `recoil_pitch` already says how hard a weapon kicks; `ZeeWeaponArt.weight` slows the spring (by its square root) and scales sway and bob, and never touches the size of a kick. Scaling both counted the sniper's size twice (17 degrees and 13 cm back for one shot).
 - **The range is compressed.** Recoil runs 0.12 to 4.0 across the pack, right for a camera climbing and wrong for a gun in a hand: `kick_degrees()` is `kick_pitch · r / (1 + r · kick_knee)`.
 - **The gun turns about the grip, not the eye.** `Animated` sits at the camera, so a rotation there carries the whole weapon up the screen. `pivot` is the holder's rest origin, the grip, and the kick turns about that.

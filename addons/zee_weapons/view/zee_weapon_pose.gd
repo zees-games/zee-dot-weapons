@@ -95,6 +95,12 @@ class Tunables extends RefCounted:
 	## weapon returns more slowly, by the square root of its weight.
 	var kick_response: float = 22.0
 
+	## A weapon firing faster than this many seconds a shot gets a stiffer kick spring, so the kick settles between shots.
+	var kick_rate_ref: float = 0.12
+
+	## The most that stiffening multiplies [member kick_response] by.
+	var kick_rate_max: float = 1.8
+
 	## [b]The spring is critically damped, and that is not a tunable any more.[/b] It was
 	## 0.7, which overshoots: on a sniper the barrel dipped visibly under where it rested
 	## after every shot, a wobble that reads as the model being loose in the hand rather
@@ -141,6 +147,32 @@ class Tunables extends RefCounted:
 
 	## How quickly a landing dip recovers, per second.
 	var landing_response: float = 8.0
+
+	## The profile keys (`extra: params:`) that set each kick number, by name here: a server tunes a weapon's feel in cfg.
+	const KICK_PARAMS := {
+		&"view_kick_pitch": &"kick_pitch", &"view_kick_knee": &"kick_knee", &"view_kick_yaw": &"kick_yaw",
+		&"view_kick_roll": &"kick_roll", &"view_kick_back": &"kick_back", &"view_kick_back_max": &"kick_back_max",
+		&"view_kick_response": &"kick_response", &"view_kick_rate_ref": &"kick_rate_ref",
+		&"view_kick_rate_max": &"kick_rate_max", &"view_camera_share": &"camera_share",
+	}
+
+
+	## The builders' kick numbers as profile params: the defaults above, so a profile that sets none changes nothing.
+	static func kick_defaults() -> Dictionary:
+		var base := Tunables.new()
+		var out := {}
+		for key: StringName in KICK_PARAMS:
+			out[key] = float(base.get(KICK_PARAMS[key]))
+		return out
+
+
+	## Sets the kick numbers from a weapon's params; a key that is absent or not a number keeps the default.
+	func apply_kick(params: Dictionary) -> void:
+		var base := Tunables.new()
+		for key: StringName in KICK_PARAMS:
+			var field: StringName = KICK_PARAMS[key]
+			var v: Variant = params.get(key, params.get(String(key)))
+			set(field, float(v) if (v is float or v is int) and is_finite(float(v)) else base.get(field))
 
 
 # --- Authored motion --------------------------------------------------------
@@ -828,7 +860,7 @@ static func _critical(x: float, v: float, omega: float, t: float) -> Vector2:
 func _omega() -> float:
 	var rate := 1.0
 	if fire_interval > 0.0:
-		rate = clampf(0.12 / fire_interval, 1.0, 1.8)
+		rate = clampf(tunables.kick_rate_ref / fire_interval, 1.0, maxf(1.0, tunables.kick_rate_max))
 	return maxf(1.0, tunables.kick_response) * rate / sqrt(clampf(weight, 0.5, 4.0))
 
 

@@ -826,10 +826,10 @@ static func beamer(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.3)
 	# It ramps: half damage on contact, full after half a second on target. What makes
 	# it a tracking weapon rather than a very fast automatic one.
-	def.params = {
+	def.params.merge({
 		&"ramp_ticks": sec_ticks(0.5),
 		&"ramp_from": 0.45,
-	}
+	})
 
 	var b := _ballistics(t, 9.0, ZeeWeaponIds.DAMAGE_ENERGY)
 	b.spread = 0.0
@@ -940,6 +940,7 @@ static func _gun(
 		&"bash_reach": 1.9,
 		&"bash_cooldown_ticks": sec_ticks(0.8),
 	}
+	def.params.merge(ZeeWeaponPose.Tunables.kick_defaults())
 	return def
 
 

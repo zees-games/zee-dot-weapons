@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 556
+const CHECKS := 559
 
 
 func _ready() -> void:
@@ -359,6 +359,29 @@ func _recoil() -> void:
 		"a faster weapon's kick has settled further after the same time",
 		absf(fast_p.view_punch().x) < absf(slow_p.view_punch().x)
 	)
+
+	# Kick numbers are profile params: defaults change nothing, a set key does, junk is ignored.
+	var kd := ZeeWeaponPose.Tunables.kick_defaults()
+	var base_t := ZeeWeaponPose.Tunables.new()
+	var same := kd.size() == 10
+	for key: StringName in ZeeWeaponPose.Tunables.KICK_PARAMS:
+		same = same and is_equal_approx(float(kd[key]), float(base_t.get(ZeeWeaponPose.Tunables.KICK_PARAMS[key])))
+	var def_pose := ZeeWeaponPose.make(1.0)
+	var tuned_pose := ZeeWeaponPose.make(1.0)
+	tuned_pose.tunables.apply_kick(kd)
+	def_pose.punch(Vector2(2.0, 0.0))
+	tuned_pose.punch(Vector2(2.0, 0.0))
+	for j in range(9):
+		def_pose.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+		tuned_pose.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	_check("kick params at their defaults give the identical kick", same and def_pose.describe()["kick_rotation"] == tuned_pose.describe()["kick_rotation"])
+	var hard := ZeeWeaponPose.make(1.0)
+	hard.tunables.apply_kick({&"view_kick_pitch": 8.0, &"view_kick_knee": "junk"})
+	hard.punch(Vector2(2.0, 0.0))
+	_check("a profile's view_kick_pitch scales the climb and junk keeps the default",
+		hard.kick_degrees(2.0) > def_pose.kick_degrees(2.0) * 1.9 and is_equal_approx(hard.tunables.kick_knee, 0.45))
+	var pack_rifle := ZeeWeaponPack.rifle()
+	_check("every gun builder carries the kick params (rifle)", pack_rifle.params.has(&"view_kick_pitch") and pack_rifle.params.has(&"view_kick_rate_max"))
 
 	# Signed (dot-weapon's recoil_signed): the sign of the yaw is the side, every time.
 	var fixed := ZeeWeaponPose.make(1.0)

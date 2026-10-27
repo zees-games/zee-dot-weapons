@@ -37,7 +37,17 @@ behaviour_path = "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
 params = {
 &"bash_cooldown_ticks": 51,
 &"bash_damage": 42.0,
-&"bash_reach": 1.9
+&"bash_reach": 1.9,
+&"view_camera_share": 0.3,
+&"view_kick_back": 0.008,
+&"view_kick_back_max": 0.045,
+&"view_kick_knee": 0.45,
+&"view_kick_pitch": 4.0,
+&"view_kick_rate_max": 1.8,
+&"view_kick_rate_ref": 0.12,
+&"view_kick_response": 22.0,
+&"view_kick_roll": 1.5,
+&"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_6ob7v")
 weight = 1.0

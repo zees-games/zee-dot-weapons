@@ -631,6 +631,11 @@ func eject_transform() -> Transform3D:
 var fire_interval: float = 0.0
 
 
+## Sets this weapon's kick feel from its profile params (see [method ZeeWeaponPose.Tunables.apply_kick]).
+func set_kick_params(params: Dictionary) -> void:
+	_pose.tunables.apply_kick(params)
+
+
 ## A use produced [param outcome].
 func on_used(outcome: DotWeaponOutcome) -> void:
 	if outcome == null or not outcome.used:

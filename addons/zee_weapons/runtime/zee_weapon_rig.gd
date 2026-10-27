@@ -496,6 +496,7 @@ func _update_presentation(tick: int) -> void:
 
 		if _view != null:
 			_view.equip(art)
+			_view.set_kick_params(def.params if def != null else {})
 
 		if _world != null:
 			_world.equip(art)
