@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 532
+const CHECKS := 533
 
 
 func _ready() -> void:
@@ -873,6 +873,13 @@ func _effects() -> void:
 	_check("only what never moves takes a mark",
 		ZeeShotFx.takes_marks(wall) and not ZeeShotFx.takes_marks(crate)
 		and not ZeeShotFx.takes_marks(somebody) and not ZeeShotFx.takes_marks(null))
+
+	var warmed := ZeeShotFx.warm()
+	var warmed_again := ZeeShotFx.warm()
+	var shared := warmed.size() >= 15
+	for i in warmed.size():
+		shared = shared and warmed[i] != null and warmed[i] == warmed_again[i]
+	_check("warm() builds every shared mesh and material once, so the first shot makes none", shared)
 
 	var marks_before := fx.mark_count() if fx != null else 0
 	var sparks_before := fx.count_of(&"spark") if fx != null else 0

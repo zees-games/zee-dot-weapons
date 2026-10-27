@@ -941,6 +941,16 @@ func _collect_bodies(node: Node, depth: int) -> void:
 		_collect_bodies(child, depth + 1)
 
 
+## Builds every shared mesh, texture and material now and returns them for a draw under the load
+## gate (DotLoadGate.warm_up), so the first shot compiles nothing.
+static func warm() -> Array:
+	return [
+		_streak_mesh(), _quad_mesh(), _shell_mesh_unit(), _soft_disc(),
+		_tracer_mat(), _beam_mat(), _flash_mat(), _spark_mat(), _puff_mat(), _petal_mat(),
+		_hit_mat(), _mist_mat(), _mark_mat(), _brass_mat(), _hull_mat(),
+	]
+
+
 static func _streak_mesh() -> BoxMesh:
 	if _streak == null:
 		_streak = BoxMesh.new()
