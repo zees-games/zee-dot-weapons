@@ -534,7 +534,13 @@ def launcher():
     return join(parts, "launcher"), None, 0.95
 
 
+import toy_guns  # noqa: E402
+
 RECIPES = {
+    "pistol": toy_guns.pistol,
+    "derringer": toy_guns.derringer,
+    "drum_shotgun": toy_guns.drum_shotgun,
+    "minigun": toy_guns.minigun,
     "rifle": rifle,
     "carbine": carbine,
     "smg": smg,

@@ -376,9 +376,11 @@ static func spade() -> ZeeWeaponArt:
 # --- Sidearms ---------------------------------------------------------------
 
 static func pistol() -> ZeeWeaponArt:
-	return _blaster(ZeeWeaponIds.PISTOL, "blaster-k", POSE_PISTOL).with_magazine(
-		CLIP_SMALL, Vector3(0.0, -0.09, 0.02)
+	var art := _gun(ZeeWeaponIds.PISTOL, "pistol", POSE_PISTOL).with_magazine(
+		GUNS + "pistol_magazine.glb", Vector3(0.0, -0.0504, 0.1522)
 	)
+	art.ejects = false  # the foam sidearm throws no brass
+	return art
 
 
 ## A full-lug revolver: the round goes into the cylinder, a third of the way from the back.
@@ -394,9 +396,9 @@ static func machine_pistol() -> ZeeWeaponArt:
 	return art
 
 
-## The smallest model in the kit, at 42 cm.
+## Two stacked barrels over a stub of a grip: the smallest gun in the pack, 26 cm.
 static func derringer() -> ZeeWeaponArt:
-	return _loose(_blaster(ZeeWeaponIds.DERRINGER, "blaster-b", POSE_PISTOL), DART, Vector3(0.0, -0.05, 0.0))
+	return _loose(_gun(ZeeWeaponIds.DERRINGER, "derringer", POSE_PISTOL), DART, Vector3(0.0, -0.05, 0.0))
 
 
 # --- Primaries --------------------------------------------------------------
@@ -448,9 +450,9 @@ static func shotgun() -> ZeeWeaponArt:
 	return _tube(_gun(ZeeWeaponIds.SHOTGUN, "shotgun", POSE_RIFLE))
 
 
-## The widest model in the kit, at 24 cm across. A drum, so a drum shotgun.
+## A long barrel over a fore-end, a drum under it and a full stock.
 static func drum_shotgun() -> ZeeWeaponArt:
-	return _tube(_blaster(ZeeWeaponIds.DRUM_SHOTGUN, "blaster-l", POSE_RIFLE))
+	return _tube(_gun(ZeeWeaponIds.DRUM_SHOTGUN, "drum_shotgun", POSE_RIFLE))
 
 
 static func marksman() -> ZeeWeaponArt:
@@ -508,18 +510,9 @@ static func sniper() -> ZeeWeaponArt:
 
 
 static func minigun() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.MINIGUN, "blaster-f", POSE_HEAVY)
-	# On the muzzle (see the machine pistol's), but not on the -Z end of the bounds: that is
-	# the tip of a slanted brake that runs 13 cm past the barrel (which ends at z -0.52, its
-	# bore 5.2 cm above the origin). At the bounds' end and the origin's height the silencer
-	# floated in front of the gun, below the bore, with the flash in the gap; slid over the
-	# brake it sits on the barrel. The effects' muzzle is its far end (0.283 m long): written
-	# down, the one case ZeeWeaponArt.muzzle_distance allows, because the measurement covers
-	# the gun's mesh and not what is screwed onto it. Found by a third-person render
-	# (docs/history.md).
-	art.with_attachment(SILENCER_LARGE, Vector3(0.0, 0.052, -0.52))
-	art.muzzle_distance = 0.52 + 0.283
-	art.muzzle_offset = Vector3(0.0, 0.052, 0.0)
+	var art := _gun(ZeeWeaponIds.MINIGUN, "minigun", POSE_HEAVY)
+	# The bore sits 1.5 cm under the bounds' centre (the carry handle is above it).
+	art.muzzle_offset = Vector3(0.0, -0.015, 0.0)
 	art.weight = 2.0
 	# A box and its belt hanging on the right of the body (built in code: view/zee_reload_parts.gd),
 	# the belt leaning in to the gun. The minigun feeds from the reserve and never reloads

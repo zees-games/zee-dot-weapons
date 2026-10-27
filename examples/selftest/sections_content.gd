@@ -287,8 +287,30 @@ func _art() -> void:
 	var fists: ZeeWeaponArt = table[ZeeWeaponIds.FISTS]
 	_check("the fists have no model", not fists.has_model())
 
+	_silhouettes()
 	_art_asset_root(table)
 	_end()
+
+
+## Every gun must tell from every other in a thumbnail: its length, or its length to height,
+## differs by 6% from each other's. Two guns closer than that read as one shape drawn twice.
+func _silhouettes() -> void:
+	var guns: Array = []
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if not art.has_model() or not [ZeeWeaponArtTable.POSE_PISTOL, ZeeWeaponArtTable.POSE_RIFLE, ZeeWeaponArtTable.POSE_HEAVY].has(art.pose):
+			continue
+		var box := ZeeModelCache.bounds(art.model_path)
+		var length := maxf(box.size.z, 0.001)
+		guns.append({"id": art.id, "length": length, "ratio": length / maxf(box.size.y, 0.001)})
+	var twins: Array = []
+	for i in guns.size():
+		for j in range(i + 1, guns.size()):
+			var a: Dictionary = guns[i]
+			var b: Dictionary = guns[j]
+			if absf(a.length / b.length - 1.0) < 0.06 and absf(a.ratio / b.ratio - 1.0) < 0.06:
+				twins.append("%s/%s" % [a.id, b.id])
+	_check("twenty guns carry a silhouette each", guns.size() >= 18)
+	_check("no two guns share a silhouette: %s" % [twins], twins.is_empty())
 
 
 func _art_asset_root(table: Dictionary) -> void:

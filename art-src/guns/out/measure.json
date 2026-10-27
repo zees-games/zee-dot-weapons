@@ -51,6 +51,24 @@
   ],
   "tris": 2366
  },
+ "derringer": {
+  "magazine_offset": null,
+  "size": [
+   0.03,
+   0.127,
+   0.26
+  ],
+  "tris": 372
+ },
+ "drum_shotgun": {
+  "magazine_offset": null,
+  "size": [
+   0.063,
+   0.203,
+   0.8
+  ],
+  "tris": 844
+ },
  "launcher": {
   "magazine_offset": null,
   "size": [
@@ -81,6 +99,28 @@
    1.0
   ],
   "tris": 3262
+ },
+ "minigun": {
+  "magazine_offset": null,
+  "size": [
+   0.153,
+   0.293,
+   1.0
+  ],
+  "tris": 1232
+ },
+ "pistol": {
+  "magazine_offset": [
+   0.0,
+   -0.0504,
+   0.1522
+  ],
+  "size": [
+   0.045,
+   0.228,
+   0.46
+  ],
+  "tris": 428
  },
  "revolver": {
   "magazine_offset": null,
