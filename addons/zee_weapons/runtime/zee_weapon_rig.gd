@@ -758,6 +758,9 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 		used.emit(outcome)
 
 		if _view != null:
+			var shot_def := arsenal.current_def()
+			if shot_def != null and shot_def.use_interval_ticks > 0:
+				_view.fire_interval = float(arsenal.ticks_for(shot_def, shot_def.use_interval_ticks)) / float(tick_rate)
 			_view.on_used(outcome)
 
 		if _fx != null:

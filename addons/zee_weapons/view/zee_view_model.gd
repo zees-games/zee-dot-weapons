@@ -627,11 +627,16 @@ func eject_transform() -> Transform3D:
 
 # --- Being told what happened -----------------------------------------------
 
+## Seconds between this weapon's shots, set by the rig; drives the kick spring's rate.
+var fire_interval: float = 0.0
+
+
 ## A use produced [param outcome].
 func on_used(outcome: DotWeaponOutcome) -> void:
 	if outcome == null or not outcome.used:
 		return
 
+	_pose.fire_interval = fire_interval
 	_pose.punch(outcome.recoil, outcome.recoil_signed)
 	match outcome.kind:
 		DotWeaponOutcome.KIND_SWING:

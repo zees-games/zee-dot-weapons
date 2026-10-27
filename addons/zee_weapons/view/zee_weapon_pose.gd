@@ -370,6 +370,9 @@ var tunables := Tunables.new()
 ## hard it kicks; scaling that by weight again counted the sniper's size twice.
 var weight: float = 1.0
 
+## Seconds between the weapon's shots, or 0 when unknown. A faster weapon gets a stiffer kick spring (up to 1.8x) so the kick settles between shots; a slow one keeps the base spring.
+var fire_interval: float = 0.0
+
 ## Scales sway, bob and kick together: what a "weapon motion" setting turns down.
 var feel: float = 1.0
 
@@ -823,7 +826,10 @@ static func _critical(x: float, v: float, omega: float, t: float) -> Vector2:
 
 ## The recoil spring's natural frequency for this weapon.
 func _omega() -> float:
-	return maxf(1.0, tunables.kick_response) / sqrt(clampf(weight, 0.5, 4.0))
+	var rate := 1.0
+	if fire_interval > 0.0:
+		rate = clampf(0.12 / fire_interval, 1.0, 1.8)
+	return maxf(1.0, tunables.kick_response) * rate / sqrt(clampf(weight, 0.5, 4.0))
 
 
 ## The recoil curve: linear for small recoil, flattening for large.

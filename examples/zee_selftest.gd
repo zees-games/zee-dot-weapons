@@ -331,6 +331,33 @@ func _recoil() -> void:
 		left >= 4 and right >= 4
 	)
 
+	# Same punches, same kick: the pose has no hidden randomness when signed.
+	var seq_a: Array = []
+	var seq_b: Array = []
+	for run in [seq_a, seq_b]:
+		var sp := ZeeWeaponPose.make(1.0)
+		for i in range(8):
+			sp.punch(Vector2(2.0, 1.0 if i % 3 else -1.0), true)
+			for j in range(6):
+				sp.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+			run.append(sp.view_punch())
+	_check("the same signed punches give the same camera sequence", seq_a == seq_b)
+
+	# A faster weapon's kick settles sooner.
+	var slow_p := ZeeWeaponPose.make(1.0)
+	var fast_p := ZeeWeaponPose.make(1.0)
+	slow_p.fire_interval = 0.5
+	fast_p.fire_interval = 0.06
+	slow_p.punch(Vector2(3.0, 0.0))
+	fast_p.punch(Vector2(3.0, 0.0))
+	for j in range(12):
+		slow_p.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+		fast_p.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	_check(
+		"a faster weapon's kick has settled further after the same time",
+		absf(fast_p.view_punch().x) < absf(slow_p.view_punch().x)
+	)
+
 	# Signed (dot-weapon's recoil_signed): the sign of the yaw is the side, every time.
 	var fixed := ZeeWeaponPose.make(1.0)
 	var fixed_right := 0
