@@ -30,6 +30,9 @@ extends Node3D
 
 ## Most pellets drawn per use. A shotgun's twelve all land; drawing all twelve tracers is
 ## a fan of lines that reads as a beam weapon.
+## A sound was handed to a voice. For a suite that asserts which stream played, and a HUD.
+signal heard(stream: AudioStream)
+
 const MAX_TRACERS_PER_USE := 6
 
 ## Most effects alive at once, per carrier.
@@ -63,6 +66,7 @@ const IMPACT_BODY := &"body"
 ## cases, and a launcher has none.
 const FLASH := {
 	ZeeWeaponSound.LIGHT: {"size": 0.7, "light": 0.7, "petals": 2, "length": 0.9, "case": 0.024},
+	ZeeWeaponSound.SUPPRESSED: {"size": 0.3, "light": 0.15, "petals": 1, "length": 0.6, "case": 0.024},
 	ZeeWeaponSound.SMG: {"size": 0.75, "light": 0.75, "petals": 2, "length": 0.9, "case": 0.026},
 	ZeeWeaponSound.MAGNUM: {"size": 1.15, "light": 1.1, "petals": 3, "length": 1.0},
 	ZeeWeaponSound.RIFLE: {"size": 1.0, "light": 1.0, "petals": 2, "length": 1.0, "case": 0.038},
@@ -76,6 +80,14 @@ const FLASH := {
 ## Most reports playing at once, per carrier. A minigun cuts its own oldest report off
 ## rather than stacking forty.
 const MAX_VOICES := 6
+
+## A report from further than this plays the stock's distant recording, when there is one.
+const FAR_METRES := 60.0
+
+## Shortest gap between two dry clicks and two case landings, in ms: a held trigger on an
+## empty gun and a minigun would otherwise use every voice on them.
+const DRY_GAP_MSEC := 250
+const CASING_GAP_MSEC := 90
 
 @export_group("Muzzle flash")
 
@@ -92,7 +104,7 @@ const MAX_VOICES := 6
 
 @export_group("Shell ejection")
 
-## Eject spent cases from the gun's port. Presentation only: no physics body, no sound.
+## Eject spent cases from the gun's port. Presentation only: no physics body; the landing is a stock sound.
 @export var eject_shells: bool = true
 
 ## Multiplier on a case's size (the base is drawn for a view model, which is smaller than life).
@@ -147,6 +159,8 @@ var _marks: Array[Dictionary] = []
 ## arriving from the server ([method play_body_hit]) does not draw it twice.
 var _last_body_at := Vector3.INF
 var _last_body_msec: int = -100000
+var _last_dry_msec: int = -100000
+var _last_casing_msec: int = -100000
 
 ## Materials shared by every carrier's effects, built once.
 static var _tracer_material: StandardMaterial3D = null
@@ -312,6 +326,8 @@ func play_eject(port: Transform3D, id: StringName) -> void:
 	var profile: Dictionary = FLASH.get(ZeeWeaponSound.class_for(id, DotWeaponOutcome.KIND_SHOT), {})
 	if not profile.has("case") or not port.origin.is_finite():
 		return
+
+	_schedule_casing(port.origin, float(profile.get("delay", 0.0)))
 
 	var hull: bool = profile.get("hull", false)
 	var length: float = float(profile["case"]) * shell_scale
@@ -720,11 +736,52 @@ func play_reload(stage: StringName, at: Vector3) -> void:
 	_play(ZeeWeaponSound.stream(stage), at, -4.0)
 
 
+## The hammer falling on nothing. Throttled, because a held trigger asks every tick.
+func play_dry(at: Vector3) -> void:
+	var now := Time.get_ticks_msec()
+	if not sounds or not is_inside_tree() or now - _last_dry_msec < DRY_GAP_MSEC:
+		return
+	_last_dry_msec = now
+	_play(ZeeWeaponSound.stream(ZeeWeaponSound.DRY), at, -4.0)
+
+
+## A weapon coming up in the hands.
+func play_equip(at: Vector3) -> void:
+	if is_inside_tree():
+		_play(ZeeWeaponSound.stream(ZeeWeaponSound.EQUIP), at, -6.0)
+
+
+## One shell going into a tube magazine: a per-round reload plays this once per round.
+func play_reload_shell(at: Vector3) -> void:
+	if is_inside_tree():
+		_play(ZeeWeaponSound.stream(ZeeWeaponSound.RELOAD_SHELL), at, -4.0)
+
+
+## The case landing, a little after it left the port.
+func _schedule_casing(at: Vector3, delay: float) -> void:
+	var now := Time.get_ticks_msec()
+	if not sounds or not is_inside_tree() or now - _last_casing_msec < CASING_GAP_MSEC:
+		return
+	_last_casing_msec = now
+	var timer := get_tree().create_timer(0.38 + delay)
+	timer.timeout.connect(_play_casing.bind(at))
+
+
+func _play_casing(at: Vector3) -> void:
+	if is_inside_tree():
+		_play(ZeeWeaponSound.stream(ZeeWeaponSound.CASING), at - Vector3(0.0, 1.2, 0.0), -2.0)
+
+
 func _report(id: StringName, kind: StringName, at: Vector3) -> void:
 	if not sounds or kind == DotWeaponOutcome.KIND_NONE:
 		return
 
-	_play(ZeeWeaponSound.stream_for(id, kind), at, 0.0)
+	var heard: AudioStream = null
+	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
+	if camera != null and camera.global_position.distance_to(at) > FAR_METRES:
+		heard = ZeeWeaponSound.far_for(id, kind)
+
+	_play(heard if heard != null else ZeeWeaponSound.stream_for(id, kind), at, 0.0)
 
 
 func _play(stream: AudioStream, at: Vector3, extra_db: float) -> void:
@@ -758,6 +815,7 @@ func _play(stream: AudioStream, at: Vector3, extra_db: float) -> void:
 		voice = _voices.pop_front()
 		_voices.append(voice)
 
+	heard.emit(stream)
 	voice.bus = bus
 	voice.stream = stream
 	voice.volume_db = volume_db + extra_db

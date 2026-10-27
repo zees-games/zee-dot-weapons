@@ -128,6 +128,12 @@ var _bash_ready_tick: int = 0
 var _reload_started: int = -1
 var _reload_ticks: int = 0
 
+## The current weapon's magazine last tick of a per-round reload, to hear each shell go in; -1 otherwise.
+var _rounds_seen: int = -1
+
+## False until the first presentation tick, so the weapon a carrier spawns with is not an "equip".
+var _fx_origin_known: bool = false
+
 ## Tick the current switch started on, how long it lasts, and whether it is the holster
 ## half or the deploy half.
 var _switch_started: int = -1
@@ -262,6 +268,7 @@ func _connect_arsenal() -> void:
 	arsenal.reload_started.connect(_on_reload_started)
 	arsenal.reload_finished.connect(_on_reload_finished)
 	arsenal.switched.connect(_on_switched)
+	arsenal.dry_used.connect(_on_dry_used)
 
 
 # --- Carrying ---------------------------------------------------------------
@@ -485,6 +492,11 @@ func _update_presentation(tick: int) -> void:
 			_world.equip(art)
 
 		equipped.emit(id)
+		if _fx != null and _fx_origin_known and id != &"":
+			_fx.play_equip(_listen_at())
+
+	_fx_origin_known = true
+	_per_round_sound()
 
 	if _view != null:
 		_view.on_deploy(_deploy_fraction(tick))
@@ -647,7 +659,9 @@ func _on_reload_started(slot: int) -> void:
 	if carried == null:
 		return
 
-	_reload_sound(ZeeWeaponSound.RELOAD_OUT)
+	# A tube magazine has no magazine to drop: its shells are heard one by one.
+	if not carried.def.reload_per_round:
+		_reload_sound(ZeeWeaponSound.RELOAD_OUT)
 
 	_reload_started = _last_tick
 	_reload_ticks = reload_motion_ticks(carried.def, carried.magazine_space())
@@ -660,6 +674,28 @@ func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
 	if def.reload_per_round:
 		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space, 1)
 	return maxi(1, arsenal.ticks_for(def, ticks))
+
+
+func _on_dry_used(_slot: int) -> void:
+	if _replaying or role == Role.SERVER or _fx == null:
+		return
+	_fx.play_dry(_listen_at())
+
+
+## One shell sound for every round a per-round reload has added since the last tick.
+func _per_round_sound() -> void:
+	var carried := arsenal.current()
+	if carried == null or not carried.def.reload_per_round:
+		_rounds_seen = -1
+		return
+	# The last round lands on the tick the reload ends, so compare before checking is_reloading.
+	if _rounds_seen >= 0 and carried.magazine > _rounds_seen and _fx != null:
+		_fx.play_reload_shell(_listen_at())
+	_rounds_seen = carried.magazine if arsenal.is_reloading() else -1
+
+
+func _listen_at() -> Vector3:
+	return (_player as Node3D).global_position if _player is Node3D else Vector3.ZERO
 
 
 func _on_reload_finished(_slot: int, _rounds: int) -> void:

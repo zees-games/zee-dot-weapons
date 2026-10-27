@@ -17,6 +17,7 @@
 /addons/dot_player_controller
 /addons/dot_player_char
 /addons/dot_physics
+/addons/dot_audio
 
 # Exports
 build/

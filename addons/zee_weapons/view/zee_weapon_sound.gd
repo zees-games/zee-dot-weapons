@@ -47,6 +47,13 @@ const IMPACT := &"impact"
 ## reload a player hears, so a reload is audible from behind a wall as well as visible.
 const RELOAD_OUT := &"reload_out"
 const RELOAD_IN := &"reload_in"
+## A suppressed report (zed's silenced pistol), a hammer on an empty chamber, a weapon coming
+## up, a spent case landing, and one shell pushed into a tube magazine.
+const SUPPRESSED := &"suppressed"
+const DRY := &"dry"
+const EQUIP := &"equip"
+const CASING := &"casing"
+const RELOAD_SHELL := &"reload_shell"
 
 ## How each class is built. Every field is optional; the defaults are silence.
 ##
@@ -160,6 +167,32 @@ const RECIPES := {
 		"body": 0.50, "body_hz": 380.0, "body_to": 160.0, "body_s": 0.020,
 		"whoosh": 0.25, "whoosh_lo": 800.0, "whoosh_hi": 2400.0,
 	},
+	SUPPRESSED: {
+		"length": 0.20, "gain": 0.40,
+		"crack": 0.20, "crack_hz": 1800.0, "crack_s": 0.012,
+		"body": 0.50, "body_hz": 200.0, "body_to": 90.0, "body_s": 0.030,
+		"tail": 0.18, "tail_hz": 900.0, "tail_s": 0.050,
+	},
+	DRY: {
+		"length": 0.08, "gain": 0.35,
+		"crack": 0.80, "crack_hz": 3200.0, "crack_s": 0.004,
+		"body": 0.25, "body_hz": 520.0, "body_to": 300.0, "body_s": 0.010,
+	},
+	EQUIP: {
+		"length": 0.20, "gain": 0.35,
+		"whoosh": 0.50, "whoosh_lo": 500.0, "whoosh_hi": 1800.0,
+		"crack": 0.60, "crack_hz": 2800.0, "crack_s": 0.006,
+	},
+	CASING: {
+		"length": 0.10, "gain": 0.25,
+		"crack": 0.60, "crack_hz": 6500.0, "crack_s": 0.012,
+		"body": 0.20, "body_hz": 3200.0, "body_to": 2400.0, "body_s": 0.015,
+	},
+	RELOAD_SHELL: {
+		"length": 0.12, "gain": 0.40,
+		"crack": 0.70, "crack_hz": 3000.0, "crack_s": 0.006,
+		"body": 0.35, "body_hz": 420.0, "body_to": 240.0, "body_s": 0.018,
+	},
 }
 
 ## Which class each weapon in the pack sounds like. A weapon missing from here is
@@ -197,6 +230,22 @@ static var _classes: Dictionary = {}
 ## their own instead of the fallback's.
 static func set_class(id: StringName, sound_class: StringName) -> void:
 	_classes[id] = sound_class
+
+
+## A report heard from far away (another recording with more air), or null when the class has
+## none or dot-audio is not linked.
+static func far_stream(sound_class: StringName) -> AudioStream:
+	if _overrides.has(sound_class):
+		return null
+	return DotWeaponSound.pick_far(sound_class, randi())
+
+
+## The distant recording of [param id]'s report, or null (an override of the id, no such
+## recording, or dot-audio not linked): the caller plays [method stream_for] then.
+static func far_for(id: StringName, kind: StringName) -> AudioStream:
+	if _overrides.has(id):
+		return null
+	return far_stream(class_for(id, kind))
 
 
 ## The class [param id]'s use of [param kind] sounds like.

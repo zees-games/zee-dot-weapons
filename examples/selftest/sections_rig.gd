@@ -577,3 +577,108 @@ func _profiles() -> void:
 	_check("the export writes every profile and the upgrade folders", wrote.ok and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/rifle/rifle.yml")) and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/rifle/upgrades/hot_loads.yml")) and FileAccess.file_exists(out.path_join("cfg/addons/zee_weapons/weapon/pistol.yml")))
 	ZeeWeaponPack.base_roots = saved_roots
 	_end()
+
+
+func _stock_path(stream: AudioStream, sound: String) -> bool:
+	return stream is AudioStreamOggVorbis and stream.resource_path.begins_with(
+		"%s%s_" % [DotWeaponSound.DIR, sound]
+	)
+
+
+func _stock_sounds() -> void:
+	_begin("the stock recordings are what plays")
+
+	_check("dot-audio's weapon stock is linked", DotWeaponSound.count(&"light_fire") == 5)
+
+	var wrong := PackedStringArray()
+	for sound_class: StringName in DotWeaponSound.FIRE:
+		var stream := ZeeWeaponSound.stream(sound_class)
+		if not _stock_path(stream, String(DotWeaponSound.FIRE[sound_class])):
+			wrong.append(String(sound_class))
+	_check("every class plays a recording, not the bake (%s)" % ", ".join(wrong), wrong.is_empty())
+
+	var bake_ids := PackedStringArray()
+	for def: DotWeaponDef in ZeeWeaponPack.weapons():
+		for kind: StringName in [DotWeaponOutcome.KIND_SHOT, DotWeaponOutcome.KIND_SWING]:
+			if not ZeeWeaponSound.stream_for(def.id, kind) is AudioStreamOggVorbis:
+				bake_ids.append("%s/%s" % [def.id, kind])
+	_check("every weapon's report is a recording (%s)" % ", ".join(bake_ids), bake_ids.is_empty())
+
+	_check("a rifle heard from afar is the _far recording",
+		_stock_path(ZeeWeaponSound.far_for(ZeeWeaponIds.RIFLE, DotWeaponOutcome.KIND_SHOT), "rifle_far"))
+	_check("a melee class has no far recording", ZeeWeaponSound.far_for(ZeeWeaponIds.RIFLE, DotWeaponOutcome.KIND_SWING) == null)
+	_check("a suppressed weapon plays its own report, not the pistol's",
+		_stock_path(ZeeWeaponSound.stream(ZeeWeaponSound.SUPPRESSED), "suppressed_fire"))
+
+	var fx := ZeeShotFx.new()
+	add_child(fx)
+	var heard: Array[AudioStream] = []
+	fx.heard.connect(func(stream: AudioStream) -> void: heard.append(stream))
+	fx.play_dry(Vector3.ZERO)
+	fx.play_dry(Vector3.ZERO)
+	_check("a dry fire clicks once, throttled", heard.size() == 1 and _stock_path(heard[0], "dry"))
+	fx.play_equip(Vector3.ZERO)
+	_check("an equip plays the stock equip", _stock_path(heard[-1], "equip"))
+	fx.play_reload_shell(Vector3.ZERO)
+	_check("a shell plays reload_shell", _stock_path(heard[-1], "reload_shell"))
+	fx.play_reload(ZeeWeaponSound.RELOAD_OUT, Vector3.ZERO)
+	_check("a magazine out plays reload_out", _stock_path(heard[-1], "reload_out"))
+	fx.play_eject(Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	fx.call(&"_play_casing", Vector3.ZERO)
+	_check("a case lands with the stock casing", _stock_path(heard[-1], "casing"))
+	var before := heard.size()
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	_check("a shot plays a stock report", heard.size() == before + 1 and _stock_path(heard[-1], "rifle_fire"))
+	fx.sounds = false
+	fx.play_equip(Vector3.ZERO)
+	_check("and with sounds off nothing plays", heard.size() == before + 1)
+	fx.queue_free()
+
+	# The rig wires the arsenal's dry signal and a tube magazine's shells to the effects.
+	var carrier := Node3D.new()
+	add_child(carrier)
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	carrier.add_child(view)
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.LOCAL
+	rig.authority = true
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.view_model_ref = DotNodeRef.of_path(view.get_path())
+	carrier.add_child(rig)
+	rig.setup()
+	var rig_fx := rig.shot_fx()
+	var rig_heard: Array[AudioStream] = []
+	rig_fx.heard.connect(func(stream: AudioStream) -> void: rig_heard.append(stream))
+	rig.arsenal.dry_used.emit(0)
+	_check("the rig plays the dry click when the arsenal reports one",
+		rig_heard.size() == 1 and _stock_path(rig_heard[0], "dry"))
+
+	rig.give(ZeeWeaponIds.SHOTGUN)
+	var gun := rig.arsenal.catalogue.get_def(ZeeWeaponIds.SHOTGUN)
+	rig.arsenal.select(gun.slot, 0)
+	_run_rig(rig, 0, 60, 0)
+	rig_heard.clear()
+	_run_rig(rig, 60, 120, DotWeaponCommand.BUTTON_ATTACK)
+	rig.arsenal.current().magazine = 3
+	_run_rig(rig, 120, 124, DotWeaponCommand.BUTTON_RELOAD)
+	rig_heard.clear()
+	_run_rig(rig, 124, 700, 0)
+	var shells := 0
+	var outs := 0
+	for stream in rig_heard:
+		if _stock_path(stream, "reload_shell"):
+			shells += 1
+		if _stock_path(stream, "reload_out"):
+			outs += 1
+	_check("a shotgun reload plays a shell per round, not a magazine out (%d shells)" % shells, shells >= 2 and outs == 0)
+	_cleanup(carrier)
+	_end()
+
+
+func _fake_shot() -> DotWeaponOutcome:
+	var outcome := DotWeaponOutcome.new()
+	outcome.used = true
+	outcome.kind = DotWeaponOutcome.KIND_SHOT
+	return outcome

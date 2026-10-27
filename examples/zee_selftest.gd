@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 515
+const CHECKS := 530
 
 
 func _ready() -> void:
@@ -54,6 +54,7 @@ func _ready() -> void:
 	_ads_rules()
 	_effects()
 	_input_bindings()
+	_stock_sounds()
 
 	print("")
 	print("%d sections entered, %d finished, %d checks, %d failed" % [
@@ -661,7 +662,8 @@ func _effects() -> void:
 	var clicks: Array[String] = []
 
 	for sound_class in ZeeWeaponSound.RECIPES.keys():
-		var wav := ZeeWeaponSound.stream(sound_class) as AudioStreamWAV
+		# The bake itself (the fallback when dot-audio is not linked); the stock is checked in its own section.
+		var wav := ZeeWeaponSound.bake(ZeeWeaponSound.RECIPES[sound_class], hash(sound_class))
 		if wav == null or wav.data.size() < 200 or _wav_peak(wav) < 0.2:
 			silent.append(String(sound_class))
 		elif wav.data.decode_s16(wav.data.size() - 2) != 0:
@@ -673,7 +675,9 @@ func _effects() -> void:
 		clicks.is_empty()
 	)
 
-	var rifle := ZeeWeaponSound.stream(ZeeWeaponSound.RIFLE) as AudioStreamWAV
+	var rifle := ZeeWeaponSound.bake(
+		ZeeWeaponSound.RECIPES[ZeeWeaponSound.RIFLE], hash(ZeeWeaponSound.RIFLE)
+	)
 	var again := ZeeWeaponSound.bake(
 		ZeeWeaponSound.RECIPES[ZeeWeaponSound.RIFLE], hash(ZeeWeaponSound.RIFLE)
 	)

@@ -29,3 +29,7 @@ There is no CC0 set of twenty-seven matched weapon reports to vendor. dot-audio'
 ## Seeing a shot on a machine with no hands
 
 The contact sheet's fire frames (`tools/screenshot.sh --sheet`) pull the trigger through the rig and step `ZeeShotFx.advance` with the view model, so they show the flash (fire 1, 2), the tracer and the impact (fire 4-14); `EXTRA="--dummy"` stands a character in the line of fire to see a hit on a body. `zee_range -- --weapon smg --fire --capture <prefix>` pulls the trigger itself and saves six frames counted from the first shot, with the clock slowed twenty times, so that a software renderer's tenth-of-a-second frames are a flip-book of one shot rather than a picture of the reload after it.
+
+## Stock sounds
+
+`ZeeWeaponSound.stream(id)` prefers the dot-audio stock recordings (`DotWeaponSound`) and falls back to the baked synth when the stock is not installed. `ZeeShotFx` also plays dry fire (`play_dry`), equip (`play_equip`), a casing landing (`play_casing`, shortly after the shot), a distant report (`_far` variant by distance, `far_for`) and one shell per round for a tube-magazine reload (`play_reload_shell`; the rig wires it from the arsenal). Weapons mapped to `ZeeWeaponSound.SUPPRESSED` (the silenced pistol and the tactical SMG in zed) get their own quiet report and a smaller flash. `ZeeShotFx.heard` emits every stream played, which the suite uses to assert a stock stream, not null.
