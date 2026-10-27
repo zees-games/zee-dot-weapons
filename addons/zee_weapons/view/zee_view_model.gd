@@ -619,7 +619,7 @@ func on_used(outcome: DotWeaponOutcome) -> void:
 	if outcome == null or not outcome.used:
 		return
 
-	_pose.punch(outcome.recoil)
+	_pose.punch(outcome.recoil, outcome.recoil_signed)
 	match outcome.kind:
 		DotWeaponOutcome.KIND_SWING:
 			_pose.swing()

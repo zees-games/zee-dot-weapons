@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 513
+const CHECKS := 514
 
 
 func _ready() -> void:
@@ -328,6 +328,26 @@ func _recoil() -> void:
 	_check(
 		"a sideways kick goes both ways over twenty shots (%d left, %d right)" % [left, right],
 		left >= 4 and right >= 4
+	)
+
+	# Signed (dot-weapon's recoil_signed): the sign of the yaw is the side, every time.
+	var fixed := ZeeWeaponPose.make(1.0)
+	var fixed_right := 0
+	var fixed_left := 0
+	for i in range(10):
+		var was := (fixed.describe()["kick_rotation"] as Vector3).y
+		fixed.punch(Vector2(0.0, 1.0 if i < 5 else -1.0), true)
+		fixed.advance(1.0 / 120.0, Vector2.ZERO, 0.0, true)
+		var went := (fixed.describe()["kick_rotation"] as Vector3).y - was
+		if went > 0.0:
+			fixed_right += 1
+		elif went < 0.0:
+			fixed_left += 1
+		for j in range(60):
+			fixed.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	_check(
+		"a signed sideways kick takes the side the rules chose (%d right, %d left)" % [fixed_right, fixed_left],
+		fixed_right == 5 and fixed_left == 5
 	)
 
 	# About the grip: the muzzle rises and the hand stays where it is, rather than the

@@ -501,14 +501,18 @@ func advance(
 ## [b]The sideways kick picks a side each shot.[/b] The behaviours hand over a magnitude
 ## and it was applied as given, so every shot of every weapon pushed the gun the same way
 ## and a held trigger walked it steadily off to one side.
-func punch(recoil: Vector2) -> void:
+## With [param signed_yaw] (the outcome's `recoil_signed`, from dot-weapon's recoil rules) the sign of [code]recoil.y[/code] is the side, so the view agrees with the server's bullet.
+func punch(recoil: Vector2, signed_yaw: bool = false) -> void:
 	if not is_finite(recoil.x) or not is_finite(recoil.y):
 		return
 
 	var scale := maxf(0.0, feel)
 	var climb := kick_degrees(recoil.x) * scale
 	var side := _compress(absf(recoil.y)) * tunables.kick_yaw * scale
-	side *= -1.0 if _rng.randf() < 0.5 else 1.0
+	if signed_yaw:
+		side *= -1.0 if recoil.y < 0.0 else 1.0
+	else:
+		side *= -1.0 if _rng.randf() < 0.5 else 1.0
 
 	var omega := _omega()
 	var to_velocity := omega * exp(1.0)
