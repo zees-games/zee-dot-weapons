@@ -103,6 +103,33 @@ func _other_packs() -> void:
 	_end()
 
 
+func _pack_source() -> void:
+	_begin("ZeePackSource")
+
+	var provider := GDScript.new()
+	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[DotWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"ps_gun\"\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"ps_blade\"\n\treturn [a, b]\n"
+	provider.reload()
+	var defs_source := Callable(provider, &"weapon_defs")
+	ZeePackSource.register(&"ps_test", provider, defs_source)
+	_check("its weapons join the catalogue", ZeeWeaponPack.table().has(&"ps_gun") and ZeeWeaponPack.table().has(&"ps_blade"))
+	_check("a pack with no art gets stand-in art for each", ZeeWeaponArtTable.get_art(&"ps_gun") != null and ZeeWeaponArtTable.get_art(&"ps_blade") != null)
+	var gun := ZeeWeaponArtTable.get_art(&"ps_gun")
+	var pistol := ZeeWeaponArtTable.get_art(&"pistol")
+	_check("a sidearm stands in as the pistol's art", gun.id == &"ps_gun" and gun.model_path == pistol.model_path)
+	_check("a melee weapon as the knife's, not the pistol's",
+		ZeeWeaponArtTable.get_art(&"ps_blade").model_path == ZeeWeaponArtTable.get_art(&"knife").model_path)
+	_check("the table still validates", ZeeWeaponArtTable.validate().ok)
+	var plain := ZeeWeaponPack.rifle()
+	plain.tags.clear()
+	plain.slot = ZeeWeaponIds.SLOT_HEAVY
+	_check("no tier tag: the slot decides", ZeePackSource.stand_in_art([plain], provider)[0].model_path == ZeeWeaponArtTable.launcher().model_path)
+	ZeePackSource.unregister(&"ps_test")
+	_check("unregistered, the weapons are gone", not ZeeWeaponPack.table().has(&"ps_gun"))
+	_check("and the art", ZeeWeaponArtTable.get_art(&"ps_gun") == null)
+
+	_end()
+
+
 func _damage() -> void:
 	_begin("damage types")
 
