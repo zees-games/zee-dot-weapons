@@ -32,6 +32,7 @@ const DEFAULT_ACTIONS := {
 	&"weapon_previous": DotWeaponCommand.BUTTON_PREVIOUS,
 	&"weapon_last": DotWeaponCommand.BUTTON_LAST,
 	&"weapon_drop": DotWeaponCommand.BUTTON_DROP,
+	&"weapon_fire_mode": DotWeaponCommand.BUTTON_FIRE_MODE,
 }
 
 ## Slot actions, in slot order. `weapon_slot_1` selects slot 1.
@@ -157,6 +158,7 @@ static func register_default_actions() -> int:
 		&"weapon_previous": [MOUSE_BUTTON_WHEEL_UP],
 		&"weapon_last": [KEY_Q],
 		&"weapon_drop": [KEY_G],
+		&"weapon_fire_mode": [KEY_B],
 		&"weapon_slot_1": [KEY_1],
 		&"weapon_slot_2": [KEY_2],
 		&"weapon_slot_3": [KEY_3],
