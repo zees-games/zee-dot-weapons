@@ -260,6 +260,7 @@ func _resolve_presentation() -> void:
 	if effects and _view != null:
 		_fx = ZeeShotFx.new()
 		_fx.name = "ShotFx"
+		_fx.catalogue = catalogue
 		add_child(_fx)
 		_fx.exclude_carrier(_player)
 
