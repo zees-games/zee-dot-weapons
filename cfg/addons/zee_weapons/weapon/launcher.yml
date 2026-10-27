@@ -49,6 +49,15 @@ extra:
     recoil_build_max: 0.8
     recoil_recovery: 6.0
     recoil_seed: 0
+    muzzle_velocity: 0.0
+    bullet_gravity: 1.0
+    drag: 0.0005
+    falloff_start: 0.0
+    falloff_min: 1.0
+    penetration: 0.0
+    ricochet_chance: 0.0
+    tracer_interval: 0
+    bullet_mass: 0.004
     splash_radius: 4.5
     splash_damage: 88.0
     splash_hurts_owner: true
