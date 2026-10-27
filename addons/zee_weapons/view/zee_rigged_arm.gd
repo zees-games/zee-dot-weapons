@@ -37,6 +37,10 @@ const FINGER_THICKNESS := 0.011
 ## No joint folds further than this (radians): a finger bends past ninety degrees at the
 ## knuckle and a little less at the others, and a fist is the limit.
 const MAX_CURL := 1.65
+## The forearm's scale, uniform so the hand keeps its size under a counter-scale of its own
+## (a non-uniform one does not survive the wrist's rotation). The rigged mesh's forearm is thin
+## beside its hand; its length grows with it and the IK uses the longer bone.
+const FOREARM_SCALE := 1.3
 ## How far the shoulder-to-wrist span may use of the arm's length before the arm is scaled up.
 const MAX_STRETCH := 0.96
 
@@ -191,6 +195,8 @@ func pose_arm(
 	skeleton.set_bone_pose_rotation(
 		_hand, (g_fore.inverse() * g_hand).get_rotation_quaternion()
 	)
+	skeleton.set_bone_pose_scale(_fore, Vector3.ONE * FOREARM_SCALE)
+	skeleton.set_bone_pose_scale(_hand, Vector3.ONE / FOREARM_SCALE)
 	# Posed hand rotation, in the arm's frame: the fingers are driven relative to it.
 	_curl_fingers(clampf((radius + FINGER_THICKNESS) / s, 0.004, 0.2), open)
 
@@ -262,7 +268,7 @@ func _measure_rest() -> void:
 			else float(_seg_len.get(skeleton.get_bone_parent(i), 0.03)) * 0.8
 		)
 	_l_upper = _rest_origin[_fore].distance_to(_rest_origin[_upper])
-	_l_fore = _rest_origin[_hand].distance_to(_rest_origin[_fore])
+	_l_fore = _rest_origin[_hand].distance_to(_rest_origin[_fore]) * FOREARM_SCALE
 
 	var middle_tip := _rest_origin[(_chains["middle"] as Array)[2]]
 	var d := (middle_tip - _rest_origin[_hand]).normalized()

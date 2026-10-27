@@ -366,6 +366,9 @@ func has_arms() -> bool:
 # --- The rigged arm -------------------------------------------------------------
 
 ## The fingers' openness by what is held: a ball is held open, an empty fist is shut.
+## What an empty hand closes on: small enough that every joint folds to its limit, a real fist.
+const FIST_RADIUS := 0.004
+
 const OPEN_BY_POSE := {&"thrown": 0.45, &"fists": 0.0}
 
 func _build_rigged() -> bool:
@@ -400,7 +403,7 @@ func _reach_rigged(
 	var square := pose in [&"thrown", &"fists"]
 	var open: float = OPEN_BY_POSE.get(pose, 0.0)
 	# A hand with nothing in it closes on nothing: the radius a fist makes.
-	var radius := grip_radius if grip_radius > 0.0 and pose != &"fists" else 0.012
+	var radius := grip_radius if grip_radius > 0.0 and pose != &"fists" else FIST_RADIUS
 	_rigged_arm(
 		_right, hands["right_shoulder"], hands["right"], grip_axis, false, size, square, radius, open
 	)
