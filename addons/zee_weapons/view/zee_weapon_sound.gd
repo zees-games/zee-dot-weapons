@@ -30,6 +30,7 @@ const RATE := 22050
 ## Sound classes. A weapon names one; a game can override per weapon id instead.
 const LIGHT := &"light"
 const MAGNUM := &"magnum"
+const SMG := &"smg"
 const RIFLE := &"rifle"
 const HEAVY := &"heavy"
 const SNIPER := &"sniper"
@@ -66,6 +67,12 @@ const RECIPES := {
 		"crack": 0.85, "crack_hz": 5200.0, "crack_s": 0.010,
 		"body": 0.55, "body_hz": 230.0, "body_to": 80.0, "body_s": 0.035,
 		"tail": 0.30, "tail_hz": 1600.0, "tail_s": 0.070,
+	},
+	SMG: {
+		"length": 0.22, "gain": 0.66,
+		"crack": 0.85, "crack_hz": 5400.0, "crack_s": 0.009,
+		"body": 0.50, "body_hz": 240.0, "body_to": 90.0, "body_s": 0.028,
+		"tail": 0.26, "tail_hz": 1700.0, "tail_s": 0.050,
 	},
 	MAGNUM: {
 		"length": 0.55, "gain": 0.85,
@@ -159,8 +166,8 @@ const RECIPES := {
 ## classed by what its use was — see [method class_for].
 const WEAPONS := {
 	ZeeWeaponIds.PISTOL: LIGHT,
-	ZeeWeaponIds.MACHINE_PISTOL: LIGHT,
-	ZeeWeaponIds.SMG: LIGHT,
+	ZeeWeaponIds.MACHINE_PISTOL: SMG,
+	ZeeWeaponIds.SMG: SMG,
 	ZeeWeaponIds.REVOLVER: MAGNUM,
 	ZeeWeaponIds.DERRINGER: MAGNUM,
 	ZeeWeaponIds.CARBINE: RIFLE,
@@ -223,10 +230,15 @@ static func stream_for(id: StringName, kind: StringName) -> AudioStream:
 	return stream(class_for(id, kind))
 
 
-## One class's stream, an override if there is one, baked on first use and kept.
+## One class's stream: an override, else a stock recording (a different variant each call), else the bake.
 static func stream(sound_class: StringName) -> AudioStream:
 	if _overrides.has(sound_class):
 		return _overrides[sound_class]
+
+	# Recordings from dot-audio's stock when a game links it; null (and the bake) when not.
+	var real := DotWeaponSound.pick_class(sound_class, randi())
+	if real != null:
+		return real
 
 	if not _baked.has(sound_class):
 		_baked[sound_class] = bake(RECIPES.get(sound_class, RECIPES[RIFLE]), hash(sound_class))

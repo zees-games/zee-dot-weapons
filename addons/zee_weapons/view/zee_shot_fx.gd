@@ -63,6 +63,7 @@ const IMPACT_BODY := &"body"
 ## cases, and a launcher has none.
 const FLASH := {
 	ZeeWeaponSound.LIGHT: {"size": 0.7, "light": 0.7, "petals": 2, "length": 0.9, "case": 0.024},
+	ZeeWeaponSound.SMG: {"size": 0.75, "light": 0.75, "petals": 2, "length": 0.9, "case": 0.026},
 	ZeeWeaponSound.MAGNUM: {"size": 1.15, "light": 1.1, "petals": 3, "length": 1.0},
 	ZeeWeaponSound.RIFLE: {"size": 1.0, "light": 1.0, "petals": 2, "length": 1.0, "case": 0.038},
 	ZeeWeaponSound.HEAVY: {"size": 1.25, "light": 1.25, "petals": 3, "length": 1.1, "case": 0.05},
