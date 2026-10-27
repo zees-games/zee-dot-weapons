@@ -140,6 +140,23 @@ extends Resource
 
 @export_range(0.05, 8.0, 0.01) var world_scale: float = 1.0
 
+## How many hands hold it in third person: 0 takes the pose's (a pistol one, a long gun two), 1 or 2 says.
+@export_range(0, 2, 1) var hands: int = 0
+
+## Where the support hand goes, in the weapon model's own space. [constant Vector3.INF] derives it
+## from [member fore_along] and [member fore_up] over the mesh's bounds.
+@export var support_grip: Vector3 = Vector3.INF
+
+@export_group("Sprint")
+
+## The sprint carry, a layer over the hip hold: [constant Vector3.INF] takes the pose's default
+## ([method ZeeWeaponArtTable.sprint_view] first person, [method ZeeWeaponArtTable.sprint_world] third).
+## Offsets in metres, rotations in degrees (pitch up, yaw muzzle-left, roll counter-clockwise), turned about the grip.
+@export var sprint_offset: Vector3 = Vector3.INF
+@export var sprint_rotation: Vector3 = Vector3.INF
+@export var sprint_world_offset: Vector3 = Vector3.INF
+@export var sprint_world_rotation: Vector3 = Vector3.INF
+
 @export_group("Magazine")
 
 ## The magazine mesh, dropped and replaced during a reload. Empty means the reload is
@@ -249,6 +266,28 @@ func with_magazine(path: String, offset: Vector3 = Vector3.ZERO) -> ZeeWeaponArt
 
 
 ## The first-person transform, before any animation the rig applies.
+## [param row] (a profile's `extra: art:`; vectors as 3-number arrays) over a copy of this art, or this
+## art itself when the row says nothing. Keys: `hands`, `support_grip`, `sprint_offset`, `sprint_rotation`,
+## `sprint_world_offset`, `sprint_world_rotation`, `world_scale`.
+func with_overrides(row: Variant) -> ZeeWeaponArt:
+	if not (row is Dictionary) or (row as Dictionary).is_empty():
+		return self
+	var out := duplicate() as ZeeWeaponArt
+	for key: String in (row as Dictionary):
+		var value: Variant = row[key]
+		match key:
+			"hands":
+				out.hands = int(value)
+			"world_scale":
+				out.world_scale = float(value)
+			"support_grip", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation":
+				if value is Array and (value as Array).size() == 3:
+					out.set(key, Vector3(float(value[0]), float(value[1]), float(value[2])))
+				elif value is Vector3:
+					out.set(key, value)
+	return out
+
+
 func view_transform() -> Transform3D:
 	return _transform(view_offset, view_rotation, view_scale)
 

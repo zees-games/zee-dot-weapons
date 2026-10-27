@@ -122,6 +122,52 @@ static func pose_rotation(pose: StringName) -> Vector3:
 			return Vector3(0.0, 10.0, 30.0)
 
 
+## How much bigger than life a weapon is drawn in a person's hand, by pose, as a share of the figure's own hand scale
+## (`DotHumanoidFigure.held_scale`, which makes a pistol visible in a fist): a pistol needs all of it, a long gun would be a plank.
+static func pose_world_factor(pose: StringName) -> float:
+	match pose:
+		POSE_PISTOL:
+			return 1.0
+		POSE_HEAVY:
+			return 0.62
+		POSE_MELEE, POSE_THROWN:
+			return 1.0
+		_:
+			return 0.7
+
+
+## Whether a pose is held with two hands in third person (before [member ZeeWeaponArt.hands]).
+static func pose_two_handed(pose: StringName) -> bool:
+	return pose == POSE_RIFLE or pose == POSE_HEAVY
+
+
+## The sprint carry in first person, [offset m, rotation deg] over the hip hold: lowered and turned so
+## the barrel points left of the body, a pistol tucked up near the chest, a blade held low.
+static func sprint_view(pose: StringName) -> Array:
+	match pose:
+		POSE_PISTOL:
+			return [Vector3(-0.04, 0.06, 0.05), Vector3(28.0, 18.0, -14.0)]
+		POSE_MELEE:
+			return [Vector3(0.0, -0.1, 0.03), Vector3(-18.0, 0.0, 20.0)]
+		POSE_THROWN:
+			return [Vector3(0.0, -0.06, 0.02), Vector3(-10.0, 0.0, 10.0)]
+		POSE_HEAVY:
+			return [Vector3(-0.1, -0.12, 0.07), Vector3(-18.0, 52.0, -28.0)]
+		_:
+			return [Vector3(-0.1, -0.1, 0.06), Vector3(-14.0, 55.0, -24.0)]
+
+
+## The sprint carry in a person's hand (third person), same units, in the hand's frame (-Z the way the person faces).
+static func sprint_world(pose: StringName) -> Array:
+	match pose:
+		POSE_PISTOL:
+			return [Vector3.ZERO, Vector3(30.0, 15.0, 0.0)]
+		POSE_MELEE, POSE_THROWN:
+			return [Vector3.ZERO, Vector3(-15.0, 0.0, 0.0)]
+		_:
+			return [Vector3.ZERO, Vector3(0.0, 50.0, 0.0)]
+
+
 ## How much a weapon of each pose is shrunk to stand in for a narrower field of view.
 ##
 ## [b]Roughly half, and it is not an arbitrary taste.[/b] A weapon drawn at life size

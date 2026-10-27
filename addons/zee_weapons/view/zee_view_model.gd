@@ -212,6 +212,16 @@ static func vertical_from_horizontal_4_3(horizontal: float) -> float:
 	return rad_to_deg(2.0 * atan(tan(half) * 3.0 / 4.0))
 
 
+## Seconds to blend the sprint carry in or out.
+const SPRINT_SECONDS := 0.2
+
+## Whether sprinting changes the pose (a game's cvar to turn it off).
+var sprint_pose: bool = true
+
+var _sprinting: bool = false
+var _sprint: float = 0.0
+
+
 func _init() -> void:
 	add_to_group(&"dot_view_model")
 
@@ -318,6 +328,9 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		else ZeeWeaponPose.DRAW_KEYS
 	_pose.tunables.reload_keys = art.reload_keys if not art.reload_keys.is_empty() \
 		else ZeeWeaponArtTable.reload_keys(art.pose)
+	var carry := ZeeWeaponArtTable.sprint_view(art.pose)
+	_pose.tunables.sprint_offset = art.sprint_offset if art.sprint_offset.is_finite() else carry[0]
+	_pose.tunables.sprint_rotation = art.sprint_rotation if art.sprint_rotation.is_finite() else carry[1]
 	_reload_fraction = 0.0
 
 	_holder.transform = art.view_transform()
@@ -689,6 +702,8 @@ func advance(delta: float) -> void:
 		return
 
 	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_speed(delta))
+	_sprint = move_toward(_sprint, 1.0 if _sprinting and sprint_pose else 0.0, delta / SPRINT_SECONDS)
+	_pose.set_sprint(_ease(_sprint))
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
 	_place_hands()
@@ -886,6 +901,16 @@ func sight_points() -> Dictionary:
 ## a constant rate, which reads as mechanical.
 static func _ease(x: float) -> float:
 	return x * x * (3.0 - 2.0 * x)
+
+
+## Whether the carrier is sprinting: the weapon lowers and swings to the side, blended over [constant SPRINT_SECONDS].
+func set_sprinting(on: bool) -> void:
+	_sprinting = on
+
+
+## Where the sprint carry is, 0 (hip) to 1.
+func sprint_fraction() -> float:
+	return _sprint
 
 
 ## Tells the rig how the holder is moving and looking this frame.

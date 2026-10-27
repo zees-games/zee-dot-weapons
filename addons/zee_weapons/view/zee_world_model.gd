@@ -132,6 +132,14 @@ var _action_hides: bool = false
 
 var _built: bool = false
 
+## The person this hangs from (duck-typed, see [method _person]), the sprint carry blended in (read from
+## it), and the support hand's place in the holder's space, [constant Vector3.INF] for one hand.
+var _owner_cache: Object = null
+var _sprint: float = 0.0
+var _support_local := Vector3.INF
+var _support_sent: bool = false
+var _sprint_was_on: bool = false
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -188,7 +196,8 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		return DotResult.fail(DotError.CODE_INVALID, "No art to equip.")
 
 	_id = art.id
-	_holder.transform = art.world_transform()
+	_holder.transform = _rest()
+	_support_local = Vector3.INF
 
 	if not art.has_model():
 		return DotResult.success(null)
@@ -218,10 +227,12 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		_attachments.append(part)
 
 	_apply_shadows()
+	_support_local = _support_point_for(art)
 	return DotResult.success(null)
 
 
 func clear() -> void:
+	_send_support(false)
 	_clear_models()
 	_art = null
 	_id = &""
@@ -299,10 +310,14 @@ func throw() -> void:
 ## anything on a throw, because the figure has no throw clip and empty-handed arms are what a
 ## thrown weapon is held with.
 func _person() -> Object:
+	if _owner_cache != null and is_instance_valid(_owner_cache) and _owner_cache is Node and (_owner_cache as Node).is_ancestor_of(self):
+		return _owner_cache
+	_owner_cache = null
 	var node := get_parent()
 	var depth := 0
 	while node != null and depth < 10:
 		if node.has_method(&"swing") and node.has_method(&"set_hold"):
+			_owner_cache = node
 			return node
 		node = node.get_parent()
 		depth += 1
@@ -351,8 +366,10 @@ func advance(delta: float) -> void:
 	if not is_finite(delta) or delta < 0.0:
 		return
 
-	if _kick <= 0.00001 and _action >= 1.0:
+	_follow_person()
+	if _kick <= 0.00001 and _action >= 1.0 and _sprint <= 0.0 and not _sprint_was_on:
 		return
+	_sprint_was_on = _sprint > 0.0
 
 	# Decayed rather than sprung. A watcher cannot see an overshoot at twenty metres, so
 	# the spring the view model runs would be arithmetic nobody ever sees the result of.
@@ -371,10 +388,93 @@ func advance(delta: float) -> void:
 	_show_in_hand(not (_action_hides and _action >= THROW_RELEASE and _action < THROW_BACK))
 
 	# About the grip, which is where the hand is: the rest transform's origin.
-	var rest := _art.world_transform() if _art != null else Transform3D.IDENTITY
+	var rest := _rest()
+	var carry := _sprint_carry()
 	_holder.transform = Transform3D(
-		turn * rest.basis, rest.origin + moved + Vector3(0.0, 0.0, _kick)
+		carry[1] * turn * rest.basis, rest.origin + moved + carry[0] + Vector3(0.0, 0.0, _kick)
 	)
+
+
+## The art's third-person transform, scaled by its pose's share of the figure's hand scale.
+func _rest() -> Transform3D:
+	if _art == null:
+		return Transform3D.IDENTITY
+	var rest := _art.world_transform()
+	return Transform3D(rest.basis.scaled(Vector3.ONE * ZeeWeaponArtTable.pose_world_factor(_art.pose)), rest.origin)
+
+
+## The sprint carry at the current blend: [offset, rotation basis], in the hand's frame, about the grip.
+func _sprint_carry() -> Array:
+	if _art == null or _sprint <= 0.0:
+		return [Vector3.ZERO, Basis.IDENTITY]
+	var base := ZeeWeaponArtTable.sprint_world(_art.pose)
+	var offset: Vector3 = _art.sprint_world_offset if _art.sprint_world_offset.is_finite() else base[0]
+	var degrees: Vector3 = _art.sprint_world_rotation if _art.sprint_world_rotation.is_finite() else base[1]
+	degrees *= _sprint
+	return [offset * _sprint, Basis.from_euler(Vector3(deg_to_rad(degrees.x), deg_to_rad(degrees.y), deg_to_rad(degrees.z)))]
+
+
+## Reads the person's sprint blend and tells it where the support hand goes: every frame, because the holder moves.
+func _follow_person() -> void:
+	var person := _person()
+	if person == null:
+		_sprint = 0.0
+		return
+	_sprint = clampf(float(person.get(&"sprint_blend")), 0.0, 1.0) if person.get(&"sprint_blend") != null else 0.0
+	if not person.has_method(&"set_support_grip"):
+		return
+	var two := _art != null and _weapon != null and visible and _weapon.visible and _support_local.is_finite() \
+		and (_art.hands == 2 or (_art.hands == 0 and ZeeWeaponArtTable.pose_two_handed(_art.pose)))
+	if two:
+		person.call(&"set_support_grip", _holder.global_transform * _support_local)
+		_support_sent = true
+	else:
+		_send_support(false)
+
+
+func _send_support(_on: bool) -> void:
+	if not _support_sent:
+		return
+	_support_sent = false
+	var person := _person()
+	if person != null and person.has_method(&"set_support_grip"):
+		person.call(&"set_support_grip", Vector3.INF)
+
+
+## Where the support hand holds [param art]'s model, in the holder's space: its own `support_grip`, else
+## the fractions [member ZeeWeaponArt.fore_along] and [member ZeeWeaponArt.fore_up] over the mesh's bounds.
+func _support_point_for(art: ZeeWeaponArt) -> Vector3:
+	if art.support_grip.is_finite():
+		return art.support_grip
+	if _weapon == null:
+		return Vector3.INF
+	var box := AABB()
+	var seeded := false
+	for mi in _meshes(_weapon):
+		if mi.mesh == null:
+			continue
+		var to_holder := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != _holder:
+			if walk is Node3D:
+				to_holder = (walk as Node3D).transform * to_holder
+			walk = walk.get_parent()
+		var part := to_holder * mi.mesh.get_aabb()
+		box = part if not seeded else box.merge(part)
+		seeded = true
+	if not seeded:
+		return Vector3.INF
+	var forward := art.model_forward.normalized()
+	var t_min := INF
+	var t_max := -INF
+	for i in 8:
+		var t := box.get_endpoint(i).dot(forward)
+		t_min = minf(t_min, t)
+		t_max = maxf(t_max, t)
+	var centre := box.get_center()
+	var point := centre - forward * centre.dot(forward) + forward * lerpf(t_min, t_max, art.fore_along)
+	point.y = box.position.y + box.size.y * art.fore_up
+	return point
 
 
 func _show_in_hand(shown: bool) -> void:

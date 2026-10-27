@@ -116,6 +116,10 @@ class Tunables extends RefCounted:
 	## The reload, as keys over its fraction, 0 to 1. Empty is no reload motion.
 	var reload_keys: Array = ZeeWeaponPose.RELOAD_KEYS_RIFLE
 
+	## The sprint carry at full blend: metres and degrees (pitch up, yaw muzzle-left, roll), about the grip.
+	var sprint_offset := Vector3.ZERO
+	var sprint_rotation := Vector3.ZERO
+
 	## A melee swing, as keys over its own time (see [member swing_seconds]). Empty is none.
 	var swing_keys: Array = ZeeWeaponPose.SWING_KEYS
 
@@ -429,6 +433,9 @@ var _action_seconds: float = 0.36
 ## How far into aiming down the weapon, 0 at the hip to 1 at full aim. See [method set_aim].
 var _aim: float = 0.0
 
+## How far the sprint carry is blended in, 0 to 1 (see [method set_sprint]).
+var _sprint: float = 0.0
+
 ## Where full aim moves the weapon to, relative to where it rests. Set by the view model
 ## from the art, because the resting place is the art's and so is the sight line.
 var aim_shift := Vector3.ZERO
@@ -579,6 +586,11 @@ func set_deploy(fraction: float) -> void:
 
 
 ## How far into aiming, 0 to 1. The view model eases it; the pose only applies it.
+## The sprint carry's blend, 0 (hip) to 1 (lowered, barrel to the side). Eased by the caller.
+func set_sprint(fraction: float) -> void:
+	_sprint = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
+
+
 func set_aim(fraction: float) -> void:
 	_aim = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
 
@@ -652,8 +664,10 @@ func offset() -> Transform3D:
 	var drawn := sample_keys(tunables.draw_keys, _deploy) if holstered > 0.0 else [Vector3.ZERO, Vector3.ZERO]
 	var reloaded := sample_keys(tunables.reload_keys, _reload) if _reload > 0.0 else [Vector3.ZERO, Vector3.ZERO]
 	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
-	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3)
-	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3)
+	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) \
+		+ tunables.sprint_rotation * _sprint
+	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3) \
+		+ tunables.sprint_offset * _sprint
 	var hand := Basis.from_euler(Vector3(
 		deg_to_rad(acted.x), deg_to_rad(acted.y), deg_to_rad(acted.z)
 	))

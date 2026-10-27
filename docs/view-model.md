@@ -161,3 +161,7 @@ Strafe speed is handed to `drive_view(..., strafe)` (metres a second, positive r
 
 **Aimed, the gun drifted sideways** (arena, 2026-10-15): aim steadied the sway and bob to a quarter but left the roll whole, and a quarter of the look lag and the bob's sideways swing is centimetres at a half metre's range, so the body of the gun swung left and right of a sight that was meant to stay on the crosshair. Sideways motion and roll are now held to a twentieth aimed (`steady_x` in `ZeeWeaponPose.offset`). Review on `EXTRA="--moves" tools/screenshot.sh --sheet rifle`: hip and aimed, strafing, turning, walking, landing.
 
+
+## Sprint carry and grips
+
+Sprinting lowers the weapon on its own layer, separate from the aim layer: `ZeeViewModel.set_sprinting` eases `sprint_fraction` over `SPRINT_SECONDS`, and `ZeeWeaponPose.offset()` adds the art's `sprint_offset` and `sprint_rotation` (barrel left and down). In the third person `ZeeWorldModel` reads the figure's `sprint_blend` and yaws the barrel left (`sprint_world_offset`, `sprint_world_rotation`). Both default per pose class in `ZeeWeaponArtTable`; a profile overrides them, `hands` (1 or 2) and `support_grip` through `extra: art:`, applied by `ZeeWeaponArt.with_overrides(row)`. A two-handed weapon sends its foregrip to the figure (`set_support_grip`), which reaches the off hand there with two-bone IK. The first-person sprint pose has not been looked at in a rendered frame.

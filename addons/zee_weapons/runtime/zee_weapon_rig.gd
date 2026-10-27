@@ -323,6 +323,8 @@ func simulate_tick(
 	var context := ctx if ctx != null else _context_for(tick)
 	context.tick = tick
 	context.authority = authority
+	if _view != null:
+		_view.set_sprinting(context.sprinting)
 
 	_notice_holster(tick)
 
@@ -350,6 +352,9 @@ func simulate_tick(
 ## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button
 ## down there is no aim, bash or use, so only the bookkeeping that every tick does is left.
 func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
+	# Sprinting is just movement: no button is down, so this is the path a sprint usually takes.
+	if _view != null and _player != null:
+		_view.set_sprinting(_context_for(tick).sprinting)
 	_notice_holster(tick)
 	_ads_move = 1.0
 	_aim_ticks = 0
