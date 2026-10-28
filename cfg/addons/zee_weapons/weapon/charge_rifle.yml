@@ -80,4 +80,6 @@ extra:
     view_kick_rate_ref: 0.12
     view_kick_rate_max: 1.8
     view_camera_share: 0.3
+    view_kick_min: 2.0
+    view_kick_min_back: 0.012
     death_power: 0.9

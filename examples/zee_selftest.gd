@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 559
+const CHECKS := 562
 
 
 func _ready() -> void:
@@ -294,6 +294,34 @@ func _recoil() -> void:
 		climbs[ZeeWeaponIds.SMG] > 0.75
 	)
 
+	# A small recoil still lifts the drawn weapon (kick_min), the camera punch does not follow it,
+	# and a kick scale of 0 draws no kick at all.
+	var vm_small := ZeeWeaponPose.make(1.0)
+	vm_small.punch(Vector2(0.1, 0.0))
+	var vm_peak := 0.0
+	var vm_cam := 0.0
+	for i in range(144):
+		vm_small.advance(1.0 / 144.0, Vector2.ZERO, 0.0, true)
+		vm_peak = maxf(vm_peak, absf(vm_small.offset().basis.get_euler().x))
+		vm_cam = maxf(vm_cam, vm_small.view_punch().x)
+	_check("a small shot lifts the drawn weapon at least a degree (%.2f)" % rad_to_deg(vm_peak), rad_to_deg(vm_peak) > 1.0)
+	var vm_bare := ZeeWeaponPose.make(1.0)
+	vm_bare.tunables.kick_min = 0.0
+	vm_bare.punch(Vector2(0.1, 0.0))
+	var vm_bare_cam := 0.0
+	for i in range(144):
+		vm_bare.advance(1.0 / 144.0, Vector2.ZERO, 0.0, true)
+		vm_bare_cam = maxf(vm_bare_cam, vm_bare.view_punch().x)
+	_check("the camera punch is the same with or without the drawn top-up", is_equal_approx(vm_cam, vm_bare_cam))
+	var vm_off := ZeeWeaponPose.make(1.0)
+	vm_off.rules.kick = 0.0
+	vm_off.punch(Vector2(1.0, 0.2))
+	var vm_moved := 0.0
+	for i in range(72):
+		vm_off.advance(1.0 / 144.0, Vector2.ZERO, 0.0, true)
+		vm_moved = maxf(vm_moved, vm_off.offset().origin.length() + absf(vm_off.offset().basis.get_euler().x))
+	_check("kick scale 0 draws no kick (%.4f)" % vm_moved, vm_moved < 0.0001)
+
 	# The climb asked for is the climb drawn. A semi-implicit step under critical damping
 	# bled a third of every kick away, so the number tuned was never the number seen.
 	var asked := ZeeWeaponPose.make(1.0).kick_degrees(2.0)
@@ -363,7 +391,7 @@ func _recoil() -> void:
 	# Kick numbers are profile params: defaults change nothing, a set key does, junk is ignored.
 	var kd := ZeeWeaponPose.Tunables.kick_defaults()
 	var base_t := ZeeWeaponPose.Tunables.new()
-	var same := kd.size() == 10
+	var same := kd.size() == 12
 	for key: StringName in ZeeWeaponPose.Tunables.KICK_PARAMS:
 		same = same and is_equal_approx(float(kd[key]), float(base_t.get(ZeeWeaponPose.Tunables.KICK_PARAMS[key])))
 	var def_pose := ZeeWeaponPose.make(1.0)

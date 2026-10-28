@@ -26,6 +26,7 @@ const CVAR_TILT := "mp_vm_strafe_tilt"
 const CVAR_BOB := "mp_vm_bob"
 const CVAR_LANDING := "mp_vm_landing"
 const CVAR_AIM_STEADY := "mp_vm_aim_steadiness"
+const CVAR_KICK := "cl_vm_kick"
 
 ## Look lag and inertia: the weapon trails a turn, and rolls into it.
 var sway: float = 1.0
@@ -43,6 +44,9 @@ var landing: float = 1.0
 ## dead still; the default leaves a quarter of it, so the weapon is held rather than pinned.
 var aim_steadiness: float = 0.75
 
+## The per-shot kick of the weapon and arms, drawn only: 0 off. Never moves the camera or a bullet.
+var kick: float = 1.0
+
 
 func cvar_specs() -> Array[Dictionary]:
 	return [
@@ -56,6 +60,8 @@ func cvar_specs() -> Array[Dictionary]:
 			"description": "View model dip on landing, a multiplier: 0 off, 1 default"},
 		{"name": CVAR_AIM_STEADY, "value": str(aim_steadiness), "min": 0.0, "max": 1.0,
 			"description": "How much of the view model's sway, tilt and bob aiming removes: 0 none, 1 all"},
+		{"name": CVAR_KICK, "value": str(kick), "min": 0.0, "max": 3.0,
+			"description": "View model kick per shot (weapon and arms), a multiplier: 0 off, 1 default"},
 	]
 
 
@@ -118,6 +124,7 @@ func set_cvar(cvar_name: String, value: String) -> bool:
 			CVAR_BOB: bob = number
 			CVAR_LANDING: landing = number
 			CVAR_AIM_STEADY: aim_steadiness = number
+			CVAR_KICK: kick = number
 		changed.emit()
 		return true
 	return false
@@ -133,11 +140,11 @@ func _on_replicated_cvar(cvar_name: String, value: String) -> void:
 
 func describe() -> Dictionary:
 	return {"sway": sway, "strafe_tilt": strafe_tilt, "bob": bob, "landing": landing,
-		"aim_steadiness": aim_steadiness}
+		"aim_steadiness": aim_steadiness, "kick": kick}
 
 
 func describe_lines() -> PackedStringArray:
 	return PackedStringArray([
-		"view model feel: sway %.2f, strafe tilt %.2f, bob %.2f, landing %.2f, aim steadiness %.2f"
-		% [sway, strafe_tilt, bob, landing, aim_steadiness]
+		"view model feel: sway %.2f, strafe tilt %.2f, bob %.2f, landing %.2f, aim steadiness %.2f, kick %.2f"
+		% [sway, strafe_tilt, bob, landing, aim_steadiness, kick]
 	])

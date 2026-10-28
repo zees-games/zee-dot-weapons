@@ -684,7 +684,7 @@ func _feel() -> void:
 	_check("a cvar value is applied", rules.set_cvar(ZeeViewFeel.CVAR_BOB, "0.5") and is_equal_approx(rules.bob, 0.5))
 	_check("a value out of range is refused", not rules.set_cvar(ZeeViewFeel.CVAR_BOB, "9") and is_equal_approx(rules.bob, 0.5))
 	_check("so is one that is not a number", not rules.set_cvar(ZeeViewFeel.CVAR_SWAY, "lots"))
-	_check("every amount is a cvar", rules.cvar_specs().size() == 5)
+	_check("every amount is a cvar", rules.cvar_specs().size() == 6)
 
 	var landed := ZeeWeaponPose.make(1.0)
 	landed.land(9.0)

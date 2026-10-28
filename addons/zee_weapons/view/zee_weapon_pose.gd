@@ -91,6 +91,14 @@ class Tunables extends RefCounted:
 	## The most a single shot may push the weapon back, in metres.
 	var kick_back_max: float = 0.045
 
+	## The least a shot may lift the drawn weapon, in degrees, however small its recoil: the
+	## automatics' recoil is tuned for the camera and was under a degree on screen. Drawn
+	## only (a separate spring), so the camera punch and the shot are untouched. 0 off.
+	var kick_min: float = 2.0
+
+	## Metres the weapon slides back per degree of that minimum lift.
+	var kick_min_back: float = 0.012
+
 	## Stiffness of the recoil spring, per second, for a weapon of weight 1. A heavier
 	## weapon returns more slowly, by the square root of its weight.
 	var kick_response: float = 22.0
@@ -154,6 +162,7 @@ class Tunables extends RefCounted:
 		&"view_kick_roll": &"kick_roll", &"view_kick_back": &"kick_back", &"view_kick_back_max": &"kick_back_max",
 		&"view_kick_response": &"kick_response", &"view_kick_rate_ref": &"kick_rate_ref",
 		&"view_kick_rate_max": &"kick_rate_max", &"view_camera_share": &"camera_share",
+		&"view_kick_min": &"kick_min", &"view_kick_min_back": &"kick_min_back",
 	}
 
 
@@ -444,6 +453,11 @@ var _kick_velocity: float = 0.0
 ## Recoil rotation in degrees (x pitch, y yaw, z roll) and its velocity.
 var _kick_rotation := Vector3.ZERO
 var _kick_rotation_velocity := Vector3.ZERO
+## The drawn-only top-up to a small shot (see [member Tunables.kick_min]): pitch and push back.
+var _extra_pitch: float = 0.0
+var _extra_pitch_velocity: float = 0.0
+var _extra_back: float = 0.0
+var _extra_back_velocity: float = 0.0
 
 ## Which way the next sideways kick goes. Presentation only, so a plain generator.
 var _rng := RandomNumberGenerator.new()
@@ -566,6 +580,11 @@ func punch(recoil: Vector2, signed_yaw: bool = false) -> void:
 		climb * tunables.kick_back, tunables.kick_back_max
 	) * omega * 1.3 * exp(1.0)
 
+	if recoil.x > 0.0 and tunables.kick_min > 0.0:
+		var lacking := maxf(0.0, tunables.kick_min * scale - climb)
+		_extra_pitch_velocity += lacking * to_velocity
+		_extra_back_velocity += lacking * tunables.kick_min_back * omega * 1.3 * exp(1.0)
+
 
 ## Plays a melee swing ([member Tunables.swing_keys]) from its start. A swing pressed during a
 ## swing starts again from the top, which is what a second press looks like.
@@ -654,6 +673,10 @@ func reset() -> void:
 	_kick_velocity = 0.0
 	_kick_rotation = Vector3.ZERO
 	_kick_rotation_velocity = Vector3.ZERO
+	_extra_pitch = 0.0
+	_extra_pitch_velocity = 0.0
+	_extra_back = 0.0
+	_extra_back_velocity = 0.0
 	_landing = 0.0
 	_aim = 0.0
 	_action = 1.0
@@ -680,7 +703,7 @@ func offset() -> Transform3D:
 	var position := Vector3(
 		(_sway.x * rules.sway + trail) * steady_x,
 		_sway.y * rules.sway * steady - _landing * rules.landing,
-		_kick + _charge * tunables.charge_pull
+		(_kick + _extra_back) * maxf(0.0, rules.kick) + _charge * tunables.charge_pull
 	)
 
 	var bob := _bob_offset() * rules.bob
@@ -709,9 +732,9 @@ func offset() -> Transform3D:
 
 	# The kick turns about the grip, inside everything else: sway and bob carry the
 	# kicking weapon around, rather than the kick being taken about wherever sway left it.
-	var held := 1.0 - _aim * clampf(aim_kick_steadiness, 0.0, 1.0)
+	var held := (1.0 - _aim * clampf(aim_kick_steadiness, 0.0, 1.0)) * maxf(0.0, rules.kick)
 	var kick := Basis.from_euler(Vector3(
-		deg_to_rad(_kick_rotation.x * held),
+		deg_to_rad((_kick_rotation.x + _extra_pitch) * held),
 		deg_to_rad(_kick_rotation.y * held),
 		deg_to_rad(_kick_rotation.z * held)
 	))
@@ -839,6 +862,15 @@ func _advance_kick(step: float) -> void:
 		)
 		_kick_rotation[axis] = turned.x
 		_kick_rotation_velocity[axis] = turned.y
+
+	var extra_back := _critical(_extra_back, _extra_back_velocity, omega * 1.3, step)
+	_extra_back = extra_back.x
+	_extra_back_velocity = extra_back.y
+	var extra_pitch := _critical(_extra_pitch, _extra_pitch_velocity, omega, step)
+	_extra_pitch = extra_pitch.x
+	_extra_pitch_velocity = extra_pitch.y
+	_extra_pitch = clampf(_extra_pitch, -20.0, 20.0)
+	_extra_back = clampf(_extra_back, -0.2, 0.2)
 
 	# Clamped so that a stack of impulses in one frame cannot throw the weapon somewhere
 	# that reads as broken rather than as kicking.

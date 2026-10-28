@@ -40,6 +40,8 @@ params = {
 &"view_kick_back": 0.008,
 &"view_kick_back_max": 0.045,
 &"view_kick_knee": 0.45,
+&"view_kick_min": 2.0,
+&"view_kick_min_back": 0.012,
 &"view_kick_pitch": 4.0,
 &"view_kick_rate_max": 1.8,
 &"view_kick_rate_ref": 0.12,
