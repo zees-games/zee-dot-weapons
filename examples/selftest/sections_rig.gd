@@ -114,9 +114,30 @@ func _rig() -> void:
 
 	_rig_art_override(rig)
 	_rig_reload_motion()
+	_rig_world_attachments()
 
 	_cleanup(rig)
 	_end()
+
+
+## A rig hands its world model the arsenal's attachment catalogue, so a replicated code can be decoded.
+func _rig_world_attachments() -> void:
+	var world := ZeeWorldModel.new()
+	add_child(world)
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.LOCAL
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.world_model_ref = DotNodeRef.of_path(world.get_path())
+	add_child(rig)
+	rig.setup()
+	var catalogue := DotWeaponAttachments.new()
+	rig.arsenal.attachments = catalogue
+	rig.give(ZeeWeaponIds.PISTOL)
+	rig.arsenal.select(rig.arsenal.catalogue.get_def(ZeeWeaponIds.PISTOL).slot, 0)
+	_run_rig(rig, 1, 3, 0)
+	_check("the rig's world model decodes against the arsenal's attachments", world.attachments == catalogue)
+	_cleanup(rig)
+	_cleanup(world)
 
 
 func _rig_reload_motion() -> void:

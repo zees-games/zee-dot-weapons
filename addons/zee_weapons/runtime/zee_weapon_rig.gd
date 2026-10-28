@@ -403,6 +403,8 @@ func _update_presentation(tick: int) -> void:
 
 ## Tells both models what is fitted to the weapon in hand, when that changes.
 func _show_fitting() -> void:
+	if _world != null:
+		_world.attachments = arsenal.attachments
 	var fitting := arsenal.fitting_at(arsenal.current_slot())
 	if fitting.key() == _shown_fit:
 		return
