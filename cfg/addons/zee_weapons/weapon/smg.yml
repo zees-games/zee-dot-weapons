@@ -26,6 +26,7 @@ reload_per_round: false
 reload_start_ticks: 22
 auto_reload: true
 weight: 2.8
+crosshair_scale: 0.0
 mounts: []
 extra:
   tuning:
