@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_rig.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 565
+const CHECKS := 571
 
 
 func _ready() -> void:
@@ -52,6 +52,7 @@ func _ready() -> void:
 	_rig_idle()
 	_tick_rate()
 	_view_models()
+	_previews()
 	_aim()
 	_ads_rules()
 	_effects()
@@ -1003,3 +1004,19 @@ static func _wav_peak(wav: AudioStreamWAV) -> float:
 	for i in range(0, wav.data.size() - 1, 2):
 		peak = maxi(peak, absi(wav.data.decode_s16(i)))
 	return float(peak) / 32767.0
+
+
+func _previews() -> void:
+	_begin("weapon previews")
+	var previews := ZeeWeaponPreview.new()
+	add_child(previews)
+	var rifle := previews.texture(&"rifle")
+	_check("a weapon with a model gets a texture", rifle != null)
+	_check("at the configured size", rifle != null and rifle.get_size() == Vector2(previews.size))
+	_check("asking again returns the cached texture", previews.texture(&"rifle") == rifle)
+	_check("an unknown id has no picture", previews.texture(&"no_such_weapon") == null)
+	_check("the miss is cached too", previews.cached_count() == 2)
+	var other := previews.texture(&"pistol")
+	_check("each weapon has its own texture", other != null and other != rifle)
+	previews.queue_free()
+	_end()
