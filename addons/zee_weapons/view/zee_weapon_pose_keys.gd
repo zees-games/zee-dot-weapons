@@ -12,13 +12,8 @@ const DRAW_KEYS := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A melee swing: drawn back and up to the right (0-0.18), cut down and across to the left
-## through the middle of the screen (0.18-0.5), held a moment at the end of the cut, and
-## brought back.
-##
-## [b]Keys, because a swing is an action.[/b] A swing used to be the recoil spring alone, and
-## a melee weapon has no recoil: the knife, the hatchet and the fists did nothing on screen when
-## they struck, which reads as the weapon being broken.
+## A melee swing: back and up right (0-0.18), cut down and left across the screen (0.18-0.5), held, brought back.
+## Keys, because a melee weapon has no recoil spring to show a strike.
 const SWING_KEYS := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
 	[0.18, Vector3(0.04, 0.035, 0.03), Vector3(22.0, -16.0, -14.0)],
@@ -39,15 +34,9 @@ const THROW_KEYS := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A long gun: lifted in toward the middle of the screen and rolled onto its side, so the
-## magazine well is in sight while the old magazine drops (0.10-0.28); held there while the hand
-## fetches the next and brings it up (0.36-0.55); a jolt up as it seats (0.55-0.60); rolled back
-## down to the hip, and a rack (0.84-0.90).
-##
-## [b]Lifted, because at the hip the well is below the bottom of the screen.[/b] The first keys
-## rolled and dipped the gun where it sat: every magazine fell, and every hand fetched one, out
-## of frame, and what a player saw was the gun tilting and coming back. The play test called
-## that "no proper reload animations"; the contact sheet showed the same.
+## A long gun: lifted in and rolled onto its side so the well is in sight as the magazine drops (0.10-0.28), held while
+## the next is fetched (0.36-0.55), a jolt as it seats (0.55-0.60), rolled back to the hip, a rack (0.84-0.90).
+## Lifted, because at the hip the well is below the bottom of the screen and the reload plays out of frame.
 const RELOAD_KEYS_RIFLE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
 	[0.10, Vector3(-0.045, 0.035, 0.01), Vector3(8.0, 10.0, -30.0)],
@@ -75,13 +64,9 @@ const RELOAD_KEYS_PISTOL := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A heavy weapon with a box or a cell: lifted up and in like a rifle and rolled to show the
-## well, a little less (it is longer and the roll swings more of it across the screen), the new
-## box or cell carried up from 0.36 and seated at 0.58, heaved back to the hip and racked.
-##
-## [b]Lifted as far as a rifle.[/b] The first heavy keys lifted half as much, and the box, the
-## cell and every round the hand fetched stayed below the bottom of the screen: the contact
-## sheet showed a gun tilting, which is what the play test said.
+## A heavy weapon with a box or a cell: lifted and rolled like a rifle, a little less (it is longer), the new box or
+## cell carried up from 0.36 and seated at 0.58, heaved back to the hip and racked.
+## Lifted as far as a rifle, or the box and cell stay below the bottom of the screen.
 const RELOAD_KEYS_HEAVY := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
 	[0.10, Vector3(-0.06, 0.05, 0.015), Vector3(7.0, 10.0, -22.0)],
@@ -95,10 +80,8 @@ const RELOAD_KEYS_HEAVY := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A bolt gun fed a round at a time: brought up and in with its top and right side to the eye,
-## the bolt yanked back (0.12-0.20, a jolt back), held still while the rounds are pressed in
-## (ZeeViewModel `FEED_START`-`FEED_END`), the bolt shoved home (0.75-0.82, a jolt forward), down
-## to the hip.
+## A bolt gun fed a round at a time: brought up and in, bolt yanked back (0.12-0.20), held still while the rounds
+## are pressed in (ZeeViewModel `FEED_START`-`FEED_END`), bolt shoved home (0.75-0.82), down to the hip.
 const RELOAD_KEYS_BOLT := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
 	[0.08, Vector3(-0.06, 0.06, 0.02), Vector3(8.0, 14.0, -4.0)],
@@ -113,10 +96,8 @@ const RELOAD_KEYS_BOLT := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## A pump gun fed shells through the port underneath: lifted in and rolled well over so the
-## underside is to the eye (0.10-0.22), held still while the shells are pushed up into it
-## (ZeeViewModel `FEED_START`-`FEED_END`), back down, and the pump worked (0.80-0.90: back, then
-## forward). Held like the bolt gun, because each shell needs the port in the same place.
+## A pump gun fed shells through the port underneath: rolled well over so the underside is to the eye (0.10-0.22),
+## held still like the bolt gun while the shells go in (`FEED_START`-`FEED_END`), then the pump worked (0.80-0.90).
 const RELOAD_KEYS_TUBE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
 	[0.10, Vector3(-0.05, 0.045, 0.01), Vector3(9.0, 11.0, -30.0)],
