@@ -19,6 +19,10 @@ var _magazine: Node3D = null
 var _attachments: Array[Node3D] = []
 var _sight: Node3D = null
 
+## The fitted attachments (what the rig was told) and what [code]zee_attachment_dress.gd[/code] drew for them.
+var _fitting: DotWeaponFitting = null
+var _dressed: Dictionary = {}
+
 ## The iron sight's line, measured at equip in the holder's (model) space: `rear` and `front`
 ## on the line, or empty when the weapon aims at its written aim_offset. See zee_iron_sight.gd.
 var _sight_line: Dictionary = {}

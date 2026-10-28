@@ -123,6 +123,7 @@ var _charge_started: int = -1
 
 ## The weapon the presentation is currently showing, so it is only rebuilt on a change.
 var _shown: StringName = &""
+var _shown_fit: String = ""
 
 ## The tick most recently simulated, so a signal handler knows when it fired.
 ## Arsenal signals carry no tick; a handler reading a clock would be wrong during a replay.

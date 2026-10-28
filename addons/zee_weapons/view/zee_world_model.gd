@@ -27,6 +27,8 @@ extends Node3D
 # ZeeModelCache and handed back as a DotResult; "nowhere to attach" is headless, not wrong.
 
 ## How much of a weapon's recoil a watcher sees.
+const Dress := preload("zee_attachment_dress.gd")
+
 const RECOIL_SHARE := 0.35
 
 # --- Authored motion ----------------------------------------------------------
@@ -117,6 +119,12 @@ const THROW_BACK := 0.9
 var _holder: Node3D = null
 var _weapon: Node3D = null
 var _attachments: Array[Node3D] = []
+var _dressed: Dictionary = {}
+var _fitting: DotWeaponFitting = null
+var _fit_code: int = -1
+
+## The catalogue [method on_fitted] decodes a replicated fitting against; the arsenal's own.
+var attachments: DotWeaponAttachments = null
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
 var _fx: ZeeShotFx = null
@@ -215,20 +223,30 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	# Attachments come across, magazines do not: a watcher cannot see a magazine fall
 	# out at range, and thirty players each carrying one extra mesh they cannot see is
 	# thirty meshes being culled every frame for nothing.
-	for entry in art.attachments:
-		var part := ZeeModelCache.instantiate(str(entry.get("path", "")))
-		if part == null:
-			continue
-		_holder.add_child(part)
-		part.transform = Transform3D(
-			Basis.from_euler(_radians(entry.get("rotation", Vector3.ZERO))),
-			entry.get("offset", Vector3.ZERO)
-		)
-		_attachments.append(part)
+	_attachments.append_array(Dress.art_parts(art, _holder))
 
 	_apply_shadows()
 	_support_local = _support_point_for(art)
 	return DotResult.success(null)
+
+
+## Draws [param fitting]'s attachments on the weapon in hand, and moves the muzzle to the suppressor's end.
+func set_fitting(fitting: DotWeaponFitting) -> void:
+	_fitting = fitting.duplicate_fitting() if fitting != null else null
+	if _weapon == null or _art == null:
+		return
+	_dressed = Dress.apply(_weapon, _fitting, _art.model_forward, _dressed)
+	_apply_shadows()
+
+
+## Follows a carrier's replicated [code]net_fitted[/code] [param code]; needs [member attachments] to decode it.
+func on_fitted(code: int) -> void:
+	if code == _fit_code or attachments == null or _id == &"":
+		return
+	_fit_code = code
+	var base := ZeeWeaponPack.catalogue().get_def(_id)
+	if base != null and attachments.code_bits(base) <= DotWeaponNetSync.FITTED_BITS:
+		set_fitting(attachments.decode(base, code))
 
 
 func clear() -> void:
@@ -251,6 +269,8 @@ func muzzle_transform() -> Transform3D:
 
 	if distance <= 0.0:
 		distance = ZeeModelCache.muzzle_distance(_art.model_path, _art.model_forward)
+
+	distance = maxf(distance, float(_dressed.get("reach", 0.0)))
 
 	return _weapon.global_transform * Transform3D(
 		Basis.IDENTITY,
@@ -571,13 +591,11 @@ func _clear_models() -> void:
 
 	_weapon = null
 	_attachments.clear()
+	_dressed = {}
+	_fitting = null
+	_fit_code = -1
 	_kick = 0.0
 	_action = 1.0
-
-
-static func _radians(value: Variant) -> Vector3:
-	var v: Vector3 = value if value is Vector3 else Vector3.ZERO
-	return Vector3(deg_to_rad(v.x), deg_to_rad(v.y), deg_to_rad(v.z))
 
 
 func describe() -> Dictionary:

@@ -172,6 +172,9 @@ static func apply(
 	if world_model != null:
 		world_model.on_switching(bool(source.get(&"net_switching")))
 
+		if &"net_fitted" in source:
+			world_model.on_fitted(int(source.get(&"net_fitted")))
+
 		# One kick however many shots arrived in the snapshot. Playing one per shot
 		# would put a burst's worth of recoil into a single frame, which reads as the
 		# weapon jumping rather than as firing.

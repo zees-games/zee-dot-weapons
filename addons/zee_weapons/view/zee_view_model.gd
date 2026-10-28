@@ -5,6 +5,7 @@ extends "zee_view_model_state.gd"
 ## By path, not by class_name: see the file's own header.
 const IronSight := preload("zee_iron_sight.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
+const Dress := preload("zee_attachment_dress.gd")
 
 ## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
 ## and never reads a device, a clock or the arsenal, so it draws a remote player's gun the same way.
@@ -183,8 +184,7 @@ func _build_light() -> void:
 
 # --- Weapons ----------------------------------------------------------------
 
-## Draws [param art]'s weapon, replacing whatever was in hand.
-## Rebuilds rather than hides: keeping all twenty-seven models in the tree is a hundred-odd culled nodes per player.
+## Draws [param art]'s weapon, replacing whatever was in hand; rebuilt, not hidden, as every model in the tree is culled per player.
 func equip(art: ZeeWeaponArt) -> DotResult:
 	_build_structure()
 
@@ -237,6 +237,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_holder.add_child(_weapon)
 	_set_on_top(_weapon)
 
+	_dress()
 	_muzzle = _measure_muzzle(art)
 	_fit_sight(art)
 
@@ -246,25 +247,37 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		else:
 			_magazine = _add_built(ReloadParts.build(art.magazine_part), art.magazine_transform())
 
-	for entry in art.attachments:
-		var part := _add_part(
-			str(entry.get("path", "")),
-			Transform3D(
-				Basis.from_euler(_radians(entry.get("rotation", Vector3.ZERO))),
-				entry.get("offset", Vector3.ZERO)
-			)
-		)
-		if part != null:
-			_attachments.append(part)
+	for part in Dress.art_parts(art, _holder):
+		_set_on_top(part)
+		_attachments.append(part)
 
 	_reach_for(art)
 	model_ready.emit(_id, _weapon)
 	return DotResult.success(null)
 
 
+## Draws [param fitting]'s attachments on the weapon in hand, and moves the muzzle and the sight line to suit.
+func set_fitting(fitting: DotWeaponFitting) -> void:
+	_fitting = fitting.duplicate_fitting() if fitting != null else null
+	if _weapon == null:
+		return
+	_dress()
+	_muzzle = _measure_muzzle(_art)
+	if _sight != null:
+		_sight.queue_free()
+		_sight = null
+	_fit_sight(_art)
+	_apply_aim(_ease(_aim_fraction))
+
+
+func _dress() -> void:
+	_dressed = Dress.apply(_weapon, _fitting, _art.model_forward, _dressed)
+	for part: Node3D in _dressed.parts:
+		_set_on_top(part)
+
+
 ## Puts the hands on this weapon, measured from the weapon itself in the holder's space: a blaster's right hand round its grip,
 ## the left on the fore-end at 62%, a melee hand round its handle, a grenade's round its middle, each with the held axis.
-## Measured, in the model's own space: the origin is not the grip, and a view-space box of a canted gun is a box round a diagonal.
 func _reach_for(art: ZeeWeaponArt) -> void:
 	var to_aim := _holder.transform
 	var forward := art.model_forward.normalized()
@@ -467,8 +480,7 @@ func equipped() -> StringName:
 	return _id
 
 
-## Where the muzzle is right now, in world space: what a flash, a tracer and a shell ejection hang off.
-## Nothing the simulation reads; a shot's origin is the eye, decided on the server, or reach would depend on the model.
+## Where the muzzle is right now in world space, for a flash, a tracer and a shell; the simulation never reads it.
 func muzzle_transform() -> Transform3D:
 	if _weapon == null:
 		return global_transform
@@ -544,9 +556,7 @@ func on_deploy(fraction: float) -> void:
 	_pose.set_deploy(fraction)
 
 
-## How far through a reload, 0 to 1.
-##
-## The magazine is animated from the same number, so a game driving one drives both.
+## How far through a reload, 0 to 1; the magazine is animated from the same number.
 func on_reload(fraction: float) -> void:
 	_reload_fraction = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
 	_pose.set_reload(_reload_fraction)
@@ -625,8 +635,7 @@ func aim(held: bool) -> void:
 	_aim_held = held
 
 
-## The aim button's raw state, every frame: held follows it, or a press flips it when the
-## weapon's rules say toggle. Prefer this to [method aim] when the rules can toggle.
+## The aim button's raw state every frame; held follows it, or a press flips it under toggle rules.
 func aim_input(pressed: bool) -> void:
 	if _toggles():
 		if pressed and not _aim_button_was:
@@ -669,24 +678,23 @@ func can_aim() -> bool:
 	return _art != null and _art.aim_enabled and (ads_rules == null or ads_rules.enabled_for(_art.id))
 
 
-## The field-of-view multiplier for this frame: 1 at the hip, the art's zoom at full aim.
-## The game applies it to its own camera (`DotFpsView.external_fov_scale`); this node is a child of it.
+## The field-of-view multiplier this frame: 1 at the hip, the zoom at full aim; the game applies it (`DotFpsView.external_fov_scale`).
 func aim_fov_scale() -> float:
 	if _art == null:
 		return 1.0
-	var zoom := _art.aim_zoom if ads_rules == null else ads_rules.zoom_for(_art.id, _art.aim_zoom)
+	var base := float(_dressed.get("zoom", 0.0))
+	base = base if base > 0.0 else _art.aim_zoom
+	var zoom := base if ads_rules == null else ads_rules.zoom_for(_art.id, base)
 	return lerpf(1.0, zoom, _ease(_aim_fraction))
 
 
 ## Whether the view is through a scope right now: a scoped weapon at (nearly) full aim.
 func is_scoped() -> bool:
-	return _art != null and _art.aim_scoped and _aim_fraction >= 0.95
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= 0.95
 
 
 func _advance_aim(delta: float) -> void:
-	# A reload lowers the aim: the reload keys turn the gun about the grip at hip distances,
-	# and about the rear sight (centimetres from the eye) at full aim they swing the whole
-	# rifle far left and up out of view. The button stays held; the sight comes back after.
+	# A reload lowers the aim: the keys turn the gun about the rear sight, centimetres from the eye, and swing it out of view.
 	var reloading := _reload_fraction > 0.0 and _reload_fraction < 1.0
 	var target := 1.0 if (_aim_held and can_aim() and not reloading) else 0.0
 	var time := _art.aim_time if _art != null else 0.16
@@ -702,7 +710,6 @@ func _advance_aim(delta: float) -> void:
 
 ## Moves and turns the Aim node so the holder sits [param f] of the way from the art's hip hold to its aim hold,
 ## and tells the pose where the grip now is so a kick turns about it.
-## Slerped rotation, lerped position: blending basis components would shrink the weapon half way.
 func _apply_aim(f: float) -> void:
 	if _art == null or _aim_node == null:
 		return
@@ -722,9 +729,7 @@ func _apply_aim(f: float) -> void:
 		Basis(turn).scaled(Vector3.ONE * _art.view_scale), hip.origin.lerp(sight.origin, f)
 	)
 	_aim_node.transform = now * hip.affine_inverse()
-	# Aimed, the kick turns about the rear sight rather than the grip: the eye stays behind
-	# the notch and the front sight climbs off the crosshair and settles back onto it. About
-	# the grip, the whole sight picture jumped up the screen on every shot.
+	# Aimed, the kick turns about the rear sight, not the grip, or the sight picture jumps up the screen.
 	_pose.pivot = now.origin.lerp(now * _sight_line.rear, f) if not _sight_line.is_empty() \
 		else now.origin
 
@@ -735,8 +740,7 @@ func _aim_target() -> Transform3D:
 	return _sight_aim if not _sight_line.is_empty() else _art.aim_transform()
 
 
-## Measures [param art]'s sight line on the mesh just built, builds the sight on it, and derives the aim hold that puts the line through the eye.
-## Derived, not written: one aim place for every blaster showed the gun's pale rear face. `origin = (0, 0, -relief) - B * rear` puts the rear sight ahead of the eye and the front on the crosshair.
+## Measures [param art]'s sight line on the mesh just built (an optic's glass overrides a marked one), builds the sight on it, and derives the aim hold that puts the line through the eye.
 func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_line = {}
 	if not art.iron_sight or not art.aim_enabled or art.aim_scoped or _weapon == null:
@@ -744,19 +748,19 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	# A model with its own sights marks their line; one without gets a sight measured and built.
 	var line := IronSight.from_marks(_weapon, _holder, art.model_forward)
 	var marked := not line.is_empty()
+	if marked:
+		line.merge(_dressed.get("line", {}), true)
 	if not marked:
 		line = IronSight.measure(_weapon, _holder, art.model_forward)
 	if line.is_empty():
 		return
 	var basis := art.orientation().scaled(Vector3.ONE * art.view_scale)
-	# The gun's back end is this far behind the rear sight; the eye stands back far enough to
-	# keep it in front of the near plane (a clip plane slices, it does not hide).
+	# The eye stands back far enough to keep the gun's back end past the near plane (a clip plane slices).
 	var behind := maxf(0.0, (basis * (line.back as Vector3)).z - (basis * (line.rear as Vector3)).z)
 	var camera := get_parent() as Camera3D
 	var near := camera.near if camera != null else 0.05
 	var relief := maxf(art.aim_eye_relief, behind + near + NEAR_MARGIN)
-	# The ring is sized to how far out it ends up, so it reads the same on a toy blaster and on
-	# a real-sized rifle drawn at another scale.
+	# The ring is sized to how far out it ends up, so a toy blaster and a real-sized rifle read alike.
 	var span := absf((basis * (line.front as Vector3)).z - (basis * (line.rear as Vector3)).z)
 	if not marked:
 		var ring := (relief + span) * tan(deg_to_rad(IronSight.RING_DEGREES)) / art.view_scale
@@ -769,9 +773,7 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_aim = Transform3D(basis, Vector3(0.0, 0.0, -relief) - basis * (line.rear as Vector3))
 
 
-## Where the iron sight's rear and front points are this frame, in the view model's own space
-## (the camera's, before the hands' lens), as `{rear, front}`; empty without a sight. Aimed and
-## at rest both are on the view axis (x and y zero): the line runs through the crosshair.
+## The sight's rear and front points this frame in the camera's space (before the hands' lens), as `{rear, front}`; empty without a sight.
 func sight_points() -> Dictionary:
 	if _sight_line.is_empty() or _animated == null:
 		return {}
@@ -779,8 +781,7 @@ func sight_points() -> Dictionary:
 	return {"rear": to_view * (_sight_line.rear as Vector3), "front": to_view * (_sight_line.front as Vector3)}
 
 
-## Smoothstep, so the weapon leaves the hip and arrives at the eye gently rather than at
-## a constant rate, which reads as mechanical.
+## Smoothstep, so the weapon leaves the hip and arrives at the eye gently.
 static func _ease(x: float) -> float:
 	return x * x * (3.0 - 2.0 * x)
 
@@ -929,6 +930,7 @@ func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 	if distance <= 0.0:
 		distance = ZeeModelCache.muzzle_distance(art.model_path, art.model_forward)
 
+	distance = maxf(distance, float(_dressed.get("reach", 0.0)))
 	return art.model_forward.normalized() * distance + art.muzzle_offset
 
 
@@ -1009,6 +1011,8 @@ func _clear_models() -> void:
 			node.queue_free()
 	_sight = null
 	_sight_line = {}
+	_dressed = {}
+	_fitting = null
 
 	for node in _attachments:
 		node.queue_free()
@@ -1016,11 +1020,6 @@ func _clear_models() -> void:
 	_weapon = null
 	_magazine = null
 	_attachments.clear()
-
-
-static func _radians(value: Variant) -> Vector3:
-	var v: Vector3 = value if value is Vector3 else Vector3.ZERO
-	return Vector3(deg_to_rad(v.x), deg_to_rad(v.y), deg_to_rad(v.z))
 
 
 func describe() -> Dictionary:

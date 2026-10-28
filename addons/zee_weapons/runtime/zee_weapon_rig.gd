@@ -383,10 +383,12 @@ func _update_presentation(tick: int) -> void:
 		if _world != null:
 			_world.equip(art)
 
+		_shown_fit = ""
 		equipped.emit(id)
 		if _fx != null and _fx_origin_known and id != &"":
 			_fx.play_equip(_listen_at())
 
+	_show_fitting()
 	_fx_origin_known = true
 	_per_round_sound()
 
@@ -397,6 +399,18 @@ func _update_presentation(tick: int) -> void:
 
 	if _world != null:
 		_world.on_switching(arsenal.is_switching())
+
+
+## Tells both models what is fitted to the weapon in hand, when that changes.
+func _show_fitting() -> void:
+	var fitting := arsenal.fitting_at(arsenal.current_slot())
+	if fitting.key() == _shown_fit:
+		return
+	_shown_fit = fitting.key()
+	if _view != null:
+		_view.set_fitting(fitting)
+	if _world != null:
+		_world.set_fitting(fitting)
 
 
 ## Drives the view model's sway and bob from the carrier's motion.
