@@ -58,6 +58,11 @@ func _ready() -> void:
 	_controller.landed.connect(_on_landed)
 	_controller.teleport(SPAWN, 0.0, 0.0)
 
+	# `--wall [--wall-yaw DEG]`: the capsule pressed against the back wall, turned DEG off square, to see whether the view model clips it.
+	if OS.get_cmdline_user_args().has("--wall"):
+		var yaw := deg_to_rad(_argument("--wall-yaw").to_float())
+		_controller.teleport(Vector3(0.0, 0.0, -17.5 + 0.36), yaw, 0.0)
+
 	_crosshair.text = "+"
 
 	print("zee-dot-weapons range — %d weapons" % ZeeWeaponIds.all().size())

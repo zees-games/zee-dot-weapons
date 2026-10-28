@@ -10,6 +10,7 @@
 #   tools/screenshot.sh --sheet --all              # a contact sheet for every weapon
 #   SHEET_DIR=/tmp/before tools/screenshot.sh --sheet rifle   # somewhere else
 #   tools/screenshot.sh --world knife frag        # screenshots/world_<id>.png: a person using it
+#   EXTRA="--wall" tools/screenshot.sh pistol  # pressed against the back wall: does the view model clip it
 #
 # A contact sheet is eighteen frames of one weapon on one image: hip, aimed, fire frames
 # 1/2/4/8/14, reload at 0/25/50/75/90%, walking, turning, the draw at 30/70%, standing in a
