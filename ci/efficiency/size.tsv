@@ -1,18 +1,14 @@
 # size
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
-addons/zee_weapons/content/zee_weapon_pack.gd	1001
-addons/zee_weapons/runtime/zee_weapon_rig.gd	813
-addons/zee_weapons/view/zee_shot_fx.gd	1013
-addons/zee_weapons/view/zee_view_arms.gd	804
-addons/zee_weapons/view/zee_view_model.gd	1128
-addons/zee_weapons/view/zee_view_model.gd::equip	82
-addons/zee_weapons/view/zee_weapon_pose.gd	846
+addons/zee_weapons/content/zee_weapon_pack.gd	915
+addons/zee_weapons/view/zee_shot_fx.gd	962
+addons/zee_weapons/view/zee_view_arms.gd	803
+addons/zee_weapons/view/zee_view_model.gd	1064
 addons/zee_weapons/view/zee_weapon_sound.gd::bake	113
-examples/zee_range.gd	826
+examples/zee_range.gd	815
 examples/zee_range.gd::_run_sheet	144
-examples/zee_selftest.gd	894
+examples/zee_selftest.gd	802
 examples/zee_selftest.gd::_aim	128
-examples/zee_selftest.gd::_effects	254
+examples/zee_selftest.gd::_effects	213
 examples/zee_selftest.gd::_pose_stability	160
-examples/zee_selftest.gd::_recoil	123
 examples/zee_selftest.gd::_view_models	101

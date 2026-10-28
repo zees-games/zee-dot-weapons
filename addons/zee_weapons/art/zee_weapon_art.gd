@@ -35,12 +35,9 @@ extends Resource
 ## bare fists are, and is why this is not required.
 @export_file("*.glb", "*.gltf", "*.tscn", "*.scn") var model_path: String = ""
 
-## Which way the mesh points in its own space, before any rotation below.
-##
-## [b]Kenney's blasters point along +Z and Godot's forward is -Z[/b], so every one of
-## them needs turning around. Expressed as a vector rather than as a rotation baked into
-## [member view_rotation] because the muzzle is derived from it too: get this wrong and
-## the shots come out of the stock, which is a bug that looks like bad netcode.
+## Which way the mesh points in its own space, before any rotation below. Kenney's blasters point along +Z, Godot's forward is -Z.
+## A vector rather than a rotation baked into
+## [member view_rotation], because the muzzle derives from it: wrong and shots leave the stock.
 @export var model_forward: Vector3 = Vector3.BACK
 
 ## Metres from the mesh origin to the muzzle, along [member model_forward].

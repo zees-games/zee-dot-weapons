@@ -323,20 +323,7 @@ func _art() -> void:
 	var table := ZeeWeaponArtTable.table()
 	_check("one art entry per weapon", table.size() == 27)
 
-	# Eighteen blasters, and each must wear a different one — two roles sharing a mesh
-	# is a mistake that reads as a missing model rather than as a duplicated one.
-	var meshes: Dictionary = {}
-	var duplicates := 0
-
-	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
-		if not art.has_model():
-			continue
-		if meshes.has(art.model_path):
-			duplicates += 1
-		meshes[art.model_path] = true
-
-	_check("no two weapons wear the same mesh", duplicates == 0)
-	_check("twenty-six meshes, one weapon with none", meshes.size() == 26)
+	_art_meshes()
 
 	# The fists are the one weapon with no model, and that is on purpose.
 	var fists: ZeeWeaponArt = table[ZeeWeaponIds.FISTS]
@@ -366,6 +353,23 @@ func _silhouettes() -> void:
 				twins.append("%s/%s" % [a.id, b.id])
 	_check("twenty guns carry a silhouette each", guns.size() >= 18)
 	_check("no two guns share a silhouette: %s" % [twins], twins.is_empty())
+
+
+func _art_meshes() -> void:
+	# Eighteen blasters, and each must wear a different one — two roles sharing a mesh
+	# is a mistake that reads as a missing model rather than as a duplicated one.
+	var meshes: Dictionary = {}
+	var duplicates := 0
+
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if not art.has_model():
+			continue
+		if meshes.has(art.model_path):
+			duplicates += 1
+		meshes[art.model_path] = true
+
+	_check("no two weapons wear the same mesh", duplicates == 0)
+	_check("twenty-six meshes, one weapon with none", meshes.size() == 26)
 
 
 func _art_asset_root(table: Dictionary) -> void:

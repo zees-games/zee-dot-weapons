@@ -391,25 +391,7 @@ func _ads_rules() -> void:
 	_check("the shipped file loads to the defaults", loaded.enabled_for(&"rifle")
 		and is_equal_approx(float(loaded.base["move_speed_multiplier"]), 0.8))
 
-	var view := ZeeViewModel.new()
-	view.show_arms = false
-	add_child(view)
-	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"pistol"))
-	view.ads_rules = rules
-	view.aim(true)
-	view._advance_aim(1.0)
-	_check("the view model of a disabled weapon cannot aim", not view.can_aim() and view.aim_fraction() == 0.0)
-	var _eq2 := view.equip(ZeeWeaponArtTable.get_art(&"sniper"))
-	view.aim_input(true)
-	view.aim_input(false)
-	view._advance_aim(1.0)
-	_check("a toggle weapon stays aimed after the button is released", view.aim_fraction() > 0.99)
-	_check("its zoom is the profile's", is_equal_approx(view.aim_fov_scale(), 0.25))
-	view.aim_input(true)
-	view.aim_input(false)
-	view._advance_aim(1.0)
-	_check("a second press lowers it", view.aim_fraction() < 0.01)
-	view.queue_free()
+	_ads_view(rules)
 
 	var carrier := Node3D.new()
 	add_child(carrier)
@@ -444,6 +426,35 @@ func _ads_rules() -> void:
 	_check("while garbage is refused and changes nothing", not clone.adopt_wire("nope") and not clone.enabled_for(&"pistol"))
 	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
 	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))
+	_ads_sprint(rig)
+	_ads_wire_warning()
+	carrier.queue_free()
+	_end()
+
+
+func _ads_view(rules: ZeeAdsRules) -> void:
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"pistol"))
+	view.ads_rules = rules
+	view.aim(true)
+	view._advance_aim(1.0)
+	_check("the view model of a disabled weapon cannot aim", not view.can_aim() and view.aim_fraction() == 0.0)
+	var _eq2 := view.equip(ZeeWeaponArtTable.get_art(&"sniper"))
+	view.aim_input(true)
+	view.aim_input(false)
+	view._advance_aim(1.0)
+	_check("a toggle weapon stays aimed after the button is released", view.aim_fraction() > 0.99)
+	_check("its zoom is the profile's", is_equal_approx(view.aim_fov_scale(), 0.25))
+	view.aim_input(true)
+	view.aim_input(false)
+	view._advance_aim(1.0)
+	_check("a second press lowers it", view.aim_fraction() < 0.01)
+	view.queue_free()
+
+
+func _ads_sprint(rig: ZeeWeaponRig) -> void:
 	var sprint_ctx := DotWeaponContext.new()
 	var aim_cmd := DotWeaponCommand.new()
 	aim_cmd.buttons = DotWeaponCommand.BUTTON_USER_0
@@ -466,9 +477,6 @@ func _ads_rules() -> void:
 	barrel_ctx.direction = Vector3.FORWARD
 	rig._aim_along_sprint_barrel(barrel_ctx)
 	_check("and a walking shot is untouched", barrel_ctx.direction.is_equal_approx(Vector3.FORWARD))
-	_ads_wire_warning()
-	carrier.queue_free()
-	_end()
 
 
 func _ads_wire_warning() -> void:
@@ -656,6 +664,11 @@ func _stock_sounds() -> void:
 	_check("and with sounds off nothing plays", heard.size() == before + 3)
 	fx.queue_free()
 
+	_stock_rig_sounds()
+	_end()
+
+
+func _stock_rig_sounds() -> void:
 	# The rig wires the arsenal's dry signal and a tube magazine's shells to the effects.
 	var carrier := Node3D.new()
 	add_child(carrier)
@@ -696,7 +709,6 @@ func _stock_sounds() -> void:
 			outs += 1
 	_check("a shotgun reload plays a shell per round, not a magazine out (%d shells)" % shells, shells >= 2 and outs == 0)
 	_cleanup(carrier)
-	_end()
 
 
 func _fake_shot() -> DotWeaponOutcome:

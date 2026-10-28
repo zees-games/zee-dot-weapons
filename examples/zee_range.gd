@@ -102,8 +102,6 @@ func _add_dummy() -> void:
 	body.global_position = eye.origin + ahead.normalized() * 6.0 + Vector3(0.0, -0.75, 0.0)
 
 
-# --- Wiring -----------------------------------------------------------------
-
 func _build_weapons() -> void:
 	# The view model hangs off the camera, which is what makes it a view model: it
 	# inherits the camera's pitch for free and needs no code to follow it.
@@ -170,8 +168,6 @@ func _equip_requested() -> void:
 	for i in range(200):
 		_rig.simulate_tick(DotWeaponCommand.new(), i)
 
-
-# --- The frame --------------------------------------------------------------
 
 func _process(_delta: float) -> void:
 	if _sheet:
@@ -264,8 +260,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				print(line)
 
 
-# --- Being told what happened -----------------------------------------------
-
 func _on_used(outcome: DotWeaponOutcome) -> void:
 	_capture_shot()
 
@@ -286,8 +280,6 @@ func _on_equipped(id: StringName) -> void:
 func _on_landed(impact: float) -> void:
 	_rig.on_landed(impact)
 
-
-# --- Resolving --------------------------------------------------------------
 
 ## Traces one shot and marks where it landed.
 ##
@@ -368,8 +360,6 @@ func _mark(at: Vector3) -> void:
 		if is_instance_valid(oldest):
 			oldest.queue_free()
 
-
-# --- The world --------------------------------------------------------------
 
 ## A floor, a back wall and the kit's own targets, built in code.
 ##
@@ -483,8 +473,6 @@ func _material(colour: Color) -> StandardMaterial3D:
 	return material
 
 
-# --- The readout ------------------------------------------------------------
-
 func _draw_readout() -> void:
 	var def := _rig.current_def()
 
@@ -509,8 +497,6 @@ func _draw_readout() -> void:
 		"  ·  reloading" if _rig.arsenal.is_reloading() else "",
 	]
 
-
-# --- Exiting ----------------------------------------------------------------
 
 ## With `--capture prefix`, saves the frames just after the first shot and quits.
 ##
@@ -541,8 +527,6 @@ func _capture_shot() -> void:
 
 	get_tree().quit()
 
-
-# --- The contact sheet -----------------------------------------------------
 
 ## The frames of one weapon's contact sheet, in order: a label and what to do before it.
 ##

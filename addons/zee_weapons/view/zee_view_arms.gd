@@ -96,8 +96,6 @@ var _reach_radius := 0.0
 var _reaching := false
 
 
-# --- Building ---------------------------------------------------------------
-
 ## Loads the model and keeps the two arms.
 ##
 ## [b]Failing to find an arm is not an error.[/b] A game substituting its own model may
@@ -362,8 +360,6 @@ func current_pose() -> StringName:
 func has_arms() -> bool:
 	return _left != null or _right != null
 
-
-# --- The rigged arm -------------------------------------------------------------
 
 ## The fingers' openness by what is held: a ball is held open, an empty fist is shut.
 ## What an empty hand closes on: small enough that every joint folds to its limit, a real fist.
