@@ -453,6 +453,19 @@ func _ads_rules() -> void:
 	var free_sprint := rig._can_aim(aim_cmd, cur, sprint_ctx)
 	sprint_ctx.sprint_blocks_aim = true
 	_check("sprinting refuses the aim bit only under sv_sprint_noaim", open_aim and free_sprint and not rig._can_aim(aim_cmd, cur, sprint_ctx))
+	var barrel_ctx := DotWeaponContext.new()
+	barrel_ctx.direction = Vector3.FORWARD
+	barrel_ctx.sprinting = true
+	rig._aim_along_sprint_barrel(barrel_ctx)
+	_check("a sprint shot keeps the crosshair line without sv_sprint_barrel", barrel_ctx.direction.is_equal_approx(Vector3.FORWARD))
+	barrel_ctx.sprint_shot_follows_barrel = true
+	rig._aim_along_sprint_barrel(barrel_ctx)
+	var turned := rad_to_deg(barrel_ctx.direction.angle_to(Vector3.FORWARD))
+	_check("with it the shot follows the lowered barrel (%.1f degrees off)" % turned, turned > 1.0 and is_equal_approx(barrel_ctx.direction.length(), 1.0))
+	barrel_ctx.sprinting = false
+	barrel_ctx.direction = Vector3.FORWARD
+	rig._aim_along_sprint_barrel(barrel_ctx)
+	_check("and a walking shot is untouched", barrel_ctx.direction.is_equal_approx(Vector3.FORWARD))
 	_ads_wire_warning()
 	carrier.queue_free()
 	_end()

@@ -326,6 +326,7 @@ func simulate_tick(
 	context.authority = authority
 	if _view != null:
 		_view.set_sprinting(context.sprinting)
+	_aim_along_sprint_barrel(context)
 
 	_notice_holster(tick)
 
@@ -348,6 +349,20 @@ func simulate_tick(
 
 	_previous_command = command.duplicate_command()
 	return outcome
+
+
+## Turns [member DotWeaponContext.direction] to where the sprint carry points the barrel (full blend, from the art, so a server and a replay agree without reading the rendered pose). The origin stays the eye.
+func _aim_along_sprint_barrel(context: DotWeaponContext) -> void:
+	if not (context.sprinting and context.sprint_shot_follows_barrel):
+		return
+	var art := current_art()
+	if art == null or absf(context.direction.dot(Vector3.UP)) > 0.999:
+		return
+	var rot: Vector3 = art.sprint_rotation if art.sprint_rotation.is_finite() \
+		else ZeeWeaponArtTable.sprint_view(art.pose)[1]
+	var hand := Basis.from_euler(Vector3(deg_to_rad(rot.x), deg_to_rad(rot.y), deg_to_rad(rot.z)))
+	var aim := Basis.looking_at(context.direction, Vector3.UP)
+	context.direction = (aim * (hand * Vector3.FORWARD)).normalized()
 
 
 ## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button
