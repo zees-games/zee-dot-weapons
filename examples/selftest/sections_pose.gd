@@ -267,6 +267,8 @@ func _recoil_grip() -> void:
 	)
 
 
+## The top of a sprinting gun's bounds, as a share of the screen height from the top: the lower half, never the upper.
+const MIN_SPRINT_TOP := 0.4
 const MIN_HIP_WIDTH := 0.18
 ## The barrel as drawn, degrees off screen-up toward the middle: below it the gun is seen end-on, above it diagonal.
 const HIP_LEAN := Vector2(10.0, 35.0)
@@ -302,6 +304,12 @@ func _view_screen() -> void:
 	_check("hip: every gun is drawn canted at most %d degrees %s" % [int(MAX_HIP_CANT), str(canted)], canted.is_empty())
 	_check("hip: every gun spans at least %d%% of the screen %s" % [int(MIN_HIP_WIDTH * 100.0), str(small)], small.is_empty())
 	_check("aim: every sight sits on the screen centre " + str(off_centre), off_centre.is_empty())
+	var high := []
+	for id in ZeeWeaponIds.all():
+		var run: Dictionary = measure.measure(id, false, {}, true)
+		if not run.is_empty() and (run.bbox as Rect2).position.y < measure.get_viewport().get_visible_rect().size.y * MIN_SPRINT_TOP:
+			high.append("%s %.0f%%" % [id, (run.bbox as Rect2).position.y / measure.get_viewport().get_visible_rect().size.y * 100.0])
+	_check("sprint: no gun is carried above %d%% of the screen height %s" % [int(MIN_SPRINT_TOP * 100.0), str(high)], high.is_empty())
 	var thrown_off := []
 	for id in ZeeWeaponIds.all():
 		var art := ZeeWeaponArtTable.get_art(id)

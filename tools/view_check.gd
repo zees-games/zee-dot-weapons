@@ -1,7 +1,7 @@
 extends Node
 
 ## Renders and measures every weapon's hip and aimed view for review. Not headless for PNGs.
-##   godot --path . res://tools/view_check.tscn -- --out DIR [--ids pistol,smg] [--rules] [--fov 90]
+##   godot --path . res://tools/view_check.tscn -- --out DIR [--ids pistol,smg] [--rules] [--fov 90] [--sprint]
 ##     [--rot "pitch,yaw,roll"] [--off "x,y,z"]   (tuning: replace the hip rotation, add to the hip offset)
 ## Prints one line per weapon and view; with --out saves DIR/<id>_hip.png and <id>_aim.png.
 
@@ -19,6 +19,7 @@ func _ready() -> void:
 		hold["rotation"] = _vec(_arg(args, "--rot"))
 	if _arg(args, "--off") != "":
 		hold["offset"] = _vec(_arg(args, "--off"))
+	var sprint := args.has("--sprint")
 	var m := Measure.new()
 	add_child(m)
 	m.build(rules, fov)
@@ -29,13 +30,13 @@ func _ready() -> void:
 	ground.position = Vector3(0, -1.6, 0)
 	add_child(ground)
 	for id in ids:
-		for aimed in [false, true]:
-			var r: Dictionary = m.measure(StringName(id), aimed, hold)
+		for aimed in ([false] if sprint else [false, true]):
+			var r: Dictionary = m.measure(StringName(id), aimed, hold, sprint)
 			if r.is_empty():
 				continue
-			print("%-14s %-4s off=%5.1f lean=%6.1f cant=%6.1f deg  width=%4.0f%%  centre=%s  sight_off=%s" % [
+			print("%-14s %-4s off=%5.1f lean=%6.1f cant=%6.1f deg  width=%4.0f%%  centre=%s  sight_off=%s  top=%3.0f%%" % [
 				id, "aim" if aimed else "hip", r.degrees_off, r.screen_lean, r.screen_cant, r.width * 100.0,
-				str((r.centre_px as Vector2).round()), str(snappedf(r.get("sight_off_px", -1.0), 0.1))])
+				str((r.centre_px as Vector2).round()), str(snappedf(r.get("sight_off_px", -1.0), 0.1)), (r.bbox as Rect2).position.y / get_viewport().get_visible_rect().size.y * 100.0])
 			if out != "":
 				await RenderingServer.frame_post_draw
 				await RenderingServer.frame_post_draw

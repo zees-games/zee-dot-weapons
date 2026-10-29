@@ -92,15 +92,15 @@ static func pose_two_handed(pose: StringName) -> bool:
 
 
 ## The sprint carry in first person, [offset m, rotation deg] over the hip hold: lowered and turned so
-## the barrel points left of the body, a pistol tucked up near the chest, a blade held low.
+## the barrel points left of the body; every pose stays in the lower half of the screen.
 static func sprint_view(pose: StringName) -> Array:
 	match pose:
 		POSE_PISTOL:
-			return [Vector3(-0.04, 0.06, 0.05), Vector3(28.0, 18.0, -14.0)]
+			return [Vector3(-0.04, -0.02, 0.05), Vector3(28.0, 18.0, -14.0)]
 		POSE_MELEE:
-			return [Vector3(0.0, -0.1, 0.03), Vector3(-18.0, 0.0, 20.0)]
+			return [Vector3(0.0, -0.17, 0.03), Vector3(-18.0, 0.0, 20.0)]
 		POSE_THROWN:
-			return [Vector3(0.0, -0.06, 0.02), Vector3(-10.0, 0.0, 10.0)]
+			return [Vector3(0.0, -0.14, 0.02), Vector3(-10.0, 0.0, 10.0)]
 		POSE_HEAVY:
 			return [Vector3(-0.1, -0.12, 0.07), Vector3(-18.0, 52.0, -28.0)]
 		_:

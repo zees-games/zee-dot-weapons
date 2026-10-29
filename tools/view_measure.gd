@@ -22,7 +22,7 @@ func build(rules: ZeeAdsRules, fov: float = 90.0) -> void:
 
 ## Equips [param id] and settles it at the hip or at full aim. Returns {} when the weapon has no model.
 ## [param hold] overrides the hip for tuning: "rotation" replaces view_rotation, "offset" is added to view_offset.
-func measure(id: StringName, aimed: bool, hold: Dictionary = {}) -> Dictionary:
+func measure(id: StringName, aimed: bool, hold: Dictionary = {}, sprint: bool = false) -> Dictionary:
 	var art := ZeeWeaponArtTable.get_art(id)
 	if art == null or not art.has_model():
 		return {}
@@ -33,6 +33,7 @@ func measure(id: StringName, aimed: bool, hold: Dictionary = {}) -> Dictionary:
 	if not view.equip(art).ok:
 		return {}
 	view.aim(aimed)
+	view.set_sprinting(sprint)
 	for _i in 60:
 		view.advance(0.05)
 	var weapon := view.weapon_node()
