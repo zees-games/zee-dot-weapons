@@ -27,6 +27,8 @@ const CVAR_BOB := "mp_vm_bob"
 const CVAR_LANDING := "mp_vm_landing"
 const CVAR_AIM_STEADY := "mp_vm_aim_steadiness"
 const CVAR_KICK := "cl_vm_kick"
+const CVAR_WALL := "cl_vm_wall"
+const CVAR_WALL_TILT := "cl_vm_wall_tilt"
 
 ## Look lag and inertia: the weapon trails a turn, and rolls into it.
 var sway: float = 1.0
@@ -47,6 +49,12 @@ var aim_steadiness: float = 0.75
 ## The per-shot kick of the weapon and arms, drawn only: 0 off. Never moves the camera or a bullet.
 var kick: float = 1.0
 
+## How far the weapon pulls back from a wall it would poke into, a multiplier: 0 off.
+var wall_retract: float = 1.0
+
+## How far it also pitches up against a wall, a multiplier: 0 off.
+var wall_tilt: float = 1.0
+
 
 func cvar_specs() -> Array[Dictionary]:
 	return [
@@ -62,6 +70,10 @@ func cvar_specs() -> Array[Dictionary]:
 			"description": "How much of the view model's sway, tilt and bob aiming removes: 0 none, 1 all"},
 		{"name": CVAR_KICK, "value": str(kick), "min": 0.0, "max": 3.0,
 			"description": "View model kick per shot (weapon and arms), a multiplier: 0 off, 1 default"},
+		{"name": CVAR_WALL, "value": str(wall_retract), "min": 0.0, "max": 3.0,
+			"description": "How far the view model pulls back from a wall, a multiplier: 0 off, 1 default"},
+		{"name": CVAR_WALL_TILT, "value": str(wall_tilt), "min": 0.0, "max": 3.0,
+			"description": "How far the view model pitches up against a wall, a multiplier: 0 off, 1 default"},
 	]
 
 
@@ -125,6 +137,8 @@ func set_cvar(cvar_name: String, value: String) -> bool:
 			CVAR_LANDING: landing = number
 			CVAR_AIM_STEADY: aim_steadiness = number
 			CVAR_KICK: kick = number
+			CVAR_WALL: wall_retract = number
+			CVAR_WALL_TILT: wall_tilt = number
 		changed.emit()
 		return true
 	return false
@@ -140,7 +154,8 @@ func _on_replicated_cvar(cvar_name: String, value: String) -> void:
 
 func describe() -> Dictionary:
 	return {"sway": sway, "strafe_tilt": strafe_tilt, "bob": bob, "landing": landing,
-		"aim_steadiness": aim_steadiness, "kick": kick}
+		"aim_steadiness": aim_steadiness, "kick": kick,
+		"wall_retract": wall_retract, "wall_tilt": wall_tilt}
 
 
 func describe_lines() -> PackedStringArray:

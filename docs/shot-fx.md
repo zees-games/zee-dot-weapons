@@ -33,3 +33,9 @@ The contact sheet's fire frames (`tools/screenshot.sh --sheet`) pull the trigger
 ## Stock sounds
 
 `ZeeWeaponSound.stream(id)` prefers the dot-audio stock recordings (`DotWeaponSound`) and falls back to the baked synth when the stock is not installed. `ZeeShotFx` also plays dry fire (`play_dry`), equip (`play_equip`), a casing landing (`play_casing`, shortly after the shot), a distant report (`_far` variant by distance, `far_for`; indoors, when the game sets `ZeeShotFx.roof` to its `DotAmbienceRoof`, the same `_far` follows every report 0.06 s late at -9 dB through `DotWeaponSound.pick_tail`) and one shell per round for a tube-magazine reload (`play_reload_shell`; the rig wires it from the arsenal). Weapons mapped to `ZeeWeaponSound.SUPPRESSED` (the silenced pistol and the tactical SMG in zed) get their own quiet report and a smaller flash. `ZeeShotFx.heard` emits every stream played, which the suite uses to assert a stock stream, not null.
+
+## Wall slam and flash lifetime
+
+Against a wall the first-person view model retracts and tips its barrel up (`ZeeWallSlam`, cvars `cl_vm_wall` and `cl_vm_wall_tilt`, 0 turns it off), so tracers and muzzle flashes leave the barrel in front of the wall. The server-authoritative shot still starts at the eye: the retract is presentation, and an eye-origin shot cannot start inside a wall the eye is outside of.
+
+Muzzle flashes (dot-fx `DotMuzzleFlash`) last `DotMuzzleFlashConfig.lifetime` (50 ms), one at a time; `ZeeShotFx.stop_flashes` hides them on a weapon switch and a reset.

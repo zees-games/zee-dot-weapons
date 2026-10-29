@@ -35,6 +35,8 @@ var _sight_aim := Transform3D.IDENTITY
 const NEAR_MARGIN := 0.05
 
 var _pose := ZeeWeaponPose.make()
+var _wall := ZeeWallSlam.new()
+var _wall_excluded: Array[RID] = []
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
 

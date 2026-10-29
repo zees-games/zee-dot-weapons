@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_pose.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 574
+const CHECKS := 584
 
 
 func _ready() -> void:
@@ -58,6 +58,7 @@ func _ready() -> void:
 	_effects()
 	_input_bindings()
 	await _stock_sounds()
+	await _wall_slam()
 
 	print("")
 	print("%d sections entered, %d finished, %d checks, %d failed" % [
@@ -804,4 +805,63 @@ func _previews() -> void:
 	var other := previews.texture(&"pistol")
 	_check("each weapon has its own texture", other != null and other != rifle)
 	previews.queue_free()
+	_end()
+
+
+func _wall_slam() -> void:
+	_begin("the view model against a wall")
+
+	var camera := Camera3D.new()
+	add_child(camera)
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	camera.add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"rifle"))
+	var wall := StaticBody3D.new()
+	var box := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(20.0, 20.0, 1.0)
+	box.shape = shape
+	wall.add_child(box)
+	wall.position = Vector3(0.0, 0.0, -100.0)
+	add_child(wall)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	for i in range(30):
+		view.advance(1.0 / 60.0)
+	_check("in open air nothing is retracted", view.wall_amount() == 0.0)
+	var rest := -(camera.global_transform.affine_inverse() * view.muzzle_transform().origin).z
+
+	var surface := rest - 0.12
+	wall.position = Vector3(0.0, 0.0, -(surface + 0.5))
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	var slammed := -(camera.global_transform.affine_inverse() * view.muzzle_transform().origin).z
+	_check("a muzzle inside the wall retracts the weapon (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.05)
+	_check("the muzzle, where tracers and flashes leave, is in front of the wall (%.3f of %.3f)" % [slammed, surface],
+		slammed <= surface)
+	var up := (view.muzzle_transform().basis * Vector3.FORWARD).y
+	_check("and the barrel is tipped up (%.2f)" % up, up > 0.05)
+
+	view.feel_rules.wall_retract = 0.0
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("cl_vm_wall 0 turns it off", view.wall_amount() == 0.0)
+	view.feel_rules.wall_retract = 1.0
+	wall.position = Vector3(0.0, 0.0, -100.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for i in range(90):
+		view.advance(1.0 / 60.0)
+	_check("walking away from the wall brings it back", view.wall_amount() == 0.0)
+
+	_check("obstruction maths: no hit is 0", ZeeWallSlam.obstruction(0.9, INF) == 0.0)
+	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.9, 1.0) == 0.0)
+	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.9, 0.8) > 0.1)
+	_check("the retract is capped", ZeeWallSlam.obstruction(0.9, 0.0) == ZeeWallSlam.MAX_RETRACT)
+	camera.queue_free()
+	wall.queue_free()
 	_end()

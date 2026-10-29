@@ -187,9 +187,17 @@ func _ready() -> void:
 ## a process that quits in the same frame — a suite, a shell unloading a game — reports
 ## the playback and its stream as leaked at exit.
 func _exit_tree() -> void:
+	stop_flashes()
 	for voice in _voices:
 		if is_instance_valid(voice):
 			voice.stop()
+
+
+## Hides every pooled muzzle flash: a weapon switch, death, a respawn.
+func stop_flashes() -> void:
+	for flash: Variant in _pack_flashes.values():
+		if flash != null and is_instance_valid(flash) and (flash as Node).has_method("stop"):
+			(flash as Node).call("stop")
 
 
 # --- Being told what happened -----------------------------------------------

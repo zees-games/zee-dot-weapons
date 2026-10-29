@@ -128,6 +128,7 @@ func _resolve_presentation() -> void:
 		_fx.catalogue = catalogue
 		add_child(_fx)
 		_fx.exclude_carrier(_player)
+		_view.wall_mask = _fx.collision_mask
 
 
 func _connect_arsenal() -> void:
@@ -440,6 +441,8 @@ func on_landed(impact: float) -> void:
 
 ## Everything back to rest: a respawn, a teleport, a correction that moved the carrier.
 func on_reset() -> void:
+	if _fx != null:
+		_fx.stop_flashes()
 	if _view != null:
 		_view.on_reset()
 
@@ -627,6 +630,8 @@ func _reload_sound(stage: StringName) -> void:
 ## The arsenal emits this mid-switch, not at its end; treating it as the end leaves the weapon at the screen bottom.
 func _on_switched(_from: int, to: int) -> void:
 	var carried := arsenal.slot_at(to)
+	if _fx != null:
+		_fx.stop_flashes()
 
 	_switch_started = _last_tick
 	_switch_deploying = true

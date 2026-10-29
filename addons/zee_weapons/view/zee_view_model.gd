@@ -38,6 +38,11 @@ signal model_ready(id: StringName, weapon: Node3D)
 		visible_model = value
 		visible = value
 
+@export_group("Wall")
+
+## Physics layers the wall probe stops on (the world and bodies; the carrier is skipped). The rig copies its shot effects' mask.
+@export_flags_3d_physics var wall_mask: int = 0xFFFFFFFF
+
 @export_group("Light")
 
 ## The render layer (1 to 20) every mesh of the view model and its arms is drawn on, and the
@@ -576,6 +581,8 @@ func on_landed(impact: float) -> void:
 ## Everything back to rest. A respawn, a teleport, a correction.
 func on_reset() -> void:
 	_pose.reset()
+	_wall.reset()
+	_wall_excluded.clear()
 	_look_seen = false
 	_aim_fraction = 0.0
 
@@ -598,6 +605,7 @@ func advance(delta: float) -> void:
 	_pose.set_sprint(_ease(_sprint))
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
+	_advance_wall(delta)
 	_place_hands()
 	_apply_hands_lens()
 	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
@@ -606,6 +614,53 @@ func advance(delta: float) -> void:
 	_animated.visible = not scoped
 	if _arms != null:
 		_arms.visible = not scoped
+
+
+## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
+func _advance_wall(delta: float) -> void:
+	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()
+	_wall.step(_wall_target() if on else 0.0, delta)
+	if _wall.amount > 0.0:
+		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt) * _animated.transform
+
+
+## Metres the un-retracted muzzle is past the nearest wall, from the camera.
+func _wall_target() -> float:
+	var space := get_world_3d().direct_space_state if get_world_3d() != null else null
+	if space == null:
+		return 0.0
+	var camera := get_parent() as Node3D
+	var from: Vector3 = (camera if camera != null else self).global_position
+	var to_muzzle := muzzle_transform().origin - from
+	var distance := to_muzzle.length()
+	if distance < 0.01:
+		return 0.0
+	var forward: Vector3 = -(camera if camera != null else self).global_basis.z.normalized()
+	var reach := distance + ZeeWallSlam.MARGIN
+	var nearest := INF
+	for dir: Vector3 in [to_muzzle / distance, forward]:
+		var query := PhysicsRayQueryParameters3D.create(from, from + dir * reach, wall_mask, _wall_exclude())
+		query.collide_with_areas = false
+		var found := space.intersect_ray(query)
+		if not found.is_empty():
+			nearest = minf(nearest, from.distance_to(found["position"]))
+	return ZeeWallSlam.obstruction(distance, nearest)
+
+
+## The carrier's own body, so the probe never stops on the player it hangs from.
+func _wall_exclude() -> Array[RID]:
+	if _wall_excluded.is_empty():
+		var node: Node = get_parent()
+		while node != null and not (node is CollisionObject3D):
+			node = node.get_parent()
+		if node != null:
+			_wall_excluded.append((node as CollisionObject3D).get_rid())
+	return _wall_excluded
+
+
+## The retract and pitch the wall asks of the weapon now, for a suite and a tool.
+func wall_amount() -> float:
+	return _wall.amount
 
 
 ## The scale that draws the hands at [member hands_fov]. See there.
