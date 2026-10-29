@@ -795,14 +795,14 @@ func has_scope() -> bool:
 	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false))
 
 
-## How visible the scope's surround is, 0 to 1: it fades in over the last of the aim-in, not at the end.
-func scope_fraction() -> float:
-	if not has_scope():
 ## The weapon's overrides of the default scope look, applied by [method ZeeScopeOverlay.follow].
 func scope_style() -> Dictionary:
 	return _art.scope_style if _art != null else {}
 
 
+## How visible the scope's surround is, 0 to 1: it fades in over the last of the aim-in, not at the end.
+func scope_fraction() -> float:
+	if not has_scope():
 		return 0.0
 	var start := 0.6 if ads_rules == null else ads_rules.scope_fade_start_for(_art.id)
 	return smoothstep(start, 1.0, _aim_fraction)
