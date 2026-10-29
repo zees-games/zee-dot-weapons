@@ -4,8 +4,6 @@ extends Node
 ## how far the gun is canted, how wide it is, and where the sight sits at full aim. Works headless (a camera projects
 ## without rendering). Add to the tree, then call.
 
-const CHANNEL := "zee.view_measure"
-
 var camera: Camera3D = null
 var view: ZeeViewModel = null
 

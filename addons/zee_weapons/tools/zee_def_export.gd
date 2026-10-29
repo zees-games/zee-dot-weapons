@@ -13,8 +13,6 @@ extends RefCounted
 ## Only this pack's own rows are written (not a second pack's added through [code]add_source[/code]):
 ## a pack ships the weapons it owns.
 
-const CHANNEL := "zee.defs"
-
 ## Where the pack's art sits relative to the pack root. The art tree is `assets/`, so the root
 ## is the pack itself.
 const ASSET_ROOT := "."

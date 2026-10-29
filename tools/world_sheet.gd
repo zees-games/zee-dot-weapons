@@ -20,8 +20,6 @@ extends Node3D
 ## ([method DotHumanoidFigure.animate], [method ZeeWorldModel.advance]), so frame 6 is 100 ms
 ## after the use on any machine.
 
-const CHANNEL := "zee.world_sheet"
-
 const STEP := 1.0 / 60.0
 
 ## Steps after the use for each frame: 0 is the instant it is used.

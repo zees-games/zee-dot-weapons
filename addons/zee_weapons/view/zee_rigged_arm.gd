@@ -21,8 +21,6 @@ extends Node3D
 ## from the index knuckle to the little finger's: right-handed, so that is the palm of a right
 ## hand.
 
-const CHANNEL := "zee.arms"
-
 ## Where the file's two surfaces are named, so a game's colours land on the right one.
 const SURFACE_GLOVE := "Glove"
 const SURFACE_SLEEVE := "Sleeve"

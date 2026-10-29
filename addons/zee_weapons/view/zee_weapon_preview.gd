@@ -4,8 +4,6 @@ extends Node
 ## A weapon's model rendered once into a smooth texture (MSAA, transparent) for a menu card, cached per id. Add it to
 ## the tree; a weapon with no model returns null so the caller keeps its sprite.
 
-const CHANNEL := "zee.weapon_preview"
-
 ## Texture size in pixels; set before the first [method texture] call.
 @export var size := Vector2i(512, 256)
 @export var msaa: Viewport.MSAA = Viewport.MSAA_4X
