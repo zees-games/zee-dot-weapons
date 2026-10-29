@@ -38,6 +38,7 @@ const SPECS := {
 	"thrown_span": {"default": 0.31, "min": 0.05, "max": 1.0},
 	"hip_cant": {"default": 0.3, "min": 0.0, "max": 1.0},
 	"hip_lean": {"default": 25.0, "min": -30.0, "max": 60.0},
+	"hip_zero": {"default": 20.0, "min": 0.0, "max": 200.0},
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 }
 
@@ -204,6 +205,11 @@ func hip_cant_for(id: StringName) -> float:
 ## Degrees the barrel leans toward the screen's middle at the hip, as drawn. The view model turns the gun to it.
 func hip_lean_for(id: StringName) -> float:
 	return float(value_for(id, "hip_lean"))
+
+
+## Metres out at which the hip barrel crosses the screen's centre; 0 stands it up by `hip_lean` instead.
+func hip_zero_for(id: StringName) -> float:
+	return float(value_for(id, "hip_zero"))
 
 
 ## How much a hit shakes the view and wobbles the aim while this weapon is held, on top of the server's `sv_hit_*` numbers: 0 steady, 1 as set.

@@ -34,8 +34,8 @@ func _ready() -> void:
 			var r: Dictionary = m.measure(StringName(id), aimed, hold, sprint)
 			if r.is_empty():
 				continue
-			print("%-14s %-4s off=%5.1f lean=%6.1f cant=%6.1f deg  width=%4.0f%%  centre=%s  sight_off=%s  top=%3.0f%%" % [
-				id, "aim" if aimed else "hip", r.degrees_off, r.screen_lean, r.screen_cant, r.width * 100.0,
+			print("%-14s %-4s off=%5.1f lean=%6.1f cant=%6.1f bore=%5.1f deg  width=%4.0f%%  length=%4.0f%%  centre=%s  sight_off=%s  top=%3.0f%%" % [
+				id, "aim" if aimed else "hip", r.degrees_off, r.screen_lean, r.screen_cant, r.get("bore_deg", -1.0), r.width * 100.0, r.get("length", 0.0) * 100.0,
 				str((r.centre_px as Vector2).round()), str(snappedf(r.get("sight_off_px", -1.0), 0.1)), (r.bbox as Rect2).position.y / get_viewport().get_visible_rect().size.y * 100.0])
 			if out != "":
 				await RenderingServer.frame_post_draw

@@ -6,6 +6,7 @@ extends "zee_view_model_state.gd"
 const IronSight := preload("zee_iron_sight.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
 const Dress := preload("zee_attachment_dress.gd")
+const HipHold := preload("zee_hip_hold.gd")
 
 ## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
 ## and never reads a device, a clock or the arsenal, so it draws a remote player's gun the same way.
@@ -204,7 +205,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_clear_models()
 
 	_source_art = art
-	_art = _sized(art)
+	_art = HipHold.sized(art, ads_rules, position.z)
 	art = _art
 	_id = art.id
 	_pose.weight = art.weight
@@ -721,49 +722,10 @@ func is_aim_held() -> bool:
 	return _aim_held
 
 
-## [param art] at the rules' size and place for it: a copy, the table's own is never changed.
-func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
-	# A knife or a grenade sized like a rifle is a fist round a log: a grenade has its own span, a knife none.
-	if art.pose == ZeeWeaponArtTable.POSE_THROWN:
-		return _sized_thrown(art)
-	if not art.model_forward.is_equal_approx(Vector3.FORWARD):
-		return art
-	var sized := art.duplicate() as ZeeWeaponArt
-	# Without rules the art keeps its size and place, but the barrel is still stood up: unturned it is drawn diagonally.
-	var lean: float = ZeeAdsRules.SPECS["hip_lean"]["default"]
-	var cant: float = ZeeAdsRules.SPECS["hip_cant"]["default"]
-	if ads_rules != null:
-		sized.view_scale = art.view_scale * ads_rules.view_scale_for(art.id)
-		sized.view_offset = art.view_offset + ads_rules.view_shift_for(art.id)
-		# A written aim hold grows about the eye with the gun, or the sight drops below the line of sight.
-		sized.aim_offset = art.aim_offset * ads_rules.view_scale_for(art.id)
-		lean = ads_rules.hip_lean_for(art.id)
-		cant = ads_rules.hip_cant_for(art.id)
-	var yaw := hip_yaw(sized.view_offset + Vector3(0.0, 0.0, position.z), lean)
-	sized.view_rotation = Vector3(art.view_rotation.x, yaw, art.view_rotation.z * cant)
-	return sized
-
-
-## A grenade drawn so its longest side is the rules' `thrown_span`, whatever model the table or a pack gives it.
-func _sized_thrown(art: ZeeWeaponArt) -> ZeeWeaponArt:
-	if ads_rules == null or art.model_path == "":
-		return art
-	var size := ZeeModelCache.bounds(art.model_path).size
-	var extent := maxf(size.x, maxf(size.y, size.z))
-	if extent <= 0.0:
-		return art
-	var sized := art.duplicate() as ZeeWeaponArt
-	sized.view_scale = ads_rules.thrown_span_for(art.id) / extent
-	return sized
-
-
-## The hip yaw (degrees, positive muzzle-in) that draws a barrel held at [param hold] leaning [param lean] degrees
-## toward the screen's middle. A barrel pointed straight ahead runs to the vanishing point, so from the lower right it is
-## drawn diagonally across the screen however it is canted; turning the muzzle out by this much stands it up.
-static func hip_yaw(hold: Vector3, lean: float) -> float:
-	var depth := maxf(-hold.z, 0.05)
-	var below := maxf(-hold.y, 0.0)
-	return -rad_to_deg(atan((hold.x - below * tan(deg_to_rad(lean))) / depth))
+## The range at which the hip barrel crosses the screen's centre (metres), 0 when it is stood up by `hip_lean` instead.
+func hip_zero() -> float:
+	var id := _art.id if _art != null else &""
+	return ads_rules.hip_zero_for(id) if ads_rules != null else float(ZeeAdsRules.SPECS["hip_zero"]["default"])
 
 
 func _toggles() -> bool:
@@ -1188,7 +1150,7 @@ static var _view_sources: Array = []
 
 
 func _spans_for(art: ZeeWeaponArt, forward: Vector3) -> Array:
-	# Not the art's instance id: `_sized` makes a new art per equip, and that id is reused.
+	# Not the art's instance id: `HipHold.sized` makes a new art per equip, and that id is reused.
 	var key := "%s|%s|%s|%s|%s" % [art.id, art.model_path, _holder.transform, forward, art.fore_along]
 	if not _span_cache.has(key):
 		var tris := IronSight.triangles_of(_weapon, _holder)

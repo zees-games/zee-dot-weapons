@@ -22,6 +22,8 @@ ads:
     view_shift_z: -0.15
     hip_cant: 0.3
     hip_lean: 25.0
+    # the hip barrel crosses the crosshair this many metres out; 0 stands it up by hip_lean instead
+    hip_zero: 20.0
     thrown_span: 0.31
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:

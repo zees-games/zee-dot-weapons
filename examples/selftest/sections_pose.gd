@@ -271,8 +271,10 @@ func _recoil_grip() -> void:
 const MIN_SPRINT_TOP := 0.4
 const MIN_RELOAD_MOTION := 0.03
 const MIN_HIP_WIDTH := 0.18
-## The barrel as drawn, degrees off screen-up toward the middle: below it the gun is seen end-on, above it diagonal.
-const HIP_LEAN := Vector2(10.0, 35.0)
+## Degrees a hip barrel may point off the screen-centre point at `hip_zero`: past it the gun aims somewhere else.
+const MAX_HIP_BORE := 1.0
+## A hip gun's length on screen, back to muzzle, as a share of the screen height: under it the gun reads end-on and thin.
+const HIP_LENGTH := Vector2(0.33, 0.75)
 const MAX_HIP_CANT := 12.0
 ## A thrown weapon is a small round object: under the floor it vanishes, over the ceiling it hides the view.
 const THROWN_HIP_WIDTH := Vector2(0.20, 0.351)
@@ -284,7 +286,8 @@ func _view_screen() -> void:
 	var measure := preload("res://tools/view_measure.gd").new()
 	add_child(measure)
 	measure.build(ZeeAdsRules.load_config())
-	var leaning := []
+	var aiming := []
+	var short := []
 	var canted := []
 	var small := []
 	var off_centre := []
@@ -292,8 +295,10 @@ func _view_screen() -> void:
 		var hip: Dictionary = measure.measure(id, false)
 		if hip.is_empty() or not hip.has("sight_off_px"):
 			continue
-		if float(hip.screen_lean) < HIP_LEAN.x or float(hip.screen_lean) > HIP_LEAN.y:
-			leaning.append("%s %.1f" % [id, hip.screen_lean])
+		if float(hip.get("bore_deg", 90.0)) > MAX_HIP_BORE:
+			aiming.append("%s %.1f" % [id, hip.get("bore_deg", -1.0)])
+		if float(hip.get("length", 0.0)) < HIP_LENGTH.x or float(hip.get("length", 0.0)) > HIP_LENGTH.y:
+			short.append("%s %.0f%%" % [id, float(hip.get("length", 0.0)) * 100.0])
 		if absf(float(hip.screen_cant)) > MAX_HIP_CANT:
 			canted.append("%s %.1f" % [id, hip.screen_cant])
 		if float(hip.width) < MIN_HIP_WIDTH:
@@ -301,7 +306,8 @@ func _view_screen() -> void:
 		var aim: Dictionary = measure.measure(id, true)
 		if aim.has("sight_off_px") and float(aim.sight_off_px) > 4.0:
 			off_centre.append("%s %.0fpx" % [id, aim.sight_off_px])
-	_check("hip: every barrel is drawn %d-%d degrees off upright %s" % [int(HIP_LEAN.x), int(HIP_LEAN.y), str(leaning)], leaning.is_empty())
+	_check("hip: every barrel points within %.0f degree of the screen centre at its zero %s" % [MAX_HIP_BORE, str(aiming)], aiming.is_empty())
+	_check("hip: every gun is drawn %d-%d%% of the screen height long %s" % [int(HIP_LENGTH.x * 100.0), int(HIP_LENGTH.y * 100.0), str(short)], short.is_empty())
 	_check("hip: every gun is drawn canted at most %d degrees %s" % [int(MAX_HIP_CANT), str(canted)], canted.is_empty())
 	_check("hip: every gun spans at least %d%% of the screen %s" % [int(MIN_HIP_WIDTH * 100.0), str(small)], small.is_empty())
 	_check("aim: every sight sits on the screen centre " + str(off_centre), off_centre.is_empty())
@@ -320,14 +326,14 @@ func _view_screen() -> void:
 		if w.is_empty() or float(w.width) < THROWN_HIP_WIDTH.x or float(w.width) > THROWN_HIP_WIDTH.y:
 			thrown_off.append("%s %.0f%%" % [id, float(w.get("width", 0.0)) * 100.0])
 	_check("hip: every thrown weapon spans %d-%d%% of the screen %s" % [int(THROWN_HIP_WIDTH.x * 100.0), int(THROWN_HIP_WIDTH.y * 100.0), str(thrown_off)], thrown_off.is_empty())
-	# A game that assigns no rules (the art's own hip) is stood up too.
+	# A game that assigns no rules (the art's own hip) points at the centre too.
 	measure.view.ads_rules = null
 	var bare := []
 	for id in [ZeeWeaponIds.RIFLE, ZeeWeaponIds.SMG, ZeeWeaponIds.PISTOL]:
 		var hip: Dictionary = measure.measure(id, false)
-		if hip.is_empty() or float(hip.screen_lean) < HIP_LEAN.x or float(hip.screen_lean) > HIP_LEAN.y:
-			bare.append("%s %s" % [id, str(hip.get("screen_lean"))])
-	_check("hip without rules: the barrel is not drawn diagonally " + str(bare), bare.is_empty())
+		if hip.is_empty() or float(hip.get("bore_deg", 90.0)) > MAX_HIP_BORE:
+			bare.append("%s %s" % [id, str(hip.get("bore_deg"))])
+	_check("hip without rules: the barrel points at the screen centre " + str(bare), bare.is_empty())
 	var still := []
 	measure.view.ads_rules = ZeeAdsRules.load_config()
 	for id in ZeeWeaponIds.all():

@@ -76,6 +76,18 @@ func measure(id: StringName, aimed: bool, hold: Dictionary = {}, sprint: bool = 
 		# The cant as drawn: the weapon's top off straight up the screen, positive leaning toward the middle.
 		"screen_cant": _screen_angle(centre, up, size),
 	}
+	var model_box := ZeeModelCache.bounds(art.model_path)
+	if model_box.size != Vector3.ZERO and art.model_forward.is_equal_approx(Vector3.FORWARD):
+		var muzzle := view.muzzle_transform().origin
+		var zero := view.hip_zero()
+		var aim_point := camera.global_transform * Vector3(0.0, 0.0, -zero)
+		var bore := weapon.global_transform.basis * art.model_forward
+		# How far the barrel points off the screen-centre point at the zero range (degrees), lens included.
+		out["bore_deg"] = rad_to_deg(bore.angle_to(aim_point - muzzle)) if zero > 0.0 else -1.0
+		var mid := model_box.get_center()
+		var back := weapon.global_transform * Vector3(mid.x, mid.y, model_box.end.z)
+		var tip := weapon.global_transform * Vector3(mid.x, mid.y, model_box.position.z)
+		out["length"] = _drawn_length(back, tip, size) / size.y
 	var pts := view.sight_points()
 	if not pts.is_empty():
 		var rear := camera.unproject_position(view.global_transform * (pts.rear as Vector3))
@@ -101,3 +113,30 @@ func _screen_angle(from: Vector3, dir: Vector3, size: Vector2) -> float:
 		return 90.0
 	var deg := rad_to_deg(atan2(v.x, -v.y))
 	return -deg if a.x >= size.x * 0.5 else deg
+
+
+## The length on screen (pixels) of the segment [param a]-[param b] in world space, cut to the frame.
+func _drawn_length(a: Vector3, b: Vector3, size: Vector2) -> float:
+	var to_cam := camera.global_transform.affine_inverse()
+	var la := to_cam * a
+	var lb := to_cam * b
+	la.z = minf(la.z, -camera.near)
+	lb.z = minf(lb.z, -camera.near)
+	var p := camera.unproject_position(camera.global_transform * la)
+	var q := camera.unproject_position(camera.global_transform * lb)
+	var d := q - p
+	var t0 := 0.0
+	var t1 := 1.0
+	for edge in [[-d.x, p.x], [d.x, size.x - p.x], [-d.y, p.y], [d.y, size.y - p.y]]:
+		var dp: float = edge[0]
+		var room: float = edge[1]
+		if absf(dp) < 0.000001:
+			if room < 0.0:
+				return 0.0
+			continue
+		var t := room / dp
+		if dp < 0.0:
+			t0 = maxf(t0, t)
+		else:
+			t1 = minf(t1, t)
+	return d.length() * (t1 - t0) if t1 > t0 else 0.0
