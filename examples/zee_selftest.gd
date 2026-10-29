@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_pose.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 572
+const CHECKS := 574
 
 
 func _ready() -> void:
@@ -540,6 +540,11 @@ func _effects() -> void:
 		ZeeWeaponSound.RECIPES[ZeeWeaponSound.RIFLE], hash(ZeeWeaponSound.RIFLE)
 	)
 	_check("the same class bakes the same bytes twice", again.data == rifle.data)
+
+	var sound_problems := DotWeaponSound.check_classes(ZeeWeaponSound.WEAPONS)
+	_check("every weapon's sound class has fire, reload and dry files of a fitting length: %s" % "; ".join(sound_problems), sound_problems.is_empty())
+	var shared := DotWeaponSound.check_unique()
+	_check("no two sound classes share a recording: %s" % "; ".join(shared), shared.is_empty())
 
 	# A gun added to the pack without a sound class falls back to the rifle's, silently.
 	var unclassed: Array[String] = []
