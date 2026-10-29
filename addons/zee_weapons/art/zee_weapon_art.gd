@@ -94,6 +94,9 @@ extends Resource
 ## over the screen ([ZeeScopeOverlay]). For the long-range weapons.
 @export var aim_scoped: bool = false
 
+## ZeeScopeOverlay properties this weapon sets over the default look (`{"glass_tint": Color(...), "mil_ticks": false}`).
+@export var scope_style: Dictionary = {}
+
 ## Where the holder sits at full aim, in place of [member view_offset]: centred, so the
 ## weapon's top lines up under the crosshair. Tuned per pose like the resting place.
 @export var aim_offset: Vector3 = Vector3(0.0, -0.11, -0.42)

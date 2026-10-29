@@ -34,11 +34,13 @@ const THROW_KEYS := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
+## Every magazine gun first dips and cants (the first inner key), then lifts to show the well.
 ## A long gun: lifted in and rolled onto its side so the well is in sight as the magazine drops (0.10-0.28), held while
 ## the next is fetched (0.36-0.55), a jolt as it seats (0.55-0.60), rolled back to the hip, a rack (0.84-0.90).
 ## Lifted, because at the hip the well is below the bottom of the screen and the reload plays out of frame.
 const RELOAD_KEYS_RIFLE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.05, Vector3(-0.012, -0.022, 0.012), Vector3(-6.0, 4.0, -14.0)],
 	[0.10, Vector3(-0.045, 0.035, 0.01), Vector3(8.0, 10.0, -30.0)],
 	[0.20, Vector3(-0.07, 0.055, 0.015), Vector3(12.0, 14.0, -42.0)],
 	[0.42, Vector3(-0.075, 0.06, 0.015), Vector3(10.0, 15.0, -44.0)],
@@ -54,6 +56,7 @@ const RELOAD_KEYS_RIFLE := [
 ## well) is in sight for the other hand; a smaller roll; the slide racked at the end.
 const RELOAD_KEYS_PISTOL := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.05, Vector3(-0.02, -0.018, 0.01), Vector3(-5.0, 6.0, -8.0)],
 	[0.12, Vector3(-0.065, 0.075, 0.0), Vector3(30.0, 18.0, -20.0)],
 	[0.45, Vector3(-0.075, 0.085, 0.0), Vector3(34.0, 20.0, -24.0)],
 	[0.56, Vector3(-0.07, 0.075, 0.0), Vector3(36.0, 18.0, -22.0)],
@@ -69,6 +72,7 @@ const RELOAD_KEYS_PISTOL := [
 ## Lifted as far as a rifle, or the box and cell stay below the bottom of the screen.
 const RELOAD_KEYS_HEAVY := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.05, Vector3(-0.02, -0.026, 0.015), Vector3(-5.0, 4.0, -10.0)],
 	[0.10, Vector3(-0.06, 0.05, 0.015), Vector3(7.0, 10.0, -22.0)],
 	[0.20, Vector3(-0.10, 0.09, 0.03), Vector3(11.0, 16.0, -32.0)],
 	[0.42, Vector3(-0.105, 0.095, 0.03), Vector3(10.0, 17.0, -34.0)],
@@ -100,6 +104,7 @@ const RELOAD_KEYS_BOLT := [
 ## held still like the bolt gun while the shells go in (`FEED_START`-`FEED_END`), then the pump worked (0.80-0.90).
 const RELOAD_KEYS_TUBE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.05, Vector3(-0.012, -0.02, 0.01), Vector3(-5.0, 4.0, -14.0)],
 	[0.10, Vector3(-0.05, 0.045, 0.01), Vector3(9.0, 11.0, -30.0)],
 	[0.22, Vector3(-0.08, 0.07, 0.015), Vector3(13.0, 15.0, -48.0)],
 	[0.46, Vector3(-0.082, 0.072, 0.015), Vector3(13.0, 15.0, -49.0)],
@@ -145,6 +150,7 @@ const RELOAD_KEYS_MUZZLE := [
 ## cylinder swings out (0.14-0.22), held while the rounds go in, a flick back as it snaps shut (0.70-0.76).
 const RELOAD_KEYS_REVOLVER := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.06, Vector3(-0.02, -0.018, 0.005), Vector3(-4.0, 6.0, -8.0)],
 	[0.12, Vector3(-0.06, 0.07, 0.0), Vector3(24.0, 16.0, -16.0)],
 	[0.22, Vector3(-0.075, 0.085, 0.0), Vector3(30.0, 20.0, -48.0)],
 	[0.62, Vector3(-0.077, 0.087, 0.0), Vector3(32.0, 20.0, -50.0)],
@@ -159,6 +165,7 @@ const RELOAD_KEYS_REVOLVER := [
 ## the fresh magazine slapped home (0.46-0.52), a short rack and back to the hip (0.72-0.80).
 const RELOAD_KEYS_SMG := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.04, Vector3(-0.01, -0.018, 0.008), Vector3(-5.0, 3.0, -12.0)],
 	[0.08, Vector3(-0.035, 0.03, 0.005), Vector3(6.0, 8.0, -24.0)],
 	[0.16, Vector3(-0.06, 0.05, 0.01), Vector3(10.0, 12.0, -38.0)],
 	[0.38, Vector3(-0.064, 0.053, 0.01), Vector3(9.0, 13.0, -40.0)],
@@ -174,6 +181,7 @@ const RELOAD_KEYS_SMG := [
 ## a fresh one pushed in with a settle (0.52-0.62), then a charge-up lift before it drops to the hip (0.80-0.88).
 const RELOAD_KEYS_CELL := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.07, Vector3(-0.012, -0.02, 0.01), Vector3(-5.0, 4.0, -16.0)],
 	[0.14, Vector3(-0.05, 0.05, 0.01), Vector3(6.0, 10.0, -34.0)],
 	[0.30, Vector3(-0.08, 0.075, 0.015), Vector3(10.0, 14.0, -52.0)],
 	[0.48, Vector3(-0.082, 0.077, 0.015), Vector3(10.0, 14.0, -52.0)],

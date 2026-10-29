@@ -489,7 +489,8 @@ static func sniper() -> ZeeWeaponArt:
 	art.fore_up = 0.28
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
-	art.aim_time = 0.22
+	# Near-instant, so a quick scope works; ads.yml `aim_time` overrides.
+	art.aim_time = 0.08
 	# A bolt gun: the bolt drawn back, two rounds pressed down into the top of the receiver from
 	# above and to the right, the bolt shoved home (ZeeWeaponPose.RELOAD_KEYS_BOLT). Measured on
 	# art-src/guns' mesh: the receiver runs z +0.19 to -0.07 with its top at y 0.055; the round

@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_pose.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 610
+const CHECKS := 611
 
 
 func _ready() -> void:
@@ -499,6 +499,8 @@ func _aim() -> void:
 	add_child(overlay)
 	overlay.fraction = 2.0
 	_check("the scope overlay clamps its fraction", overlay.fraction == 1.0)
+	var sniper_art := ZeeWeaponArtTable.get_art(&"sniper")
+	_check("a sniper aims in near-instantly (%.2f)" % sniper_art.aim_time, sniper_art.aim_time <= 0.1 and sniper_art.scope_style is Dictionary)
 
 	overlay.queue_free()
 	view.queue_free()

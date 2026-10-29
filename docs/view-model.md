@@ -78,6 +78,7 @@ Each of these is its own line in `ZeeWeaponPose`:
 
 - The game applies the zoom to its camera (`DotFpsView.external_fov_scale`) and puts a `ZeeScopeOverlay` in its HUD for scoped weapons.
 - Through a scope the view model hides the weapon **and the arms**: the arms are the view model's own child, so hiding the animated node alone leaves an arm across the scope.
+- The scope overlay draws a lens on a black surround: glass tint, dark rim, thin duplex reticle with mil ticks, edge shadow, a slight edge fringe and a gentle breathing sway of the reticle (the HUD stays visible). A weapon's art overrides any of it through `ZeeWeaponArt.scope_style` (`glass_tint`, `rim_colour`, `rim_width`, `mil_ticks`, `breath_sway`, `fringe`). The sniper aims in over 0.08 s by default (`ads.yml` `aim_time`, per weapon).
 - The scope overlay sets its offsets as well as its anchors, or it fills nothing.
 - Melee and throwables have `aim_enabled` off; the sniper is x0.3 and the marksman x0.5, the bullpup and the charge rifle x0.6, all four scoped; everything else aims at x0.8 down an iron sight.
 - Right mouse is the bash's button too; which one it is, is a game setting. The alt-fire is `BUTTON_ALT` in the command; the aim is a local hold.

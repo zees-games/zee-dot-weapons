@@ -8,6 +8,7 @@ ads:
     zoom: 0.0
     move_speed_multiplier: 0.8
     spread_multiplier: 0.6
+    recoil_multiplier: 0.6
     sway_multiplier: 0.5
     toggle: false
     # quick scope: the aim-in progress (0 to 1) from which a shot is allowed (0 any time, 1 only fully aimed, the old rule);
@@ -25,6 +26,8 @@ ads:
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:
     sniper:
+      # the scope snaps in (seconds); raise it for a slower zoom
+      aim_time: 0.08
       view_scale: 1.6
     pistol:
       view_scale: 1.9
