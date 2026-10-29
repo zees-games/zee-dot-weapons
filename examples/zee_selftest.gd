@@ -879,6 +879,28 @@ func _wall_slam() -> void:
 		view.advance(1.0 / 60.0)
 	_check("walking away from the wall brings it back", view.wall_amount() == 0.0)
 
+	var person := CharacterBody3D.new()
+	var pbox := CollisionShape3D.new()
+	var pshape := BoxShape3D.new()
+	pshape.size = Vector3(2.0, 2.0, 0.2)
+	pbox.shape = pshape
+	person.add_child(pbox)
+	person.position = Vector3(0.0, 0.0, -(surface + 0.1))
+	add_child(person)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("a person in front of the muzzle does not retract it (%.3f m)" % view.wall_amount(), view.wall_amount() == 0.0)
+	view.wall_ignore_characters = false
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("with wall_ignore_characters off the person is a wall (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.05)
+	view.wall_ignore_characters = true
+	person.queue_free()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
 	_check("obstruction maths: no hit is 0", ZeeWallSlam.obstruction(0.9, INF) == 0.0)
 	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.9, 1.0) == 0.0)
 	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.9, 0.8) > 0.1)

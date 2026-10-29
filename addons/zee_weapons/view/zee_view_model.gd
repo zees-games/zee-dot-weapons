@@ -45,6 +45,8 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 
 ## Physics layers the wall probe stops on (the world and bodies; the carrier is skipped). The rig copies its shot effects' mask.
 @export_flags_3d_physics var wall_mask: int = 0xFFFFFFFF
+## When on, the probe passes through character bodies: a person crossing the muzzle is not a wall and must not slam the weapon.
+@export var wall_ignore_characters: bool = true
 
 @export_group("Light")
 
@@ -653,11 +655,17 @@ func _wall_target() -> float:
 	var reach := distance + ZeeWallSlam.MARGIN
 	var nearest := INF
 	for dir: Vector3 in [to_muzzle / distance, forward]:
-		var query := PhysicsRayQueryParameters3D.create(from, from + dir * reach, wall_mask, _wall_exclude())
+		var query := PhysicsRayQueryParameters3D.create(from, from + dir * reach, wall_mask, _wall_exclude().duplicate())
 		query.collide_with_areas = false
-		var found := space.intersect_ray(query)
-		if not found.is_empty():
+		for _hop in range(8):
+			var found := space.intersect_ray(query)
+			if found.is_empty():
+				break
+			if wall_ignore_characters and found["collider"] is CharacterBody3D:
+				query.exclude.append(found["rid"])
+				continue
 			nearest = minf(nearest, from.distance_to(found["position"]))
+			break
 	return ZeeWallSlam.obstruction(distance, nearest)
 
 
