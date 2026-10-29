@@ -40,15 +40,15 @@ extends "zee_weapon_art_table_paths.gd"
 static func pose_offset(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
-			return Vector3(0.14, -0.18, -0.34)
+			return Vector3(0.15, -0.20, -0.34)
 		POSE_HEAVY:
-			return Vector3(0.19, -0.24, -0.42)
+			return Vector3(0.21, -0.27, -0.42)
 		POSE_MELEE:
 			return Vector3(0.22, -0.25, -0.40)
 		POSE_THROWN:
 			return Vector3(0.17, -0.19, -0.36)
 		_:
-			return Vector3(0.19, -0.23, -0.40)
+			return Vector3(0.21, -0.26, -0.40)
 
 
 ## How a blaster of each pose is turned at the hip, in degrees (pitch, yaw, roll) in the
@@ -102,9 +102,9 @@ static func sprint_view(pose: StringName) -> Array:
 		POSE_THROWN:
 			return [Vector3(0.0, -0.14, 0.02), Vector3(-10.0, 0.0, 10.0)]
 		POSE_HEAVY:
-			return [Vector3(-0.1, -0.12, 0.07), Vector3(-18.0, 52.0, -28.0)]
+			return [Vector3(-0.1, -0.18, 0.07), Vector3(-18.0, 52.0, -28.0)]
 		_:
-			return [Vector3(-0.1, -0.1, 0.06), Vector3(-14.0, 55.0, -24.0)]
+			return [Vector3(-0.1, -0.16, 0.06), Vector3(-14.0, 55.0, -24.0)]
 
 
 ## The sprint stride in first person, [bob multiplier, roll degrees]: a long gun swings heavier than a pistol or a blade.
@@ -141,9 +141,9 @@ static func sprint_world(pose: StringName) -> Array:
 static func pose_scale(pose: StringName) -> float:
 	match pose:
 		POSE_PISTOL:
-			return 0.55
+			return 0.72
 		POSE_HEAVY:
-			return 0.55
+			return 0.72
 		# [b]Melee is not shrunk the way the blasters are.[/b] A knife is 35 cm long against
 		# a rifle's 71, so the correction that puts a rifle at a third of the screen puts a
 		# knife at a sixth — behind the hand holding it, which is where the first render
@@ -152,9 +152,9 @@ static func pose_scale(pose: StringName) -> float:
 		POSE_MELEE:
 			return 1.20
 		POSE_THROWN:
-			return 0.75
+			return 0.9
 		_:
-			return 0.60
+			return 0.80
 
 
 ## The reload keys a weapon of each pose uses unless its art names its own. Melee and

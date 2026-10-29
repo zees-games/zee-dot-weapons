@@ -762,7 +762,9 @@ func restore(state: Dictionary) -> DotResult:
 	# just moved backwards. Left alone it animates a switch that already finished.
 	_was_switching = arsenal.is_switching()
 	_switch_started = -1
-	_reload_started = -1
+	# A correction mid-reload must not end the reload motion while the arsenal is still reloading.
+	var kept := _reload_started
+	_reload_started = (kept if kept >= 0 else _last_tick) if arsenal.is_reloading() else -1
 
 	return DotResult.success(null)
 

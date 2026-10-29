@@ -285,6 +285,17 @@ func _rig_rollback() -> void:
 	_run_rig(rig, 304, 308, DotWeaponCommand.BUTTON_ALT)
 	_check("but not twice in four ticks", after.size() == 1)
 
+	# A correction in the middle of a reload must not stop the reload motion: the video showed guns that did not move.
+	_run_rig(rig, 400, 410, DotWeaponCommand.BUTTON_ATTACK)
+	_run_rig(rig, 420, 424, DotWeaponCommand.BUTTON_RELOAD)
+	var mid := rig.snapshot()
+	_run_rig(rig, 424, 428, 0)
+	rig.restore(mid)
+	_check(
+		"a restore mid-reload keeps the reload motion running",
+		rig.arsenal.is_reloading() and rig._reload_fraction(428) > 0.0
+	)
+
 	_cleanup(rig)
 	_end()
 
