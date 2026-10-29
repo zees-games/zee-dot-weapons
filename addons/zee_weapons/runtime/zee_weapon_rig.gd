@@ -385,7 +385,7 @@ func _update_presentation(tick: int) -> void:
 		_shown_fit = ""
 		equipped.emit(id)
 		if _fx != null and _fx_origin_known and id != &"":
-			_fx.play_equip(_listen_at())
+			_fx.play_equip(_listen_at(), def != null and ZeeWeaponIds.TAG_THROWN in def.tags)
 
 	_show_fitting()
 	_fx_origin_known = true
@@ -570,7 +570,7 @@ func _on_reload_started(slot: int) -> void:
 
 	# A tube magazine has no magazine to drop: its shells are heard one by one.
 	if not carried.def.reload_per_round:
-		_reload_sound(ZeeWeaponSound.RELOAD_OUT)
+		_reload_sound(ZeeWeaponSound.RELOAD_OUT, carried.def.id)
 
 	_reload_started = _last_tick
 	_reload_ticks = reload_motion_ticks(carried.def, carried.magazine_space())
@@ -607,15 +607,16 @@ func _listen_at() -> Vector3:
 	return (_player as Node3D).global_position if _player is Node3D else Vector3.ZERO
 
 
-func _on_reload_finished(_slot: int, _rounds: int) -> void:
+func _on_reload_finished(slot: int, _rounds: int) -> void:
 	_reload_started = -1
-	_reload_sound(ZeeWeaponSound.RELOAD_IN)
+	var finished := arsenal.slot_at(slot)
+	_reload_sound(ZeeWeaponSound.RELOAD_IN, finished.def.id if finished != null else &"")
 
 
 ## Plays one half of a reload's sound, under the same rule as a shot's report: never on a
 ## server and never on a replayed tick — a correction that replayed across a reload would
 ## otherwise click the magazine out twice.
-func _reload_sound(stage: StringName) -> void:
+func _reload_sound(stage: StringName, weapon_id: StringName = &"") -> void:
 	if _replaying or role == Role.SERVER:
 		return
 
@@ -623,7 +624,7 @@ func _reload_sound(stage: StringName) -> void:
 
 	if _fx != null:
 		var at: Vector3 = (_player as Node3D).global_position if _player is Node3D else Vector3.ZERO
-		_fx.play_reload(stage, at)
+		_fx.play_reload(stage, at, weapon_id)
 
 
 ## The holster half finished and the deploy half began.

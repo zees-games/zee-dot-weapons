@@ -279,6 +279,15 @@ static func stream_for(id: StringName, kind: StringName) -> AudioStream:
 	return stream(class_for(id, kind))
 
 
+## The reload [param stage] ([constant RELOAD_OUT] or [constant RELOAD_IN]) of [param id]'s gun: its class's own recording
+## when the stock has one, else the generic [method stream].
+static func reload_stream(id: StringName, stage: StringName) -> AudioStream:
+	if _overrides.has(stage):
+		return _overrides[stage]
+	var real := DotWeaponSound.pick_reload(class_for(id, &""), &"out" if stage == RELOAD_OUT else &"in", randi())
+	return real if real != null else stream(stage)
+
+
 ## One class's stream: an override, else a stock recording (a different variant each call), else the bake.
 static func stream(sound_class: StringName) -> AudioStream:
 	if _overrides.has(sound_class):

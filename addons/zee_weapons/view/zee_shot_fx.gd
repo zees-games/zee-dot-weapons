@@ -765,9 +765,9 @@ func _mark(at: Vector3, facing: Vector3) -> void:
 
 
 ## A reload's sound at [param at]: [param stage] is [constant ZeeWeaponSound.RELOAD_OUT] or
-## [constant ZeeWeaponSound.RELOAD_IN]. The rig decides when; this only plays it.
-func play_reload(stage: StringName, at: Vector3) -> void:
-	_play(ZeeWeaponSound.stream(stage), at, -4.0)
+## [constant ZeeWeaponSound.RELOAD_IN]. The rig decides when; this only plays it. [param weapon_id] picks the class's own reload.
+func play_reload(stage: StringName, at: Vector3, weapon_id: StringName = &"") -> void:
+	_play(ZeeWeaponSound.reload_stream(weapon_id, stage), at, -4.0)
 
 
 ## The hammer falling on nothing. Throttled, because a held trigger asks every tick.
@@ -779,10 +779,12 @@ func play_dry(at: Vector3) -> void:
 	_play(ZeeWeaponSound.stream(ZeeWeaponSound.DRY), at, -4.0)
 
 
-## A weapon coming up in the hands.
-func play_equip(at: Vector3) -> void:
-	if is_inside_tree():
-		_play(ZeeWeaponSound.stream(ZeeWeaponSound.EQUIP), at, -6.0)
+## A weapon coming up in the hands; a grenade ([param thrown]) is heard as its pin coming out.
+func play_equip(at: Vector3, thrown: bool = false) -> void:
+	if not is_inside_tree():
+		return
+	var pin := DotWeaponSound.pick(&"pin_pull", randi()) if thrown else null
+	_play(pin if pin != null else ZeeWeaponSound.stream(ZeeWeaponSound.EQUIP), at, -6.0)
 
 
 ## One shell going into a tube magazine: a per-round reload plays this once per round.
