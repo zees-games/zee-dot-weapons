@@ -259,6 +259,8 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	_ads_move = 1.0
 	_ads_progress = 0.0
 	var def := arsenal.current_def()
+	if def != null and ads_rules != null:
+		ads_rules.set_def_row(def.id, def.params.get("ads"))
 	if not _can_aim(command, def, context):
 		_aim_ticks = 0
 		return arsenal.simulate_tick(command, context, _previous_command)
@@ -291,6 +293,13 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	if outcome.used and outcome.kind == DotWeaponOutcome.KIND_SHOT:
 		_tag_aimed_shots(outcome, art != null and art.aim_scoped)
 	return outcome
+
+
+## The aim facts [method _tag_aimed_shots] put on a shot, for a stat rule: `ads_progress` (-1 when untagged) and `quickscope`.
+static func aim_facts(shot: DotShot) -> Dictionary:
+	if shot == null:
+		return {"ads_progress": -1.0, "quickscope": false}
+	return {"ads_progress": float(shot.get_meta(&"ads_progress", -1.0)), "quickscope": bool(shot.get_meta(&"quickscope", false))}
 
 
 ## Marks each shot fired while the sights were still coming up: `ads_progress` (0 to 1) always, `quickscope` true for a scope fired before it landed. Metadata, because a shot is dot-combat's.
@@ -396,6 +405,9 @@ func _update_presentation(tick: int) -> void:
 		# A profile's `extra: art:` overrides the table's art, as a figure's held gun does.
 		if art != null and def != null and def.params.get("art") is Dictionary:
 			art = art.with_overrides(def.params["art"])
+
+		if def != null and ads_rules != null:
+			ads_rules.set_def_row(def.id, def.params.get("ads"))
 
 		if _view != null:
 			_view.equip(art)

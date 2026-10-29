@@ -520,6 +520,19 @@ func _ads_quickscope() -> void:
 	var clone := ZeeAdsRules.new()
 	_check("the threshold crosses the wire", clone.adopt_wire(mid.to_wire()) and is_equal_approx(clone.quickscope_fire_min_for(&"sniper"), 0.5))
 
+	var facts := ZeeWeaponRig.aim_facts(shot)
+	_check("aim_facts reads the shot meta for a stat rule", bool(facts["quickscope"]) and float(facts["ads_progress"]) > 0.0 and float(ZeeWeaponRig.aim_facts(null)["ads_progress"]) < 0.0)
+
+	# A weapon's own profile sets it, under the server's override.
+	var own := ZeeAdsRules.new()
+	own.set_def_row(&"sniper", {"quickscope_fire_min": 1.0, "scope_lens_min": 0.5, "bogus": 1, "scope_fade_start": 5.0})
+	var _t6 := own.set_value(&"pistol", "scope_lens_min", 0.2)
+	own.set_def_row(&"pistol", {"scope_lens_min": 0.9})
+	_check("a def's ads params apply to its weapon, bad keys dropped",
+		is_equal_approx(own.quickscope_fire_min_for(&"sniper"), 1.0) and is_equal_approx(own.scope_lens_min_for(&"sniper"), 0.5)
+		and is_equal_approx(own.scope_fade_start_for(&"sniper"), 0.6) and is_equal_approx(own.quickscope_fire_min_for(&"rifle"), 0.0))
+	_check("and the server's per-weapon override wins", is_equal_approx(own.scope_lens_min_for(&"pistol"), 0.2))
+
 	_ads_scope_view(rules)
 	carrier.queue_free()
 

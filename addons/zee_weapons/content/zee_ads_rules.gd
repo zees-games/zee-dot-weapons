@@ -44,6 +44,8 @@ const SPECS := {
 var base: Dictionary = defaults()
 ## Weapon id (String) -> only the keys that weapon changes.
 var weapons: Dictionary = {}
+## Weapon id (String) -> keys a weapon's own profile sets (`extra: params: ads:`); below the server's `weapons`, above the default.
+var def_rows: Dictionary = {}
 
 
 static func defaults() -> Dictionary:
@@ -109,7 +111,24 @@ func set_value(id: StringName, key: String, value: Variant) -> bool:
 ## The effective value of [param key] for [param id]: its override, else the default.
 func value_for(id: StringName, key: String) -> Variant:
 	var row: Dictionary = weapons.get(String(id), {})
-	return row.get(key, base.get(key, SPECS[key]["default"]))
+	if row.has(key):
+		return row[key]
+	var own: Dictionary = def_rows.get(String(id), {})
+	return own.get(key, base.get(key, SPECS[key]["default"]))
+
+
+## Takes a weapon def's `params["ads"]` as that weapon's profile-owned values; keys out of range or unknown are dropped.
+func set_def_row(id: StringName, row: Variant) -> void:
+	var clean := {}
+	if row is Dictionary:
+		var scratch := ZeeAdsRules.new()
+		for key: String in (row as Dictionary):
+			if scratch.set_value(&"x", key, (row as Dictionary)[key]):
+				clean[key] = scratch.weapons["x"][key]
+	if clean.is_empty():
+		def_rows.erase(String(id))
+	else:
+		def_rows[String(id)] = clean
 
 
 func enabled_for(id: StringName) -> bool:
