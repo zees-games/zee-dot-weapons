@@ -717,7 +717,17 @@ func _profiles() -> void:
 	var set2 := ZeeWeaponPack.profile_set()
 	_check("a file's keys are file keys, a schema default is not", set2.load_profile("rifle").value.file_keys == PackedStringArray(["extra.params.bash_damage", "extra.params.fresh", "extra.tuning.damage", "extra.tuning.nonsense", "magazine", "name"]))
 	set2.clear_cache()
+	# The bad pistol file logs ERROR on purpose: capture it and keep it off the engine's stderr.
+	var seen: Array = []
+	var catcher := func(rec: Dictionary) -> void: seen.append(rec)
+	var old_mirror := DotLog.mirror_min_level
+	DotLog.mirror_min_level = DotLog.Level.FATAL
+	DotLog.add_sink(catcher)
 	var t2 := _by_id(ZeeWeaponPack.weapons())
+	DotLog.remove_sink(catcher)
+	DotLog.mirror_min_level = old_mirror
+	var bad := seen.filter(func(rec: Dictionary) -> bool: return rec["level"] == DotLog.Level.ERROR and str(rec["fields"].get("id")) == "pistol" and "magazine" in str(rec["fields"].get("why")))
+	_check("the bad profile logged ERRORs naming the pistol and its magazine", bad.size() == 2)
 	var r: DotWeaponDef = t2["rifle"]
 	var rv: DotWeaponDef = vanilla["rifle"]
 	_check("a common key, tuning and params key land", r.magazine == 12 and r.display_name == "Test Rifle" and is_equal_approx((r.tuning as DotWeaponBallistics).damage, 99.0) and is_equal_approx(float(r.params[&"bash_damage"]), 7.0))
