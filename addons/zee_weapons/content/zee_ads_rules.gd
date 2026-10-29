@@ -27,11 +27,11 @@ const SPECS := {
 	"spread_multiplier": {"default": 0.6, "min": 0.0, "max": 1.0},
 	"sway_multiplier": {"default": 0.5, "min": 0.0, "max": 1.0},
 	"toggle": {"default": false},
-	"view_scale": {"default": 1.5, "min": 0.5, "max": 2.5},
-	"view_shift_x": {"default": -0.05, "min": -0.5, "max": 0.5},
-	"view_shift_y": {"default": 0.06, "min": -0.5, "max": 0.5},
-	"view_shift_z": {"default": 0.0, "min": -0.5, "max": 0.5},
-	"hip_cant": {"default": 0.35, "min": 0.0, "max": 1.0},
+	"view_scale": {"default": 2.0, "min": 0.5, "max": 2.5},
+	"view_shift_x": {"default": 0.03, "min": -0.5, "max": 0.5},
+	"view_shift_y": {"default": 0.08, "min": -0.5, "max": 0.5},
+	"view_shift_z": {"default": -0.1, "min": -0.5, "max": 0.5},
+	"hip_cant": {"default": 0.2, "min": 0.0, "max": 1.0},
 }
 
 ## The profile every weapon without an override uses.

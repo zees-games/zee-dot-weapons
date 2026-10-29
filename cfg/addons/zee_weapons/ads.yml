@@ -10,23 +10,24 @@ ads:
     spread_multiplier: 0.6
     sway_multiplier: 0.5
     toggle: false
-    view_scale: 1.5
-    view_shift_x: -0.05
-    view_shift_y: 0.06
-    view_shift_z: 0.0
+    view_scale: 2.0
+    view_shift_x: 0.03
+    view_shift_y: 0.08
+    view_shift_z: -0.1
+    hip_cant: 0.2
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:
     sniper:
-      view_scale: 1.4
+      view_scale: 1.6
     pistol:
-      view_scale: 1.2
+      view_scale: 1.4
       view_shift_x: -0.02
     revolver:
-      view_scale: 1.2
+      view_scale: 1.4
       view_shift_x: -0.02
     machine_pistol:
-      view_scale: 1.2
+      view_scale: 1.4
       view_shift_x: -0.02
     derringer:
-      view_scale: 1.2
+      view_scale: 1.4
       view_shift_x: -0.02

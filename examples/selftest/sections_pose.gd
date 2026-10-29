@@ -241,3 +241,33 @@ func _recoil_grip() -> void:
 		"weapon motion turned off is off",
 		still.offset().origin.length() < 0.0001 and still.view_punch().length() < 0.0001
 	)
+
+
+const MIN_HIP_WIDTH := 0.04
+
+## What a player sees: at the hip every gun points near forward and fills a fair slice of the screen, and at full aim
+## the sight sits on the screen centre. Measured by projecting through a camera, so it needs no renderer.
+func _view_screen() -> void:
+	_begin("view on screen")
+	var measure := preload("res://tools/view_measure.gd").new()
+	add_child(measure)
+	measure.build(ZeeAdsRules.load_config())
+	var crooked := []
+	var small := []
+	var off_centre := []
+	for id in ZeeWeaponIds.all():
+		var hip: Dictionary = measure.measure(id, false)
+		if hip.is_empty() or not hip.has("sight_off_px"):
+			continue
+		if float(hip.degrees_off) > 6.0:
+			crooked.append("%s %.1f" % [id, hip.degrees_off])
+		if float(hip.width) < MIN_HIP_WIDTH:
+			small.append("%s %.0f%%" % [id, float(hip.width) * 100.0])
+		var aim: Dictionary = measure.measure(id, true)
+		if aim.has("sight_off_px") and float(aim.sight_off_px) > 4.0:
+			off_centre.append("%s %.0fpx" % [id, aim.sight_off_px])
+	_check("hip: every barrel is within 6 degrees of the view " + str(crooked), crooked.is_empty())
+	_check("hip: every gun spans at least %d%% of the screen %s" % [int(MIN_HIP_WIDTH * 100.0), str(small)], small.is_empty())
+	_check("aim: every sight sits on the screen centre " + str(off_centre), off_centre.is_empty())
+	measure.queue_free()
+	_end()

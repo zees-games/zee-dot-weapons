@@ -86,7 +86,7 @@ var _style_built: StringName = &"gloves"
 ## [b]Set apart from the length, which is the whole point of reaching.[/b] [member arm_scale]
 ## scaled both, so a box long enough to get from below the screen to the grip was a slab as
 ## thick as the gun was long, and in every pose it covered the weapon it held.
-@export_range(0.02, 0.2, 0.005) var forearm_width: float = 0.07
+@export_range(0.02, 0.2, 0.005) var forearm_width: float = 0.05
 
 var _reach_grip := Vector3.ZERO
 var _reach_muzzle := Vector3.ZERO
