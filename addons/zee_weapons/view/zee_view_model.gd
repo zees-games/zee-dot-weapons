@@ -727,6 +727,8 @@ func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
 	if ads_rules != null:
 		sized.view_scale = art.view_scale * ads_rules.view_scale_for(art.id)
 		sized.view_offset = art.view_offset + ads_rules.view_shift_for(art.id)
+		# A written aim hold grows about the eye with the gun, or the sight drops below the line of sight.
+		sized.aim_offset = art.aim_offset * ads_rules.view_scale_for(art.id)
 		lean = ads_rules.hip_lean_for(art.id)
 		cant = ads_rules.hip_cant_for(art.id)
 	var yaw := hip_yaw(sized.view_offset + Vector3(0.0, 0.0, position.z), lean)
