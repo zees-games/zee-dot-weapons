@@ -123,8 +123,8 @@ const REFERENCE_DEPTH := 0.55
 ## The most the hands are drawn closer than authored, in metres.
 const MAX_PULL_IN := 0.1
 
-## Seconds to blend the sprint carry in or out.
-const SPRINT_SECONDS := 0.2
+## Seconds to blend the sprint carry in or out (smoothstepped); 0.2 hopped 0.2 m in three frames at 15 fps.
+const SPRINT_SECONDS := 0.4
 
 ## Whether sprinting changes the pose (a game's cvar to turn it off).
 var sprint_pose: bool = true
