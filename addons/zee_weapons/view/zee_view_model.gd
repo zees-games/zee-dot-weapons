@@ -105,8 +105,7 @@ func set_hands_fov_at_4_3(horizontal: float) -> void:
 
 ## The vertical field of view that is [param horizontal] degrees across a 4:3 frame.
 static func vertical_from_horizontal_4_3(horizontal: float) -> float:
-	var half := deg_to_rad(clampf(horizontal, 20.0, 170.0) * 0.5)
-	return rad_to_deg(2.0 * atan(tan(half) * 3.0 / 4.0))
+	return DotViewLens.vertical_from_horizontal_4_3(horizontal)
 
 
 
@@ -689,20 +688,13 @@ func wall_amount() -> float:
 func _apply_hands_lens() -> void:
 	# Only under a camera: the scale is in the camera's own space, and a view model hung
 	# anywhere else is in some other space where this would be a distortion, not a lens.
-	var camera := get_parent() as Camera3D
-	var k := lens_scale(camera.fov, hands_fov) if camera != null else 1.0
-	scale = Vector3(k, k, 1.0)
-	# Size under this lens relative to the reference lens, given back as distance.
-	var size := lens_scale(REFERENCE_FOV, hands_fov) if camera != null else 1.0
-	position = Vector3(0.0, 0.0, -maxf((size - 1.0) * REFERENCE_DEPTH * hands_depth_comp, -MAX_PULL_IN))
+	DotViewLens.apply(self, get_parent() as Camera3D, hands_fov, hands_depth_comp)
 
 
 ## How much X and Y are scaled to draw at [param hands] degrees under a [param camera]-degree
 ## lens. 1 when either is not a usable field of view.
 static func lens_scale(camera: float, hands: float) -> float:
-	if hands <= 1.0 or hands >= 179.0 or camera <= 1.0 or camera >= 179.0:
-		return 1.0
-	return tan(deg_to_rad(camera) * 0.5) / tan(deg_to_rad(hands) * 0.5)
+	return DotViewLens.lens_scale(camera, hands)
 
 
 # --- Aiming -----------------------------------------------------------------

@@ -109,7 +109,7 @@ So `view/zee_iron_sight.gd` measures and builds one per gun at equip, for every 
 
 ## The hands have a lens of their own
 
-**The hands are drawn at `ZeeViewModel.hands_fov` (90 degrees) whatever the game's camera.** Every pose was set under the range's 90-degree camera, and games hold them under 83 to 100, which drew a smaller gun drifting to the middle, or a bigger one, and magnified the gun with the world on an aim zoom. The view model's X and Y are scaled by `tan(camera/2) / tan(hands/2)` (`lens_scale`) in the camera's space with Z left alone, which is exactly a perspective projection at the other lens: depth is untouched, so sorting and the muzzle a tracer starts from are unchanged. Applied only when the view model's parent is a `Camera3D`; anywhere else the same scale would be a distortion.
+**The hands are drawn at `ZeeViewModel.hands_fov` (90 degrees) whatever the game's camera.** Every pose was set under the range's 90-degree camera, and games hold them under 83 to 100, which drew a smaller gun drifting to the middle, or a bigger one, and magnified the gun with the world on an aim zoom. The view model's X and Y are scaled by `tan(camera/2) / tan(hands/2)` (`lens_scale`, which is dot-core's `DotViewLens`, the maths dot-props' `DotToolView` shares; needs dot-core API 25) in the camera's space with Z left alone, which is exactly a perspective projection at the other lens: depth is untouched, so sorting and the muzzle a tracer starts from are unchanged. Applied only when the view model's parent is a `Camera3D`; anywhere else the same scale would be a distortion.
 
 ## Where the weapon is held
 
