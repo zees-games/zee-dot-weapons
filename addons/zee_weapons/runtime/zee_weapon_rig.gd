@@ -52,8 +52,6 @@ func setup() -> DotResult:
 	if not ready_res.ok:
 		return ready_res
 
-	_art = ZeeWeaponArtTable.table()
-
 	if allow_bash:
 		var script: Variant = load(BASH_BEHAVIOUR)
 		if script is Script:
@@ -166,7 +164,7 @@ func current_def() -> DotWeaponDef:
 
 func current_art() -> ZeeWeaponArt:
 	var def := current_def()
-	return _art.get(def.id, null) if def != null else null
+	return ZeeWeaponArtTable.table().get(def.id, null) if def != null else null
 
 
 # --- The tick ---------------------------------------------------------------
@@ -261,7 +259,7 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	if not _can_aim(command, def, context):
 		_aim_ticks = 0
 		return arsenal.simulate_tick(command, context, _previous_command)
-	var art: ZeeWeaponArt = _art.get(def.id, null)
+	var art: ZeeWeaponArt = ZeeWeaponArtTable.table().get(def.id, null)
 	var b := def.tuning as DotWeaponBallistics
 	if b == null:
 		return arsenal.simulate_tick(command, context, _previous_command)
@@ -293,7 +291,7 @@ func _can_aim(command: DotWeaponCommand, def: DotWeaponDef, context: DotWeaponCo
 		return false
 	if not ads_rules.enabled_for(def.id) or arsenal.is_switching() or arsenal.is_reloading():
 		return false
-	var art: ZeeWeaponArt = _art.get(def.id, null)
+	var art: ZeeWeaponArt = ZeeWeaponArtTable.table().get(def.id, null)
 	return art == null or art.aim_enabled
 
 
@@ -371,7 +369,7 @@ func _update_presentation(tick: int) -> void:
 
 	if id != _shown:
 		_shown = id
-		var art: ZeeWeaponArt = _art.get(id, null)
+		var art: ZeeWeaponArt = ZeeWeaponArtTable.table().get(id, null)
 		# A profile's `extra: art:` overrides the table's art, as a figure's held gun does.
 		if art != null and def != null and def.params.get("art") is Dictionary:
 			art = art.with_overrides(def.params["art"])

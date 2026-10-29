@@ -656,9 +656,11 @@ func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
 		return art
 	var k := ads_rules.view_scale_for(art.id)
 	var shift := ads_rules.view_shift_for(art.id)
-	if is_equal_approx(k, 1.0) and shift == Vector3.ZERO:
+	var cant := ads_rules.hip_cant_for(art.id) if art.pose != &"thrown" else 1.0
+	if is_equal_approx(k, 1.0) and shift == Vector3.ZERO and is_equal_approx(cant, 1.0):
 		return art
 	var sized := art.duplicate() as ZeeWeaponArt
+	sized.view_rotation = Vector3(art.view_rotation.x, art.view_rotation.y * cant, art.view_rotation.z * cant)
 	sized.view_scale = art.view_scale * k
 	sized.view_offset = art.view_offset + shift
 	return sized

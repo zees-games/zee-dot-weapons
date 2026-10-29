@@ -199,6 +199,12 @@ static func table() -> Dictionary:
 	for art in all():
 		out[art.id] = art
 
+	for name: StringName in _dressers:
+		var dresser: Callable = _dressers[name]
+
+		if dresser.is_valid():
+			dresser.call(out)
+
 	_table = out
 	return out
 
@@ -242,6 +248,22 @@ static func all() -> Array[ZeeWeaponArt]:
 				out.append(art)
 
 	return out
+
+
+## name -> Callable(table: Dictionary) that edits the freshly built table in place.
+static var _dressers: Dictionary = {}
+
+
+## Registers [param dresser] to run on every rebuild of [method table], so a game's re-skin survives [method add_source], [method remove_source] and
+## [method drop_cache] instead of being lost with the cache. A static method's Callable, never a lambda (as [method add_source]).
+static func add_dresser(name: StringName, dresser: Callable) -> void:
+	_dressers[name] = dresser
+	_table = {}
+
+
+static func remove_dresser(name: StringName) -> void:
+	_dressers.erase(name)
+	_table = {}
 
 
 ## name -> Callable() -> Array[ZeeWeaponArt].

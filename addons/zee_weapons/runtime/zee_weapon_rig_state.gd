@@ -92,7 +92,6 @@ var _standalone_feel: ZeeViewFeel = null
 var _world: ZeeWorldModel = null
 var _fx: ZeeShotFx = null
 var _player: Node = null
-var _art: Dictionary = {}
 
 var _bash: ZeeWeaponBash = null
 var _ads_move: float = 1.0

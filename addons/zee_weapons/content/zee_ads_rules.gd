@@ -31,6 +31,7 @@ const SPECS := {
 	"view_shift_x": {"default": -0.05, "min": -0.5, "max": 0.5},
 	"view_shift_y": {"default": 0.06, "min": -0.5, "max": 0.5},
 	"view_shift_z": {"default": 0.0, "min": -0.5, "max": 0.5},
+	"hip_cant": {"default": 0.35, "min": 0.0, "max": 1.0},
 }
 
 ## The profile every weapon without an override uses.
@@ -142,6 +143,11 @@ func sway_for(id: StringName) -> float:
 ## How much bigger than the art's own hip scale the gun is drawn (aimed, the sight still lines up).
 func view_scale_for(id: StringName) -> float:
 	return float(value_for(id, "view_scale"))
+
+
+## How much of the art's hip yaw and roll is kept: 1 is the table's diagonal carry, 0 points the barrel straight ahead.
+func hip_cant_for(id: StringName) -> float:
+	return float(value_for(id, "hip_cant"))
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).

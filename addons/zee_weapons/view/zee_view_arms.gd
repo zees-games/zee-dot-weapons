@@ -365,7 +365,7 @@ func has_arms() -> bool:
 ## What an empty hand closes on: small enough that every joint folds to its limit, a real fist.
 const FIST_RADIUS := 0.004
 
-const OPEN_BY_POSE := {&"thrown": 0.45, &"fists": 0.0}
+const OPEN_BY_POSE := {&"thrown": 0.1, &"fists": 0.0}
 
 func _build_rigged() -> bool:
 	var path := ZeeWeaponArtTable.RIGGED_ARMS_MODEL
