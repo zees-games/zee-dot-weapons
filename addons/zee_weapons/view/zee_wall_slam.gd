@@ -31,6 +31,35 @@ func step(target: float, delta: float) -> void:
 		amount = target
 
 
+## Metres the un-retracted [param muzzle] (world space) is past the nearest wall, probed from [param host]'s camera; [param exclude] is the carrier's body.
+static func target(host: Node3D, muzzle: Vector3, mask: int, ignore_characters: bool, exclude: Array[RID]) -> float:
+	var space := host.get_world_3d().direct_space_state if host.get_world_3d() != null else null
+	if space == null:
+		return 0.0
+	var camera := host.get_parent() as Node3D
+	var from: Vector3 = (camera if camera != null else host).global_position
+	var to_muzzle := muzzle - from
+	var distance := to_muzzle.length()
+	if distance < 0.01:
+		return 0.0
+	var forward: Vector3 = -(camera if camera != null else host).global_basis.z.normalized()
+	var reach := distance + MARGIN
+	var nearest := INF
+	for dir: Vector3 in [to_muzzle / distance, forward]:
+		var query := PhysicsRayQueryParameters3D.create(from, from + dir * reach, mask, exclude.duplicate())
+		query.collide_with_areas = false
+		for _hop in range(8):
+			var found := space.intersect_ray(query)
+			if found.is_empty():
+				break
+			if ignore_characters and found["collider"] is CharacterBody3D:
+				query.exclude.append(found["rid"])
+				continue
+			nearest = minf(nearest, from.distance_to(found["position"]))
+			break
+	return obstruction(distance, nearest)
+
+
 ## The pose offset: back by the amount and pitched up, scaled by the two cvar multipliers. Identity at rest.
 func offset(retract_scale: float, tilt_scale: float) -> Transform3D:
 	var back := amount * maxf(retract_scale, 0.0)

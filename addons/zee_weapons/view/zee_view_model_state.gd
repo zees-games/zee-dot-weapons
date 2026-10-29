@@ -5,9 +5,6 @@ extends Node3D
 
 var _source_art: ZeeWeaponArt = null
 
-## How far above the body's underside a hand's centre may sit, as a fraction of the gun's length.
-const HAND_REACH := 0.06
-
 var _aim_button_was: bool = false
 var _arms: ZeeViewArms = null
 var _light: DirectionalLight3D = null

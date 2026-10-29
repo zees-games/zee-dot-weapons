@@ -176,3 +176,54 @@ static func _mark_mat() -> StandardMaterial3D:
 		# whatever stands in front of the wall.
 		_mark_material.render_priority = -1
 	return _mark_material
+
+
+# --- Internals --------------------------------------------------------------
+
+## A width that stays about the same on screen wherever the effect is.
+##
+## [b]Sized by distance from the camera, because a fixed width is invisible.[/b] A tracer
+## is seen almost end-on from behind the gun, and two centimetres at thirty metres is a
+## pixel — the first render of this showed a sniper shot as one yellow fleck. Here
+## [param per_metre] is metres of width per metre of distance, so 0.004 is about a
+## quarter of a degree: three or four pixels on a 1080-line screen at any range.
+func _screen_width(at: Vector3, per_metre: float) -> float:
+	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
+	var distance := camera.global_position.distance_to(at) if camera != null else 4.0
+	return clampf(distance * per_metre, 0.004, 0.25)
+
+
+## How much larger an impact is drawn for being far away: 1 within six metres, rising to
+## 4 at twenty-four. The same reason as [method _screen_width], held to a gentler curve,
+## because a spark the size of a door at range reads as an explosion.
+func _distance_scale(at: Vector3) -> float:
+	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
+	if camera == null:
+		return 1.0
+	return clampf(camera.global_position.distance_to(at) / 6.0, 1.0, 4.0)
+
+
+## Lays a unit box along [param along], centred on [param centre], [param span] long.
+static func _place_along(
+	node: Node3D, centre: Vector3, along: Vector3, span: float, width: float
+) -> void:
+	var z := along.normalized()
+	if not z.is_finite() or z.is_zero_approx():
+		return
+
+	var up := Vector3.UP if absf(z.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT
+	var x := up.cross(z).normalized()
+	var y := z.cross(x).normalized()
+	node.global_transform = Transform3D(
+		Basis(x * width, y * width, z * maxf(0.001, span)), centre
+	)
+
+
+## Builds every shared mesh, texture and material now and returns them for a draw under the load
+## gate (DotLoadGate.warm_up), so the first shot compiles nothing.
+static func warm() -> Array:
+	return [
+		_streak_mesh(), _quad_mesh(), _shell_mesh_unit(), _soft_disc(),
+		_tracer_mat(), _beam_mat(), _flash_mat(), _spark_mat(), _puff_mat(), _petal_mat(),
+		_hit_mat(), _mist_mat(), _mark_mat(), _brass_mat(), _hull_mat(),
+	]

@@ -1,4 +1,4 @@
-extends "res://examples/selftest/sections_rig.gd"
+extends "res://examples/selftest/sections_stock.gd"
 
 ## The recoil sections of the suite, split out of zee_selftest.gd for file size.
 

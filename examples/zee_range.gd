@@ -1,4 +1,4 @@
-extends Node
+extends "res://examples/zee_range_world.gd"
 
 ## A firing range you can walk around, holding every weapon in the pack: `godot --path . res://examples/zee_range.tscn`.
 ## Options after `--`: `--seconds N --weapon ID --fire --capture DIR --sheet DIR --dummy`. WASD, space, ctrl, mouse, R, 1-5, Q, wheel; F1 dumps the rig.
@@ -8,8 +8,6 @@ const CHANNEL := "zee.range"
 
 ## Where the player stands, far enough back that a target is a shot rather than a poke.
 const SPAWN := Vector3(0.0, 0.2, 14.0)
-
-const TARGETS := "res://assets/blaster-kit/"
 
 @onready var _controller: DotFpsController = $Player/Controller
 @onready var _camera: Camera3D = $Player/Head/Camera
@@ -361,118 +359,6 @@ func _mark(at: Vector3) -> void:
 			oldest.queue_free()
 
 
-## A floor, a back wall and the kit's own targets, built in code.
-##
-## In code because this example is meant to be read top to bottom, and a scene file is
-## the one part of a Godot project that cannot be. A real level is a scene an artist
-## made; this is a page you can check.
-func _build_world() -> void:
-	var world := $World
-
-	_add_box(world, Vector3(70.0, 1.0, 70.0), Vector3(0.0, -0.5, 0.0), Color(0.22, 0.24, 0.27))
-
-	# A back wall to catch the pellets, so a shotgun's pattern is visible as a pattern.
-	_add_box(world, Vector3(40.0, 8.0, 1.0), Vector3(0.0, 4.0, -18.0), Color(0.3, 0.32, 0.36))
-	_add_box(world, Vector3(1.0, 8.0, 36.0), Vector3(-20.0, 4.0, 0.0), Color(0.28, 0.3, 0.34))
-	_add_box(world, Vector3(1.0, 8.0, 36.0), Vector3(20.0, 4.0, 0.0), Color(0.28, 0.3, 0.34))
-
-	# Something to jump on, so the airborne spread penalty can be felt.
-	for i in range(4):
-		_add_box(
-			world,
-			Vector3(3.0, 0.5 + float(i) * 0.5, 3.0),
-			Vector3(-11.0, (0.5 + float(i) * 0.5) * 0.5, 2.0 - float(i) * 3.5),
-			Color(0.35, 0.3, 0.26)
-		)
-
-	_add_targets(world)
-
-
-## The kit's targets and crates, at the ranges the weapons are tuned for.
-##
-## Placed by distance on purpose: the shotgun stops at 26 m and the sniper reaches a
-## kilometre, so a range with everything at one distance tells you nothing about either.
-func _add_targets(world: Node3D) -> void:
-	var rows := [
-		{"z": -4.0, "model": "target-large.glb", "count": 3, "spacing": 4.0, "y": 1.4},
-		{"z": -10.0, "model": "target-small.glb", "count": 5, "spacing": 3.0, "y": 1.5},
-		{"z": -16.0, "model": "target-detail.glb", "count": 7, "spacing": 2.4, "y": 1.6},
-	]
-
-	for row: Dictionary in rows:
-		var count := int(row["count"])
-		var spacing := float(row["spacing"])
-
-		for i in range(count):
-			var model := ZeeModelCache.instantiate(TARGETS + str(row["model"]))
-			if model == null:
-				continue
-
-			# [b]Turned a quarter and lifted off the floor.[/b] The target discs are
-			# modelled in the YZ plane — five centimetres thick along X — so dropped in
-			# untouched they face sideways and read as saucers lying on the ground. They
-			# are also 34 cm across, which is a dinner plate at thirty metres, so they
-			# are scaled up to something a sniper can be aimed at.
-			model.rotation = Vector3(0.0, PI * 0.5, 0.0)
-			model.scale = Vector3.ONE * 3.0
-			model.position = Vector3(
-				(float(i) - float(count - 1) * 0.5) * spacing,
-				float(row["y"]),
-				float(row["z"])
-			)
-
-			# A body behind the mesh, so a shot at one actually stops there and leaves a
-			# mark. A target you can shoot through is a target that teaches nothing.
-			var body := StaticBody3D.new()
-			var shape := CollisionShape3D.new()
-			var box := BoxShape3D.new()
-			box.size = Vector3(0.2, 1.0, 1.0)
-			shape.shape = box
-			body.add_child(shape)
-			body.position = model.position
-			body.rotation = model.rotation
-			world.add_child(body)
-
-			world.add_child(model)
-
-	# Crates for cover, and because a physics prop is the quickest way to see that a
-	# launcher's splash is doing something.
-	for i in range(6):
-		var crate := ZeeModelCache.instantiate(TARGETS + "crate-medium.glb")
-		if crate == null:
-			continue
-		crate.position = Vector3(
-			-6.0 + float(i) * 2.4, 0.0, 6.0 - float(i % 3) * 2.0
-		)
-		world.add_child(crate)
-
-
-func _add_box(parent: Node3D, size: Vector3, at: Vector3, colour: Color) -> void:
-	var body := StaticBody3D.new()
-	var mesh := MeshInstance3D.new()
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	var block := BoxMesh.new()
-
-	box.size = size
-	block.size = size
-	mesh.mesh = block
-	mesh.material_override = _material(colour)
-
-	shape.shape = box
-	body.add_child(shape)
-	body.add_child(mesh)
-	body.position = at
-	parent.add_child(body)
-
-
-func _material(colour: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = colour
-	material.roughness = 0.9
-	return material
-
-
 func _draw_readout() -> void:
 	var def := _rig.current_def()
 
@@ -573,40 +459,13 @@ const SHEET_STEP := 1.0 / 60.0
 ## The range stops simulating too: the rig would otherwise push its own reload and deploy
 ## fractions over the ones the sheet sets.
 func _run_sheet(prefix: String) -> void:
-	_sheet = true
-	_view.set_process(false)
-	# The shot's effects are stepped with the view model, or a flash that lives three frames
-	# at 60 fps is gone before a software renderer has drawn one.
-	if _rig.shot_fx() != null:
-		_rig.shot_fx().set_process(false)
-	# Read at a quarter of the size on the tiled sheet, so the label is drawn large.
-	_readout.add_theme_font_size_override("font_size", 52)
-	_crosshair.add_theme_font_size_override("font_size", 48)
-	# Grown both ways from the centre: the scene's box is sized for 24 px, and a 48 px "+" grew
-	# it downward only, drawing the crosshair 15 px under the screen's centre, below a sight
-	# that was on it.
-	_crosshair.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_sheet_setup()
 
 	var def := _rig.current_def()
 	var recoil := Vector2(0.5, 0.1)
 	if def != null and def.tuning != null and "recoil_pitch" in def.tuning:
 		recoil = Vector2(def.tuning.get("recoil_pitch"), def.tuning.get("recoil_yaw"))
-
-	# `--hold "x,y,z,pitch,yaw,roll,scale"` re-equips the weapon with that first-person
-	# placement instead of the table's: the knob for tuning a hold without an edit and a
-	# re-import per guess. The numbers that look right then go into ZeeWeaponArtTable.
-	var hold := _argument("--hold")
-	if hold != "" and def != null:
-		var art: ZeeWeaponArt = ZeeWeaponArtTable.get_art(def.id).duplicate(true)
-		var v := hold.split_floats(",")
-		if v.size() >= 3:
-			art.view_offset = Vector3(v[0], v[1], v[2])
-		if v.size() >= 6:
-			art.view_rotation = Vector3(v[3], v[4], v[5])
-		if v.size() >= 7:
-			art.view_scale = v[6]
-		_view.equip(art)
+	_sheet_hold(def)
 
 	# `--frames 0,2,9` renders only those frames of the sheet.
 	var only := _argument("--frames").split_floats(",") if _argument("--frames") != "" else PackedFloat64Array()
@@ -728,6 +587,41 @@ func _run_sheet(prefix: String) -> void:
 
 	print("sheet: %d frames at %s_NN.png" % [frames.size(), prefix])
 	get_tree().quit()
+
+
+func _sheet_setup() -> void:
+	_sheet = true
+	_view.set_process(false)
+	# The shot's effects are stepped with the view model, or a flash that lives three frames
+	# at 60 fps is gone before a software renderer has drawn one.
+	if _rig.shot_fx() != null:
+		_rig.shot_fx().set_process(false)
+	# Read at a quarter of the size on the tiled sheet, so the label is drawn large.
+	_readout.add_theme_font_size_override("font_size", 52)
+	_crosshair.add_theme_font_size_override("font_size", 48)
+	# Grown both ways from the centre: the scene's box is sized for 24 px, and a 48 px "+" grew
+	# it downward only, drawing the crosshair 15 px under the screen's centre, below a sight
+	# that was on it.
+	_crosshair.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+
+func _sheet_hold(def: DotWeaponDef) -> void:
+	# `--hold "x,y,z,pitch,yaw,roll,scale"` re-equips the weapon with that first-person
+	# placement instead of the table's: the knob for tuning a hold without an edit and a
+	# re-import per guess. The numbers that look right then go into ZeeWeaponArtTable.
+	var hold := _argument("--hold")
+	if hold != "" and def != null:
+		var art: ZeeWeaponArt = ZeeWeaponArtTable.get_art(def.id).duplicate(true)
+		var v := hold.split_floats(",")
+		if v.size() >= 3:
+			art.view_offset = Vector3(v[0], v[1], v[2])
+		if v.size() >= 6:
+			art.view_rotation = Vector3(v[3], v[4], v[5])
+		if v.size() >= 7:
+			art.view_scale = v[6]
+		_view.equip(art)
+
 
 
 ## A slab over the player on the sun's side, so the player stands in its shadow.

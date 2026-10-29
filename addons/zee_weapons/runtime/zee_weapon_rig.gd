@@ -13,19 +13,15 @@ const BASH_BEHAVIOUR := "res://addons/zee_weapons/behaviour/zee_weapon_bash.gd"
 ## A use happened. Carries the whole outcome, so a listener can tell a swing from a shot.
 signal used(outcome: DotWeaponOutcome)
 
-## A bash happened. Separate from [signal used] because it is a different animation, a
-## different sound and, for most games, a different statistic.
+## A bash happened; separate from [signal used] (different animation, sound and statistic).
 signal bashed(outcome: DotWeaponOutcome)
 
 ## The weapon in hand changed, once the deploy has finished.
 signal equipped(id: StringName)
 
-## A reload's sound was played: [constant ZeeWeaponSound.RELOAD_OUT] when it starts,
-## [constant ZeeWeaponSound.RELOAD_IN] when it finishes. Never on a server or in a replay.
+## A reload sound played (RELOAD_OUT at the start, RELOAD_IN at the end); never on a server or in a replay.
 signal reload_sound(stage: StringName)
 
-
-# --- Lifecycle --------------------------------------------------------------
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -138,8 +134,6 @@ func _connect_arsenal() -> void:
 	arsenal.dry_used.connect(_on_dry_used)
 
 
-# --- Carrying ---------------------------------------------------------------
-
 ## Gives the carrier a weapon, by id.
 func give(id: StringName, full: bool = true) -> DotResult:
 	if not _ready_for_use:
@@ -167,8 +161,6 @@ func current_art() -> ZeeWeaponArt:
 	var def := current_def()
 	return ZeeWeaponArtTable.table().get(def.id, null) if def != null else null
 
-
-# --- The tick ---------------------------------------------------------------
 
 ## One tick of one command: the arsenal, then the bash, then the picture.
 ## [param ctx] is optional; left null, one is built from the player through [DotWeaponPlayerBridge].
@@ -354,8 +346,6 @@ func is_replaying() -> bool:
 	return _replaying
 
 
-# --- The bash ---------------------------------------------------------------
-
 ## The alt-fire, simulated here because dot-weapon's arsenal routes one button (see [ZeeWeaponBash]).
 ## The cooldown lives in [member _bash_ready_tick], travels in [method snapshot] and rolls back, so a correction cannot bash twice.
 func _advance_bash(
@@ -392,8 +382,6 @@ func _advance_bash(
 
 	return outcome
 
-
-# --- Presentation -----------------------------------------------------------
 
 ## Everything the player sees, from state the simulation has already settled.
 ## Skipped during a replay: the simulation re-runs after a correction, a model rebuild, punch and sound must not.
@@ -678,8 +666,6 @@ func _on_switched(_from: int, to: int) -> void:
 	_switch_ticks = maxi(1, arsenal.ticks_for(carried.def, carried.def.deploy_ticks) if carried != null else 1)
 
 
-# --- Context ----------------------------------------------------------------
-
 func _context_for(tick: int) -> DotWeaponContext:
 	if _player != null:
 		var ctx := DotWeaponPlayerBridge.context_for(_player, tick)
@@ -719,8 +705,6 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 				outcome.recoil, ZeeWeaponNet.kind_number(outcome.kind), effects and _fx == null
 			)
 
-
-# --- Netcode ----------------------------------------------------------------
 
 ## Everything that has to travel and everything a rollback has to restore.
 ## The arsenal's snapshot plus the rig's own: the bash cooldown and charge live here, and omitting them hands a free bash on correction.
@@ -773,8 +757,6 @@ func restore(state: Dictionary) -> DotResult:
 func pull_net(target: Object) -> void:
 	ZeeWeaponNet.pull(self, target)
 
-
-# --- Reporting --------------------------------------------------------------
 
 func describe() -> Dictionary:
 	return {

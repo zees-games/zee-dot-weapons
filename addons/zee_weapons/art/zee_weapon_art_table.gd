@@ -1,6 +1,8 @@
 class_name ZeeWeaponArtTable
 extends "zee_weapon_art_table_paths.gd"
 
+const Listing := preload("zee_art_listing.gd")
+
 ## Which mesh each weapon wears, and where it sits in the hand and on the screen.
 ##
 ## [b]The only file in the pack that knows a filename.[/b] Everything else names a role
@@ -698,11 +700,7 @@ static func _thrown(id: StringName, model: String) -> ZeeWeaponArt:
 # --- Validation -------------------------------------------------------------
 
 ## Checks every entry, and that the table covers exactly the ids the pack defines.
-##
-## [b]Loads no mesh.[/b] It is the boot check, and a dedicated server runs it with the
-## whole `assets/` directory absent — so it must be able to say "the launcher has no art
-## entry" without being able to say "the launcher's mesh is missing". Whether the files
-## are there is [method validate_models]'s question, asked where there is a screen.
+## Loads no mesh: a dedicated server runs it without `assets/`, so file presence is [method validate_models]'s question.
 static func validate() -> DotResult:
 	var built := table()
 
@@ -742,77 +740,16 @@ static func validate() -> DotResult:
 	return DotResult.success(null)
 
 
-## Every model file the table names, once each, sorted: the weapon, its magazine and its
-## attachments, from this pack and every registered source (zed's included).
-##
-## [b]This is the list a game vendors, and the one list.[/b] A delivered game carries its own
-## copy of the art (see [method ZeeModelCache.set_asset_root]), so what a game must copy is
-## exactly what the table names, no more and no less; [method validate_models] checks it and
-## `tools/sync-art.sh` copies it, both reading this. A hand-written list in a game drifts: the
-## first one covered the weapons and missed the ammunition. [param with_arms] adds the arms
-## models, which only a game using `ZeeViewArms.style = &"model"` or the default `&"rigged"` needs (gloves are built in code, and are what the arms fall back to when the rigged file is not vendored).
+## Every model file the table names, once each, sorted: the weapon, its magazine and its attachments, from this pack and every registered source.
+## This is the one list a game vendors: [method validate_models] checks it and `tools/sync-art.sh` copies it. [param with_arms] adds the arms models.
 static func model_paths(with_arms: bool = false) -> Array[String]:
-	var seen := {}
-
-	for art: ZeeWeaponArt in all():
-		for path in _paths_of(art):
-			if path != "":
-				seen[path] = true
-
-	if with_arms:
-		seen[ARMS_MODEL] = true
-		seen[RIGGED_ARMS_MODEL] = true
-
-	var out: Array[String] = []
-
-	for path: String in seen.keys():
-		out.append(path)
-
-	out.sort()
-	return out
+	return Listing.model_paths(all(), with_arms)
 
 
-## Checks that every mesh, magazine and attachment actually resolves.
-##
-## Loads scenes, so this is not the boot check. Run it once where there is a screen, or
-## in the self-test. Reports every missing model rather than the first, because the
-## usual cause is a whole directory that did not ship. Paths go through
-## [method ZeeModelCache.resolve], so it asks the question the renderer asks, under a
-## game's asset root too.
-##
-## [b]A game's suite calls this one line: `ZeeWeaponArtTable.validate_models()`.[/b] A game
-## delivered as a pack has only the art it vendored, and a missing folder fails nothing else
-## (one WARN per model, then invisible guns in production).
+## Checks that every named model resolves, through [method ZeeModelCache.resolve] so a game's asset root applies. Loads scenes, so it is not the boot check.
+## A game's suite calls this one line; it reports every missing model, not the first.
 static func validate_models(with_arms: bool = false) -> DotResult:
-	var missing: Array[String] = []
-
-	for path in model_paths(with_arms):
-		if not ResourceLoader.exists(ZeeModelCache.resolve(path)):
-			missing.append(path)
-
-	if missing.is_empty():
-		return DotResult.success(null)
-
-	return DotResult.fail(
-		DotError.CODE_IO,
-		"%d model(s) are missing: %s" % [missing.size(), ", ".join(missing)]
-	)
-
-
-## Every path one entry refers to: the weapon, its magazine and its attachments.
-static func _paths_of(art: ZeeWeaponArt) -> Array[String]:
-	var out: Array[String] = []
-
-	if art.has_model():
-		out.append(art.model_path)
-
-	if art.magazine_path != "":
-		out.append(art.magazine_path)
-
-	for entry in art.attachments:
-		out.append(str(entry.get("path", "")))
-
-	return out
+	return Listing.missing_result(model_paths(with_arms))
 
 
 static func describe_lines() -> PackedStringArray:

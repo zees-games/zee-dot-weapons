@@ -7,6 +7,7 @@ const IronSight := preload("zee_iron_sight.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
 const Dress := preload("zee_attachment_dress.gd")
 const HipHold := preload("zee_hip_hold.gd")
+const HandReach := preload("zee_hand_reach.gd")
 
 ## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
 ## and never reads a device, a clock or the arsenal, so it draws a remote player's gun the same way.
@@ -293,56 +294,12 @@ func _dress() -> void:
 ## the left on the fore-end at 62%, a melee hand round its handle, a grenade's round its middle, each with the held axis.
 func _reach_for(art: ZeeWeaponArt) -> void:
 	var to_aim := _holder.transform
-	var forward := art.model_forward.normalized()
-	var up := Vector3.UP if absf(forward.dot(Vector3.UP)) < 0.9 else Vector3.BACK
-	var grip := Vector3.ZERO
-	var fore := forward * 0.4
-	var grip_axis := up
-	var fore_axis := forward
-	var radius := 0.0
-
-	if _weapon != null:
-		var box := _bounds_in(_holder, _weapon)
-		if box.size != Vector3.ZERO:
-			var t_min := INF
-			var t_max := -INF
-			for i in 8:
-				var t := box.get_endpoint(i).dot(forward)
-				t_min = minf(t_min, t)
-				t_max = maxf(t_max, t)
-			var centre := box.get_center()
-			var on_axis := centre - forward * centre.dot(forward)
-			match art.pose:
-				&"melee":
-					# Round the handle, a hand's width up from its butt (the origin).
-					grip = forward * minf(0.055, (t_max - t_min) * 0.3)
-					grip_axis = forward
-					radius = minf(box.size.x, box.size.z) * 0.38
-				&"thrown":
-					grip = centre
-					grip_axis = forward
-					radius = minf(box.size.x, box.size.z) * 0.4
-				_:
-					# Under the body: the grip and fore-end are below the bore, so the hands
-					# sit a third and a half of the way up from the bottom of the model.
-					var low := box.position.y
-					var tall := box.size.y
-					grip = on_axis + forward * lerpf(t_min, t_max, art.grip_along)
-					grip.y = low + tall * art.grip_up
-					fore = on_axis + forward * lerpf(t_min, t_max, art.fore_along)
-					fore.y = low + tall * art.fore_up
-					# A scope on top or a magazine below inflates the bounds' height; the hand
-					# takes the body at its own station, never higher than a hand's span.
-					var spans := _spans_for(art, forward)
-					var under: Dictionary = spans[0]
-					if not under.is_empty():
-						fore.y = minf(fore.y, float(under.low) + float(under.length) * HAND_REACH)
-					var rear: Dictionary = spans[1]
-					if not rear.is_empty():
-						grip.y = minf(grip.y, float(rear.low) + float(rear.length) * HAND_REACH * 1.6)
-					# A pistol grip rakes: its top is forward of its bottom.
-					grip_axis = (up + forward * 0.3).normalized()
-					radius = box.size.x * 0.3
+	var r := HandReach.measure(art, _weapon, _holder)
+	var grip: Vector3 = r.grip
+	var fore: Vector3 = r.fore
+	var grip_axis: Vector3 = r.grip_axis
+	var fore_axis: Vector3 = r.fore_axis
+	var radius: float = r.radius
 
 	if _arms != null:
 		_arms.fit_glove_to(_weapon)
@@ -370,27 +327,6 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 	_grip_radius = radius * art.view_scale
 	_place_hands()
 
-
-## The bounds of every mesh under [param node], in [param space]'s own coordinates.
-func _bounds_in(space: Node3D, node: Node) -> AABB:
-	var out := AABB()
-	var seeded := false
-	for mi: MeshInstance3D in _meshes(node):
-		if mi.mesh == null:
-			continue
-		var to_space := Transform3D.IDENTITY
-		var walk: Node = mi
-		while walk != null and walk != space:
-			if walk is Node3D:
-				to_space = (walk as Node3D).transform * to_space
-			walk = walk.get_parent()
-		var b := to_space * mi.mesh.get_aabb()
-		out = b if not seeded else out.merge(b)
-		seeded = true
-	return out
-
-
-## Puts the hands where the weapon's grip and fore-end are this frame: through the Aim
 ## node, so the hands come up to the sight with the gun while the shoulders stay below the
 ## screen. Cheap (two transforms), so it runs every frame.
 func _place_hands() -> void:
@@ -522,7 +458,7 @@ func eject_transform() -> Transform3D:
 	if _weapon == null:
 		return global_transform
 
-	var box := _bounds_in(_weapon, _weapon)
+	var box := HandReach.bounds_in(_weapon, _weapon)
 	if box.size == Vector3.ZERO:
 		return _weapon.global_transform
 
@@ -637,38 +573,9 @@ func advance(delta: float) -> void:
 ## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
 func _advance_wall(delta: float) -> void:
 	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()
-	_wall.step(_wall_target() if on else 0.0, delta)
+	_wall.step(ZeeWallSlam.target(self, muzzle_transform().origin, wall_mask, wall_ignore_characters, _wall_exclude()) if on else 0.0, delta)
 	if _wall.amount > 0.0:
 		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt) * _animated.transform
-
-
-## Metres the un-retracted muzzle is past the nearest wall, from the camera.
-func _wall_target() -> float:
-	var space := get_world_3d().direct_space_state if get_world_3d() != null else null
-	if space == null:
-		return 0.0
-	var camera := get_parent() as Node3D
-	var from: Vector3 = (camera if camera != null else self).global_position
-	var to_muzzle := muzzle_transform().origin - from
-	var distance := to_muzzle.length()
-	if distance < 0.01:
-		return 0.0
-	var forward: Vector3 = -(camera if camera != null else self).global_basis.z.normalized()
-	var reach := distance + ZeeWallSlam.MARGIN
-	var nearest := INF
-	for dir: Vector3 in [to_muzzle / distance, forward]:
-		var query := PhysicsRayQueryParameters3D.create(from, from + dir * reach, wall_mask, _wall_exclude().duplicate())
-		query.collide_with_areas = false
-		for _hop in range(8):
-			var found := space.intersect_ray(query)
-			if found.is_empty():
-				break
-			if wall_ignore_characters and found["collider"] is CharacterBody3D:
-				query.exclude.append(found["rid"])
-				continue
-			nearest = minf(nearest, from.distance_to(found["position"]))
-			break
-	return ZeeWallSlam.obstruction(distance, nearest)
 
 
 ## The carrier's own body, so the probe never stops on the player it hangs from.
@@ -1033,7 +940,7 @@ func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 ## Depth testing stays ON: `no_depth_test` stops a wall clipping but lets the arms and gun paint over each other. A sorting offset biases the order instead.
 ## The cost: it can still clip a wall the player is pressed against (offsets stay within 0.6 m); a game wanting it gone renders through its own SubViewport camera.
 func _set_on_top(root: Node) -> void:
-	for mesh in _meshes(root):
+	for mesh in HandReach.meshes(root):
 		mesh.sorting_offset = 100.0
 
 		# A view model casts no shadow: it is drawn half a metre from the camera at under life size, so its shadow
@@ -1088,18 +995,6 @@ func prewarm(art: ZeeWeaponArt) -> void:
 	clear()
 
 
-func _meshes(node: Node) -> Array[MeshInstance3D]:
-	var out: Array[MeshInstance3D] = []
-
-	if node is MeshInstance3D:
-		out.append(node)
-
-	for child in node.get_children():
-		out.append_array(_meshes(child))
-
-	return out
-
-
 func _clear_models() -> void:
 	for node in [_weapon, _magazine, _sight]:
 		if node != null:
@@ -1143,16 +1038,6 @@ func describe_lines() -> PackedStringArray:
 	return out
 
 
-# The two ray-cast spans cost a triangle walk of the whole mesh each; a weapon's art does not change, so a re-equip reuses them.
-static var _span_cache: Dictionary = {}
 static var _view_materials: Dictionary = {}
 static var _view_sources: Array = []
 
-
-func _spans_for(art: ZeeWeaponArt, forward: Vector3) -> Array:
-	# Not the art's instance id: `HipHold.sized` makes a new art per equip, and that id is reused.
-	var key := "%s|%s|%s|%s|%s" % [art.id, art.model_path, _holder.transform, forward, art.fore_along]
-	if not _span_cache.has(key):
-		var tris := IronSight.triangles_of(_weapon, _holder)
-		_span_cache[key] = [IronSight.span(_weapon, _holder, forward, art.fore_along, tris), IronSight.span(_weapon, _holder, forward, 0.30, tris)]
-	return _span_cache[key]
