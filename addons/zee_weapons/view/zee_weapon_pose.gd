@@ -134,6 +134,10 @@ class Tunables extends RefCounted:
 	var sprint_offset := Vector3.ZERO
 	var sprint_rotation := Vector3.ZERO
 
+	## While sprinting: the bob's amplitude multiplier and a roll in degrees that rocks with each stride, both at full blend.
+	var sprint_bob: float = 1.0
+	var sprint_bob_roll: float = 0.0
+
 	## A melee swing, as keys over its own time (see [member swing_seconds]). Empty is none.
 	var swing_keys: Array = ZeeWeaponPose.SWING_KEYS
 
@@ -554,6 +558,7 @@ func offset() -> Transform3D:
 	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
 	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) \
 		+ tunables.sprint_rotation * _sprint
+	acted.z += sin(_bob_distance * tunables.bob_per_metre * PI) * tunables.sprint_bob_roll * _sprint * _bob_amount
 	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3) \
 		+ tunables.sprint_offset * _sprint
 	var hand := Basis.from_euler(Vector3(
@@ -639,7 +644,7 @@ func _advance_bob(step: float, speed: float, on_floor: bool, crouched: bool) -> 
 	if on_floor:
 		var cadence := ground
 		if tunables.bob_max_rate > 0.0 and tunables.bob_per_metre > 0.0:
-			cadence = minf(ground, tunables.bob_max_rate / tunables.bob_per_metre)
+			cadence = minf(ground, tunables.bob_max_rate * lerpf(1.0, 1.35, _sprint) / tunables.bob_per_metre)
 		_bob_distance += cadence * step
 
 	_bob_distance = fposmod(_bob_distance, 1000.0)
@@ -651,6 +656,7 @@ func _bob_offset() -> Vector3:
 
 	var phase := _bob_distance * tunables.bob_per_metre * TAU
 	var scale := tunables.bob_amount * _bob_amount * maxf(0.1, weight) * maxf(0.0, feel)
+	scale *= lerpf(1.0, tunables.sprint_bob, _sprint)
 
 	# A figure of eight: the lateral term runs at half the vertical's frequency, which
 	# is what a walk cycle does — two footfalls per left-right sway.

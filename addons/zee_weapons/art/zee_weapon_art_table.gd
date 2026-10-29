@@ -107,6 +107,19 @@ static func sprint_view(pose: StringName) -> Array:
 			return [Vector3(-0.1, -0.1, 0.06), Vector3(-14.0, 55.0, -24.0)]
 
 
+## The sprint stride in first person, [bob multiplier, roll degrees]: a long gun swings heavier than a pistol or a blade.
+static func sprint_bob(pose: StringName) -> Vector2:
+	match pose:
+		POSE_PISTOL:
+			return Vector2(2.2, 3.0)
+		POSE_MELEE, POSE_THROWN:
+			return Vector2(1.8, 2.0)
+		POSE_HEAVY:
+			return Vector2(2.6, 5.0)
+		_:
+			return Vector2(2.6, 4.0)
+
+
 ## The sprint carry in a person's hand (third person), same units, in the hand's frame (-Z the way the person faces).
 static func sprint_world(pose: StringName) -> Array:
 	match pose:

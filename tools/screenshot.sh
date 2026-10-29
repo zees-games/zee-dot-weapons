@@ -18,7 +18,7 @@
 # model is stepped at a fixed 60 fps by the range (`--sheet`), so the same frame is the same
 # picture every run, and a before and an after can be compared side by side.
 #
-#   EXTRA="--moves" tools/screenshot.sh --sheet rifle   # 12 frames: strafe, turn, walk, landing, hip and aimed
+#   EXTRA="--moves" tools/screenshot.sh --sheet rifle   # 14 frames: strafe, turn, walk, landing, sprint, hip and aimed
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
 #
 # EXTRA is passed straight through to the range. `--no-arms` is the one that earns
@@ -138,9 +138,9 @@ sheet() {
         -- --weapon "$weapon" --sheet "$tmp/f" ${EXTRA:-} >"$tmp/log" 2>&1
     kill "$xpid" 2>/dev/null
 
-    # --moves (via EXTRA) is twelve frames, four rows; the default sheet is eighteen, six.
+    # --moves (via EXTRA) is fourteen frames, five rows; the default sheet is eighteen, six.
     local last=17 rows=6
-    case "${EXTRA:-}" in *--moves*) last=11; rows=4 ;; esac
+    case "${EXTRA:-}" in *--moves*) last=13; rows=5 ;; esac
     if [ ! -s "$tmp/f_$last.png" ]; then
         echo "sheet failed for $weapon:" >&2
         tail -20 "$tmp/log" >&2

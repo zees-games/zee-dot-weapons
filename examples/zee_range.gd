@@ -557,6 +557,7 @@ const MOVE_FRAMES := [
 	["turning right", "turn"], ["aimed, turning right", "aimturn"],
 	["walking", "walk"], ["aimed, walking", "aimwalk"],
 	["landing", "land"], ["aimed, landing", "aimland"],
+	["sprint, stride low", "sprint:30"], ["sprint, stride high", "sprint:45"],
 ]
 
 ## The fixed step the sheet advances the view model by: 60 frames a second, so "fire 4"
@@ -666,6 +667,12 @@ func _run_sheet(prefix: String) -> void:
 				for i in range(27):
 					_view.drive(Vector2.ZERO, 5.0, true)
 					_view.advance(SHEET_STEP)
+			"sprint":
+				_view.set_sprinting(true)
+				for i in range(int(arg)):
+					_view.drive(Vector2.ZERO, 8.0, true)
+					_view.advance(SHEET_STEP)
+				_view.set_sprinting(false)
 			"turn":
 				# 180 degrees a second to the right, for a fifth of a second.
 				for i in range(12):

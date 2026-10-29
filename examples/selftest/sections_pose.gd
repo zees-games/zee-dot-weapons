@@ -11,7 +11,31 @@ func _recoil() -> void:
 	_recoil_sides()
 	_recoil_params()
 	_recoil_grip()
+	_sprint_stride()
 	_end()
+
+
+## A sprint adds a rhythmic bob and roll over the lowered carry, none of it at the hip.
+func _sprint_stride() -> void:
+	var swing := {}
+	for sprint in [0.0, 1.0]:
+		var pose := ZeeWeaponPose.make(1.0)
+		pose.tunables.sprint_bob = 2.6
+		pose.tunables.sprint_bob_roll = 4.0
+		var lo := 1.0e9
+		var hi := -1.0e9
+		for i in range(288):
+			pose.set_sprint(sprint)
+			pose.advance(1.0 / 144.0, Vector2.ZERO, 8.0, true)
+			if i > 100:
+				var y := pose.offset().origin.y
+				lo = minf(lo, y)
+				hi = maxf(hi, y)
+		swing[sprint] = hi - lo
+	_check("a sprinting stride bobs wider than a walking one (%.3f vs %.3f m)" % [swing[1.0], swing[0.0]], swing[1.0] > swing[0.0] * 1.8)
+	var art_pistol := ZeeWeaponArtTable.sprint_bob(ZeeWeaponArtTable.POSE_PISTOL)
+	var art_rifle := ZeeWeaponArtTable.sprint_bob(ZeeWeaponArtTable.POSE_RIFLE)
+	_check("and a long gun swings heavier than a pistol", art_rifle.x > art_pistol.x and art_rifle.y > art_pistol.y)
 
 
 func _recoil_climbs() -> void:

@@ -213,6 +213,9 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	var carry := ZeeWeaponArtTable.sprint_view(art.pose)
 	_pose.tunables.sprint_offset = art.sprint_offset if art.sprint_offset.is_finite() else carry[0]
 	_pose.tunables.sprint_rotation = art.sprint_rotation if art.sprint_rotation.is_finite() else carry[1]
+	var bob := ZeeWeaponArtTable.sprint_bob(art.pose)
+	_pose.tunables.sprint_bob = bob.x
+	_pose.tunables.sprint_bob_roll = bob.y
 	_reload_fraction = 0.0
 
 	_holder.transform = art.view_transform()
