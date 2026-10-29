@@ -646,7 +646,8 @@ static func _thrown(id: StringName, model: String) -> ZeeWeaponArt:
 	art.view_offset = pose_offset(POSE_THROWN)
 	art.view_scale = pose_scale(POSE_THROWN)
 	art.weight = pose_weight(POSE_THROWN)
-	art.view_rotation = Vector3(-35.0, 0.0, 0.0)
+	# Stood on its base in an open palm: pitched down the view axis it was drawn as a disc beside the hand.
+	art.view_rotation = Vector3(70.0, 0.0, 0.0)
 	art.aim_enabled = false
 	return art
 

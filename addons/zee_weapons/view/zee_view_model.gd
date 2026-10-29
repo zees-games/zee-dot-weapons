@@ -485,6 +485,11 @@ func equipped() -> StringName:
 	return _id
 
 
+## The drawn weapon's model node, or null. A search by name can find the last one, which is freed only at the frame's end.
+func weapon_node() -> Node3D:
+	return _weapon
+
+
 ## Where the muzzle is right now in world space, for a flash, a tracer and a shell; the simulation never reads it.
 func muzzle_transform() -> Transform3D:
 	if _weapon == null:
@@ -707,18 +712,30 @@ func is_aim_held() -> bool:
 
 ## [param art] at the rules' size and place for it: a copy, the table's own is never changed.
 func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
-	if ads_rules == null:
-		return art
-	var k := ads_rules.view_scale_for(art.id)
-	var shift := ads_rules.view_shift_for(art.id)
-	var cant := ads_rules.hip_cant_for(art.id) if art.pose != &"thrown" else 1.0
-	if is_equal_approx(k, 1.0) and shift == Vector3.ZERO and is_equal_approx(cant, 1.0):
+	# Only a gun: a knife or a grenade sized like a rifle is a fist round a log.
+	if not art.model_forward.is_equal_approx(Vector3.FORWARD):
 		return art
 	var sized := art.duplicate() as ZeeWeaponArt
-	sized.view_rotation = Vector3(art.view_rotation.x, art.view_rotation.y * cant, art.view_rotation.z * cant)
-	sized.view_scale = art.view_scale * k
-	sized.view_offset = art.view_offset + shift
+	# Without rules the art keeps its size and place, but the barrel is still stood up: unturned it is drawn diagonally.
+	var lean: float = ZeeAdsRules.SPECS["hip_lean"]["default"]
+	var cant: float = ZeeAdsRules.SPECS["hip_cant"]["default"]
+	if ads_rules != null:
+		sized.view_scale = art.view_scale * ads_rules.view_scale_for(art.id)
+		sized.view_offset = art.view_offset + ads_rules.view_shift_for(art.id)
+		lean = ads_rules.hip_lean_for(art.id)
+		cant = ads_rules.hip_cant_for(art.id)
+	var yaw := hip_yaw(sized.view_offset + Vector3(0.0, 0.0, position.z), lean)
+	sized.view_rotation = Vector3(art.view_rotation.x, yaw, art.view_rotation.z * cant)
 	return sized
+
+
+## The hip yaw (degrees, positive muzzle-in) that draws a barrel held at [param hold] leaning [param lean] degrees
+## toward the screen's middle. A barrel pointed straight ahead runs to the vanishing point, so from the lower right it is
+## drawn diagonally across the screen however it is canted; turning the muzzle out by this much stands it up.
+static func hip_yaw(hold: Vector3, lean: float) -> float:
+	var depth := maxf(-hold.z, 0.05)
+	var below := maxf(-hold.y, 0.0)
+	return -rad_to_deg(atan((hold.x - below * tan(deg_to_rad(lean))) / depth))
 
 
 func _toggles() -> bool:

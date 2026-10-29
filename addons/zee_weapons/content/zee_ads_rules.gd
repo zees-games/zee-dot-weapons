@@ -27,11 +27,12 @@ const SPECS := {
 	"spread_multiplier": {"default": 0.6, "min": 0.0, "max": 1.0},
 	"sway_multiplier": {"default": 0.5, "min": 0.0, "max": 1.0},
 	"toggle": {"default": false},
-	"view_scale": {"default": 2.0, "min": 0.5, "max": 2.5},
-	"view_shift_x": {"default": 0.03, "min": -0.5, "max": 0.5},
-	"view_shift_y": {"default": 0.08, "min": -0.5, "max": 0.5},
-	"view_shift_z": {"default": -0.1, "min": -0.5, "max": 0.5},
-	"hip_cant": {"default": 0.2, "min": 0.0, "max": 1.0},
+	"view_scale": {"default": 2.0, "min": 0.5, "max": 4.0},
+	"view_shift_x": {"default": 0.12, "min": -0.5, "max": 0.5},
+	"view_shift_y": {"default": -0.10, "min": -0.5, "max": 0.5},
+	"view_shift_z": {"default": -0.15, "min": -0.5, "max": 0.5},
+	"hip_cant": {"default": 0.3, "min": 0.0, "max": 1.0},
+	"hip_lean": {"default": 25.0, "min": -30.0, "max": 60.0},
 }
 
 ## The profile every weapon without an override uses.
@@ -145,9 +146,14 @@ func view_scale_for(id: StringName) -> float:
 	return float(value_for(id, "view_scale"))
 
 
-## How much of the art's hip yaw and roll is kept: 1 is the table's diagonal carry, 0 points the barrel straight ahead.
+## How much of the art's hip roll is kept: 1 is the table's full cant, 0 holds the gun upright.
 func hip_cant_for(id: StringName) -> float:
 	return float(value_for(id, "hip_cant"))
+
+
+## Degrees the barrel leans toward the screen's middle at the hip, as drawn. The view model turns the gun to it.
+func hip_lean_for(id: StringName) -> float:
+	return float(value_for(id, "hip_lean"))
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).

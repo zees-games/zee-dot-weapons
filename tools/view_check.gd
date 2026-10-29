@@ -2,6 +2,7 @@ extends Node
 
 ## Renders and measures every weapon's hip and aimed view for review. Not headless for PNGs.
 ##   godot --path . res://tools/view_check.tscn -- --out DIR [--ids pistol,smg] [--rules] [--fov 90]
+##     [--rot "pitch,yaw,roll"] [--off "x,y,z"]   (tuning: replace the hip rotation, add to the hip offset)
 ## Prints one line per weapon and view; with --out saves DIR/<id>_hip.png and <id>_aim.png.
 
 const Measure := preload("res://tools/view_measure.gd")
@@ -13,6 +14,11 @@ func _ready() -> void:
 	var fov := _arg(args, "--fov", "90").to_float()
 	var ids: Array = ZeeWeaponIds.all() if _arg(args, "--ids") == "" else Array(_arg(args, "--ids").split(","))
 	var rules := ZeeAdsRules.load_config() if args.has("--rules") else null
+	var hold := {}
+	if _arg(args, "--rot") != "":
+		hold["rotation"] = _vec(_arg(args, "--rot"))
+	if _arg(args, "--off") != "":
+		hold["offset"] = _vec(_arg(args, "--off"))
 	var m := Measure.new()
 	add_child(m)
 	m.build(rules, fov)
@@ -24,11 +30,12 @@ func _ready() -> void:
 	add_child(ground)
 	for id in ids:
 		for aimed in [false, true]:
-			var r: Dictionary = m.measure(StringName(id), aimed)
+			var r: Dictionary = m.measure(StringName(id), aimed, hold)
 			if r.is_empty():
 				continue
-			print("%-14s %-4s off=%5.1f deg  width=%4.0f%%  sight_off=%s" % [id, "aim" if aimed else "hip",
-				r.degrees_off, r.width * 100.0, str(snappedf(r.get("sight_off_px", -1.0), 0.1))])
+			print("%-14s %-4s off=%5.1f lean=%6.1f cant=%6.1f deg  width=%4.0f%%  centre=%s  sight_off=%s" % [
+				id, "aim" if aimed else "hip", r.degrees_off, r.screen_lean, r.screen_cant, r.width * 100.0,
+				str((r.centre_px as Vector2).round()), str(snappedf(r.get("sight_off_px", -1.0), 0.1))])
 			if out != "":
 				await RenderingServer.frame_post_draw
 				await RenderingServer.frame_post_draw
@@ -40,3 +47,8 @@ func _ready() -> void:
 func _arg(args: PackedStringArray, key: String, fallback: String = "") -> String:
 	var i := args.find(key)
 	return args[i + 1] if i >= 0 and i + 1 < args.size() else fallback
+
+
+func _vec(text: String) -> Vector3:
+	var p := text.split(",")
+	return Vector3(p[0].to_float(), p[1].to_float(), p[2].to_float()) if p.size() == 3 else Vector3.ZERO
