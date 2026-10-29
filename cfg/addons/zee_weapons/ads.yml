@@ -10,6 +10,11 @@ ads:
     spread_multiplier: 0.6
     sway_multiplier: 0.5
     toggle: false
+    # quick scope: the aim-in progress (0 to 1) from which a shot is allowed (0 any time, 1 only fully aimed, the old rule);
+    # the scope's black surround fades in from scope_fade_start, and the lens grows from scope_lens_min of its size.
+    quickscope_fire_min: 0.0
+    scope_fade_start: 0.6
+    scope_lens_min: 0.3
     view_scale: 2.0
     view_shift_x: 0.12
     view_shift_y: -0.10

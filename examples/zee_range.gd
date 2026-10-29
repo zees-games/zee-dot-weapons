@@ -198,7 +198,7 @@ func _process(_delta: float) -> void:
 	_view.aim(_always_aim or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT))
 	if _controller.view != null:
 		_controller.view.external_fov_scale = _view.aim_fov_scale()
-	_scope.fraction = _view.aim_fraction() if _view.is_scoped() else 0.0
+	_scope.follow(_view)
 
 	_draw_readout()
 
@@ -624,6 +624,12 @@ func _run_sheet(prefix: String) -> void:
 		for fraction in _argument("--reloads").split_floats(","):
 			frames.append(["reload %d%%" % roundi(fraction * 100.0), "reload:%f" % fraction])
 
+	# `--aimin 2,4,6` renders the sights coming up after that many 60 fps steps: the quick scope's transition.
+	if _argument("--aimin") != "":
+		frames = []
+		for steps in _argument("--aimin").split_floats(","):
+			frames.append(["aim-in %d" % int(steps), "aimin:%f" % steps])
+
 	var roof: Node3D = null
 	for n in range(frames.size()):
 		if not only.is_empty() and not only.has(float(n)):
@@ -640,6 +646,9 @@ func _run_sheet(prefix: String) -> void:
 			"aim":
 				_view.aim(true)
 				_sheet_steps(40)
+			"aimin":
+				_view.aim(true)
+				_sheet_steps(int(arg))
 			"fire":
 				_sheet_steps(10)
 				_sheet_fire(recoil)
@@ -780,7 +789,7 @@ func _sheet_steps(count: int) -> void:
 			_rig.shot_fx().advance(SHEET_STEP)
 	# The HUD's half of aiming, as _process does it: without it a scoped weapon's aimed frame
 	# was an empty range, the gun hidden and no scope drawn.
-	_scope.fraction = _view.aim_fraction() if _view.is_scoped() else 0.0
+	_scope.follow(_view)
 
 
 ## Quits after `--seconds N`, so a screenshot sweep can open this without a person.

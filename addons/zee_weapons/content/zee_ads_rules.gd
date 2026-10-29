@@ -7,7 +7,7 @@ extends Resource
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
-const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier"]
+const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "quickscope_fire_min"]
 
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
@@ -27,6 +27,9 @@ const SPECS := {
 	"spread_multiplier": {"default": 0.6, "min": 0.0, "max": 1.0},
 	"sway_multiplier": {"default": 0.5, "min": 0.0, "max": 1.0},
 	"toggle": {"default": false},
+	"quickscope_fire_min": {"default": 0.0, "min": 0.0, "max": 1.0},
+	"scope_fade_start": {"default": 0.6, "min": 0.0, "max": 0.99},
+	"scope_lens_min": {"default": 0.3, "min": 0.05, "max": 1.0},
 	"view_scale": {"default": 2.0, "min": 0.5, "max": 4.0},
 	"view_shift_x": {"default": 0.12, "min": -0.5, "max": 0.5},
 	"view_shift_y": {"default": -0.10, "min": -0.5, "max": 0.5},
@@ -147,6 +150,21 @@ func view_scale_for(id: StringName) -> float:
 
 
 ## How much of the art's hip roll is kept: 1 is the table's full cant, 0 holds the gun upright.
+## How far into the aim-in (0 to 1) the weapon may fire: 0 fires at any moment (a quick scope), 1 only once fully aimed.
+func quickscope_fire_min_for(id: StringName) -> float:
+	return float(value_for(id, "quickscope_fire_min"))
+
+
+## Aim-in progress at which a scope's black surround starts to fade in; it is full at 1.
+func scope_fade_start_for(id: StringName) -> float:
+	return float(value_for(id, "scope_fade_start"))
+
+
+## The scope lens's size at the start of the aim-in, as a share of its full size; it grows to 1.
+func scope_lens_min_for(id: StringName) -> float:
+	return float(value_for(id, "scope_lens_min"))
+
+
 func hip_cant_for(id: StringName) -> float:
 	return float(value_for(id, "hip_cant"))
 

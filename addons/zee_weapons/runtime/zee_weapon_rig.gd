@@ -239,6 +239,7 @@ func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
 		_view.set_sprinting(_context_for(tick).sprinting)
 	_notice_holster(tick)
 	_ads_move = 1.0
+	_ads_progress = 0.0
 	_aim_ticks = 0
 	var outcome := arsenal.idle_tick()
 	_notice_switch_end()
@@ -256,6 +257,7 @@ func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
 ## is put back after, so the def is never left changed; it follows the command, so a replay agrees.
 func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> DotWeaponOutcome:
 	_ads_move = 1.0
+	_ads_progress = 0.0
 	var def := arsenal.current_def()
 	if not _can_aim(command, def, context):
 		_aim_ticks = 0
@@ -269,7 +271,13 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	# The spread closes as the sights come up, over the weapon's aim time, counted in ticks so a replay agrees.
 	var seconds := ads_rules.aim_time_for(def.id, art.aim_time if art != null else 0.16)
 	var ramp := clampf(float(_aim_ticks) / maxf(seconds * float(tick_rate), 1.0), 0.0, 1.0)
+	_ads_progress = ramp
 	var k := lerpf(1.0, ads_rules.spread_for(def.id), ramp)
+	# A shot before the fire threshold is held back; at 1 nothing fires until the sights are up, at 0 a quick scope is allowed.
+	var fire_min := ads_rules.quickscope_fire_min_for(def.id)
+	if ramp < fire_min and (command.buttons & DotWeaponCommand.BUTTON_ATTACK) != 0:
+		command = command.duplicate_command()
+		command.buttons &= ~DotWeaponCommand.BUTTON_ATTACK
 	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom]
 	b.spread *= k
 	b.spread_moving *= k
@@ -280,7 +288,16 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.spread_moving = kept[1]
 	b.spread_airborne = kept[2]
 	b.bloom = kept[3]
+	if outcome.used and outcome.kind == DotWeaponOutcome.KIND_SHOT:
+		_tag_aimed_shots(outcome, art != null and art.aim_scoped)
 	return outcome
+
+
+## Marks each shot fired while the sights were still coming up: `ads_progress` (0 to 1) always, `quickscope` true for a scope fired before it landed. Metadata, because a shot is dot-combat's.
+func _tag_aimed_shots(outcome: DotWeaponOutcome, scoped: bool) -> void:
+	for shot in outcome.shots:
+		shot.set_meta(&"ads_progress", _ads_progress)
+		shot.set_meta(&"quickscope", scoped and _ads_progress < 1.0)
 
 
 ## Whether the aim bit counts: the server does not take it on trust. Needs rules, a weapon that
@@ -300,6 +317,11 @@ func _can_aim(command: DotWeaponCommand, def: DotWeaponDef, context: DotWeaponCo
 ## held the aim button, else 1. A game multiplies its motor's speed by it on the server and in prediction.
 func ads_move_scale() -> float:
 	return _ads_move
+
+
+## How far into the aim-in the last simulated command was (0 at the hip, 1 fully aimed), by ticks.
+func ads_progress() -> float:
+	return _ads_progress
 
 
 ## Marks the start of a reconciliation replay.

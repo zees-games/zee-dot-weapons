@@ -21,6 +21,12 @@ extends Control
 ## The circle's diameter as a fraction of the screen's shorter side.
 @export_range(0.2, 1.0, 0.01) var circle: float = 0.9
 
+## The lens's size as a share of [member circle] while the scope comes up: it grows toward 1.
+@export_range(0.05, 1.0, 0.01) var lens_scale: float = 1.0:
+	set(value):
+		lens_scale = clampf(value, 0.05, 1.0)
+		queue_redraw()
+
 @export var surround_colour: Color = Color(0.0, 0.0, 0.0, 1.0)
 @export var reticle_colour: Color = Color(0.0, 0.0, 0.0, 0.9)
 
@@ -44,7 +50,7 @@ func _draw() -> void:
 
 	var size_px := size
 	var centre := size_px * 0.5
-	var radius := minf(size_px.x, size_px.y) * circle * 0.5
+	var radius := minf(size_px.x, size_px.y) * circle * 0.5 * lens_scale
 	var surround := Color(surround_colour, surround_colour.a * fraction)
 
 	# The surround as four rectangles and a ring of quads around the circle: Godot has no
@@ -54,6 +60,9 @@ func _draw() -> void:
 	draw_rect(Rect2(centre.x - radius, 0.0, radius * 2.0, centre.y - radius), surround)
 	draw_rect(Rect2(centre.x - radius, centre.y + radius, radius * 2.0, size_px.y - centre.y - radius), surround)
 	_draw_corners(centre, radius, surround)
+
+	if lens_scale < 1.0:
+		draw_arc(centre, radius, 0.0, TAU, 96, Color(surround_colour, fraction), maxf(2.0, radius * 0.04))
 
 	if vignette > 0.0:
 		var steps := 8
@@ -88,5 +97,11 @@ func _draw_corners(centre: Vector2, radius: float, colour: Color) -> void:
 		draw_colored_polygon(points, colour)
 
 
+## Takes the scope's look from [param view] for this frame: nothing for a weapon without a scope.
+func follow(view: ZeeViewModel) -> void:
+	fraction = view.scope_fraction()
+	lens_scale = view.scope_lens_scale()
+
+
 func describe() -> Dictionary:
-	return {"fraction": fraction, "circle": circle}
+	return {"fraction": fraction, "circle": circle, "lens_scale": lens_scale}

@@ -787,6 +787,27 @@ func _advance_aim(delta: float) -> void:
 func _apply_aim(f: float) -> void:
 	if _art == null or _aim_node == null:
 		return
+## Whether the weapon in hand is looked through (a scope), at any point of the aim-in.
+func has_scope() -> bool:
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false))
+
+
+## How visible the scope's surround is, 0 to 1: it fades in over the last of the aim-in, not at the end.
+func scope_fraction() -> float:
+	if not has_scope():
+		return 0.0
+	var start := 0.6 if ads_rules == null else ads_rules.scope_fade_start_for(_art.id)
+	return smoothstep(start, 1.0, _aim_fraction)
+
+
+## The scope lens's size, a share of its full size: small at the start of the aim-in, growing toward the eye.
+func scope_lens_scale() -> float:
+	if not has_scope():
+		return 1.0
+	var least := 0.3 if ads_rules == null else ads_rules.scope_lens_min_for(_art.id)
+	return lerpf(least, 1.0, _ease(_aim_fraction))
+
+
 
 	var hip := _art.view_transform()
 

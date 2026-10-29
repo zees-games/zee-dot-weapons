@@ -413,6 +413,7 @@ func _ads_rules() -> void:
 		and is_equal_approx(float(loaded.base["move_speed_multiplier"]), 0.8))
 
 	_ads_view(rules)
+	_ads_quickscope()
 
 	var carrier := Node3D.new()
 	add_child(carrier)
@@ -451,6 +452,114 @@ func _ads_rules() -> void:
 	_ads_wire_warning()
 	carrier.queue_free()
 	_end()
+
+
+## A sniper rig, drawn and ready, its aim-in as long as the rules say.
+func _sniper_rig(rules: ZeeAdsRules, carrier: Node3D) -> ZeeWeaponRig:
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.SERVER
+	rig.authority = true
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.ads_rules = rules
+	carrier.add_child(rig)
+	var _setup := rig.setup()
+	var _given := rig.arsenal.give(ZeeWeaponIds.SNIPER)
+	_run_rig(rig, 0, 400, 0)
+	return rig
+
+
+## Shots fired while the sights come up: allowed or held back by the threshold, tagged for the stats, and the scope shows progressively.
+func _ads_quickscope() -> void:
+	var carrier := Node3D.new()
+	add_child(carrier)
+	var rules := ZeeAdsRules.new()
+	var _t := rules.set_value(&"", "aim_time", 0.5)
+	var rig := _sniper_rig(rules, carrier)
+	_check("the test rig holds the sniper", rig.arsenal.current_def().id == ZeeWeaponIds.SNIPER)
+	var both := DotWeaponCommand.BUTTON_USER_0 | DotWeaponCommand.BUTTON_ATTACK
+
+	# Threshold 0: the first aimed tick may fire, as a quick scope.
+	var shot := _fire_at(rig, 1000, both)
+	_check("with threshold 0 a shot lands during the aim-in", shot != null)
+	if shot != null:
+		_check("and carries its ads_progress (%.2f)" % float(shot.get_meta(&"ads_progress", -1.0)),
+			float(shot.get_meta(&"ads_progress", -1.0)) < 0.2 and float(shot.get_meta(&"ads_progress", -1.0)) > 0.0)
+		_check("and is flagged a quickscope", bool(shot.get_meta(&"quickscope", false)))
+
+	# Threshold 1 is the old rule: nothing before the sights are up.
+	var late := ZeeAdsRules.new()
+	var _t2 := late.set_value(&"", "aim_time", 0.5)
+	var _t3 := late.set_value(&"", "quickscope_fire_min", 1.0)
+	var rig2 := _sniper_rig(late, carrier)
+	var held := 0
+	var first_progress := -1.0
+	var qs_late := false
+	for tick in range(1000, 1000 + 120):
+		var cmd := DotWeaponCommand.new()
+		cmd.buttons = both if tick % 2 == 0 else DotWeaponCommand.BUTTON_USER_0
+		var out := rig2.simulate_tick(cmd, tick)
+		if out != null and not out.shots.is_empty():
+			first_progress = float((out.shots[0] as DotShot).get_meta(&"ads_progress", -1.0))
+			qs_late = bool((out.shots[0] as DotShot).get_meta(&"quickscope", false))
+			break
+		held += 1
+	_check("with threshold 1 the shot waits for the sights (%d ticks held)" % held, held >= int(0.5 * ZeeWeaponPack.TICK_RATE) - 1)
+	_check("and then is no quickscope (progress %.2f)" % first_progress, is_equal_approx(first_progress, 1.0) and not qs_late)
+
+	# A mid threshold fires once the progress passes it.
+	var mid := ZeeAdsRules.new()
+	var _t4 := mid.set_value(&"", "aim_time", 0.5)
+	var _t5 := mid.set_value(&"", "quickscope_fire_min", 0.5)
+	var rig3 := _sniper_rig(mid, carrier)
+	var mid_shot := _fire_at(rig3, 1000, both)
+	var p := float(mid_shot.get_meta(&"ads_progress", -1.0)) if mid_shot != null else -1.0
+	_check("a mid threshold lets it fire just past half (%.2f)" % p, p >= 0.5 and p < 0.6 and bool(mid_shot.get_meta(&"quickscope", false)))
+
+	# The threshold is predicted: it crosses the wire.
+	var clone := ZeeAdsRules.new()
+	_check("the threshold crosses the wire", clone.adopt_wire(mid.to_wire()) and is_equal_approx(clone.quickscope_fire_min_for(&"sniper"), 0.5))
+
+	_ads_scope_view(rules)
+	carrier.queue_free()
+
+
+func _fire_at(rig: ZeeWeaponRig, from: int, buttons: int) -> DotShot:
+	for tick in range(from, from + 120):
+		var cmd := DotWeaponCommand.new()
+		cmd.buttons = buttons if tick % 2 == 0 else buttons & ~DotWeaponCommand.BUTTON_ATTACK
+		var out := rig.simulate_tick(cmd, tick)
+		if out != null and not out.shots.is_empty():
+			return out.shots[0] as DotShot
+	return null
+
+
+## The scope is not a pop: part-way up the surround is part visible and the lens is smaller than at the end.
+func _ads_scope_view(rules: ZeeAdsRules) -> void:
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"sniper"))
+	view.ads_rules = rules
+	view.aim(true)
+	var seen: Array[float] = []
+	var lens: Array[float] = []
+	for _i in range(40):
+		view._advance_aim(0.5 / 30.0)
+		seen.append(view.scope_fraction())
+		lens.append(view.scope_lens_scale())
+		if view.aim_fraction() >= 1.0:
+			break
+	var steps := 0
+	for v in seen:
+		if v > 0.02 and v < 0.98:
+			steps += 1
+	_check("the scope fades in over several frames, not at the end (%d part-visible frames)" % steps, steps >= 3)
+	_check("the surround is dark only late: at a third of the aim-in it is nil", seen[4] < 0.01)
+	_check("the lens grows over the aim-in (%.2f -> %.2f)" % [lens[0], lens[lens.size() - 1]], lens[0] < 0.5 and is_equal_approx(lens[lens.size() - 1], 1.0))
+	var pistol := view.equip(ZeeWeaponArtTable.get_art(&"pistol"))
+	_check("a weapon without a scope has none at any progress", view.scope_fraction() == 0.0 and not pistol == null)
+	view.queue_free()
 
 
 func _ads_view(rules: ZeeAdsRules) -> void:

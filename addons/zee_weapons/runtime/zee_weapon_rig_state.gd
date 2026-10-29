@@ -95,6 +95,7 @@ var _player: Node = null
 
 var _bash: ZeeWeaponBash = null
 var _ads_move: float = 1.0
+var _ads_progress: float = 0.0
 var _aim_ticks: int = 0
 
 ## The tick the carrier may next bash on.
