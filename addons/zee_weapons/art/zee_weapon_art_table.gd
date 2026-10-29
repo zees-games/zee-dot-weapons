@@ -40,7 +40,7 @@ extends "zee_weapon_art_table_paths.gd"
 static func pose_offset(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
-			return Vector3(0.15, -0.19, -0.36)
+			return Vector3(0.14, -0.18, -0.34)
 		POSE_HEAVY:
 			return Vector3(0.19, -0.24, -0.42)
 		POSE_MELEE:
@@ -514,7 +514,7 @@ static func minigun() -> ZeeWeaponArt:
 	# reload sheet shows, and what a game that gives it a magazine would play.
 	art.magazine_part = &"ammo_box"
 	art.magazine_offset = Vector3(0.17, -0.22, 0.0)
-	art.magazine_scale = 2.0
+	art.magazine_scale = 1.1
 	return art
 
 

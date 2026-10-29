@@ -91,6 +91,15 @@ func _rig() -> void:
 	_run_rig(rig, 60, 90, DotWeaponCommand.BUTTON_ATTACK)
 	_check("firing advances the replication counter", rig.fire_seq > before)
 
+	# Recoil and the replicated counter come from _record_use, which runs only for a used outcome.
+	var uses: Array[int] = []
+	rig.used.connect(func(_outcome: DotWeaponOutcome) -> void: uses.append(1))
+	var seq := rig.fire_seq
+	_run_rig(rig, 150, 154, 0)
+	_check("with no button down nothing is used and the counter stays", uses.is_empty() and rig.fire_seq == seq)
+	_run_rig(rig, 154, 198, DotWeaponCommand.BUTTON_ATTACK)
+	_check("every counted use emitted `used` once (%d)" % uses.size(), uses.size() > 0 and rig.fire_seq - seq == uses.size())
+
 	# A bash is the alt-fire the arsenal has no path for. An Array, not an int: a lambda captures locals by value,
 	# so a counter bumped in a handler stays zero outside it.
 	var bashes: Array[int] = []

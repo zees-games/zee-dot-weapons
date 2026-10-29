@@ -469,7 +469,7 @@ func _build_glove_arm(arm_name: String) -> Node3D:
 	tube.rings = 1
 	tube.height = 1.0
 	tube.top_radius = 0.5
-	tube.bottom_radius = 0.42
+	tube.bottom_radius = 0.46
 	sleeve.mesh = tube
 	sleeve.material_override = _flat(sleeve_color, 0.9)
 	arm.add_child(sleeve)
