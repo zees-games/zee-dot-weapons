@@ -30,6 +30,15 @@ const ARM_RIGHT := "arm-right"
 ## The glove's colour (the hands).
 @export var glove_color: Color = Color(0.17, 0.16, 0.15)
 
+## Swaps the glove for [member glove_light_color] when the held gun's mean albedo is within [member glove_contrast_min] of it in luminance (rigged arms only). Off keeps [member glove_color].
+@export var glove_contrast: bool = true
+
+## The glove used against a dark gun: tan leather, readable against black metal and a dark sleeve.
+@export var glove_light_color: Color = Color(0.6, 0.52, 0.4)
+
+## The luminance gap below which the glove counts as merging with the gun.
+@export_range(0.0, 0.5, 0.01) var glove_contrast_min: float = 0.2
+
 ## The sleeve's colour (the forearms). A game hands in its team or the player's colour.
 @export var sleeve_color: Color = Color(0.16, 0.2, 0.15)
 
@@ -366,6 +375,70 @@ func has_arms() -> bool:
 const FIST_RADIUS := 0.004
 
 const OPEN_BY_POSE := {&"thrown": 0.1, &"fists": 0.0}
+
+## Picks the glove for a gun whose surfaces are [param surfaces] (see [method surface_albedos]): [param base] unless the mean or a third of the surfaces merge with it, then [param light].
+static func glove_for(surfaces: Array[Color], base: Color, light: Color, gap: float) -> Color:
+	if surfaces.is_empty():
+		return base
+	var mean := mean_of(surfaces)
+	var merging := 0
+	for c in surfaces:
+		if absf(base.get_luminance() - c.get_luminance()) < gap:
+			merging += 1
+	var merges := absf(base.get_luminance() - mean.get_luminance()) < gap or merging * 3 >= surfaces.size()
+	if not merges:
+		return base
+	return light if mean.get_luminance() < light.get_luminance() else base.darkened(0.6)
+
+
+static func mean_of(colors: Array[Color]) -> Color:
+	var sum := Color(0, 0, 0, 1)
+	for c in colors:
+		sum += Color(c.r, c.g, c.b, 0.0)
+	var n := maxf(1.0, float(colors.size()))
+	return Color(sum.r / n, sum.g / n, sum.b / n)
+
+
+## The albedo of each mesh surface under [param root]: material colour times a 4x4 downsample of its texture where readable.
+static func surface_albedos(root: Node) -> Array[Color]:
+	var out: Array[Color] = []
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		stack.append_array(node.get_children())
+		var mi := node as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		for i in mi.mesh.get_surface_count():
+			var mat := mi.get_active_material(i) as BaseMaterial3D
+			if mat == null:
+				continue
+			var c := mat.albedo_color
+			var tex := mat.albedo_texture
+			var img: Image = tex.get_image() if tex != null else null
+			if img != null and not img.is_empty() and img.is_compressed() and img.decompress() != OK:
+				img = null
+			if img != null and not img.is_empty():
+				img.resize(4, 4, Image.INTERPOLATE_BILINEAR)
+				var t := Color(0, 0, 0, 0)
+				for y in 4:
+					for x in 4:
+						t += img.get_pixel(x, y)
+				c *= t / 16.0
+			out.append(Color(c.r, c.g, c.b, 1.0))
+	return out
+
+
+## The glove now worn: [member glove_color], or the light one when the held gun [param weapon] is as dark as it.
+func fit_glove_to(weapon: Node) -> Color:
+	var glove := glove_color
+	if glove_contrast and weapon != null:
+		glove = glove_for(surface_albedos(weapon), glove_color, glove_light_color, glove_contrast_min)
+	for arm in [_left, _right]:
+		if arm is ZeeRiggedArm:
+			(arm as ZeeRiggedArm).set_colors(glove, sleeve_color)
+	return glove
+
 
 func _build_rigged() -> bool:
 	var path := ZeeWeaponArtTable.RIGGED_ARMS_MODEL

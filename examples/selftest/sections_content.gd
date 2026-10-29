@@ -267,6 +267,35 @@ func _pack() -> void:
 	_end()
 
 
+func _glove() -> void:
+	_begin("glove contrast")
+	var base := Color(0.17, 0.16, 0.15)
+	var light := Color(0.6, 0.52, 0.4)
+	var dark_gun := MeshInstance3D.new()
+	dark_gun.mesh = BoxMesh.new()
+	var dark := StandardMaterial3D.new()
+	dark.albedo_color = Color(0.2, 0.2, 0.2)
+	dark_gun.material_override = dark
+	var pale_gun := MeshInstance3D.new()
+	pale_gun.mesh = BoxMesh.new()
+	var pale := StandardMaterial3D.new()
+	pale.albedo_color = Color(0.8, 0.8, 0.8)
+	pale_gun.material_override = pale
+	var arms := ZeeViewArms.new()
+	_check("a dark gun gets the light glove", arms.fit_glove_to(dark_gun) == arms.glove_light_color)
+	_check("a pale gun keeps the stock glove", arms.fit_glove_to(pale_gun) == arms.glove_color)
+	arms.glove_contrast = false
+	_check("with glove_contrast off a dark gun keeps the stock glove", arms.fit_glove_to(dark_gun) == arms.glove_color)
+	var mean := ZeeViewArms.mean_of(ZeeViewArms.surface_albedos(dark_gun))
+	_check("the mean albedo is the material's colour (%.2f)" % mean.r, absf(mean.r - 0.2) < 0.001)
+	_check("the glove contrasts with the dark gun it was picked for",
+		absf(light.get_luminance() - mean.get_luminance()) > absf(base.get_luminance() - mean.get_luminance()))
+	arms.free()
+	dark_gun.free()
+	pale_gun.free()
+	_end()
+
+
 func _art() -> void:
 	_begin("the art table")
 

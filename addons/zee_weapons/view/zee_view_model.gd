@@ -343,6 +343,8 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 					grip_axis = (up + forward * 0.3).normalized()
 					radius = box.size.x * 0.3
 
+	if _arms != null:
+		_arms.fit_glove_to(_weapon)
 	_has_well = art.has_magazine() and _weapon != null
 	_well = to_aim * art.magazine_transform().origin
 	# A round fed by hand from somewhere (the top, the muzzle): where its push in starts, and
