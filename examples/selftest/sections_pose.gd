@@ -269,6 +269,7 @@ func _recoil_grip() -> void:
 
 ## The top of a sprinting gun's bounds, as a share of the screen height from the top: the lower half, never the upper.
 const MIN_SPRINT_TOP := 0.4
+const MIN_RELOAD_MOTION := 0.03
 const MIN_HIP_WIDTH := 0.18
 ## The barrel as drawn, degrees off screen-up toward the middle: below it the gun is seen end-on, above it diagonal.
 const HIP_LEAN := Vector2(10.0, 35.0)
@@ -327,5 +328,36 @@ func _view_screen() -> void:
 		if hip.is_empty() or float(hip.screen_lean) < HIP_LEAN.x or float(hip.screen_lean) > HIP_LEAN.y:
 			bare.append("%s %s" % [id, str(hip.get("screen_lean"))])
 	_check("hip without rules: the barrel is not drawn diagonally " + str(bare), bare.is_empty())
+	var still := []
+	measure.view.ads_rules = ZeeAdsRules.load_config()
+	for id in ZeeWeaponIds.all():
+		var moved := _reload_motion(measure, id)
+		if moved >= 0.0 and moved < MIN_RELOAD_MOTION:
+			still.append("%s %.3f" % [id, moved])
+	_check("reload: every reloading weapon moves at least %.0f cm over its reload %s" % [MIN_RELOAD_MOTION * 100.0, str(still)], still.is_empty())
 	measure.queue_free()
 	_end()
+
+
+## Furthest the gun strays from its resting place (metres; a turn counts as 30 cm of barrel per radian) while the reload plays; -1 when the weapon does not reload.
+func _reload_motion(measure: Node, id: StringName) -> float:
+	var art := ZeeWeaponArtTable.get_art(id)
+	if art == null or not art.has_model() or ZeeWeaponArtTable.effective_reload_keys(art).is_empty():
+		return -1.0
+	var view: ZeeViewModel = measure.view
+	if not view.equip(art).ok:
+		return -1.0
+	view.on_reload(0.0)
+	for _i in 40:
+		view.advance(0.05)
+	var weapon := view.weapon_node()
+	var rest := view.global_transform.affine_inverse() * weapon.global_transform
+	var most := 0.0
+	for step in 21:
+		view.on_reload(float(step) / 20.0)
+		view.advance(0.016)
+		var now := view.global_transform.affine_inverse() * weapon.global_transform
+		most = maxf(most, now.origin.distance_to(rest.origin))
+		most = maxf(most, rest.basis.get_rotation_quaternion().angle_to(now.basis.get_rotation_quaternion()) * 0.3)
+	view.on_reload(0.0)
+	return most
