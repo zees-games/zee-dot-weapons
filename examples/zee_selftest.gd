@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_pose.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 604
+const CHECKS := 605
 
 
 func _ready() -> void:
@@ -183,6 +183,10 @@ func _pose_stability() -> void:
 			bad_ends.append(String(art.id))
 	_check("every gun resolves to a reload animation (missing: %s)" % ", ".join(no_reload), no_reload.is_empty())
 	_check("every gun's reload starts and ends at rest (bad: %s)" % ", ".join(bad_ends), bad_ends.is_empty())
+	var base_art := ZeeWeaponArtTable.all()[0] as ZeeWeaponArt
+	var by_class := base_art.with_overrides({"reload_class": "smg"})
+	var by_keys := base_art.with_overrides({"reload_keys": [[0.0, [0, 0, 0], [0, 0, 0]], [0.5, [0, 0.1, 0], [10, 0, 0]], [1.0, [0, 0, 0], [0, 0, 0]]]})
+	_check("a profile names a reload class or gives its own keys", by_class.reload_keys == ZeeWeaponPose.RELOAD_KEYS_SMG and by_keys.reload_keys.size() == 3 and base_art.with_overrides({"reload_class": "nope"}).reload_keys == base_art.reload_keys)
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
 	# [b]A melee weapon moves when it strikes.[/b] A swing was the recoil spring alone and a melee

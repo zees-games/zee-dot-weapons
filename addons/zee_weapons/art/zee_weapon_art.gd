@@ -282,7 +282,27 @@ func with_overrides(row: Variant) -> ZeeWeaponArt:
 					out.set(key, Vector3(float(value[0]), float(value[1]), float(value[2])))
 				elif value is Vector3:
 					out.set(key, value)
+			"reload_class":
+				var table := ZeeWeaponArtTable.named_reload_keys(String(value))
+				if not table.is_empty():
+					out.reload_keys = table
+			"reload_keys":
+				var parsed := _parse_keys(value)
+				if not parsed.is_empty():
+					out.reload_keys = parsed
 	return out
+
+
+## `[[t, [x, y, z], [rx, ry, rz]], ...]` from a profile, as the Vector3 keys a pose samples. Empty if malformed.
+static func _parse_keys(value: Variant) -> Array:
+	var out: Array = []
+	if not (value is Array):
+		return out
+	for k: Variant in value:
+		if not (k is Array and (k as Array).size() == 3 and k[1] is Array and k[2] is Array and (k[1] as Array).size() == 3 and (k[2] as Array).size() == 3):
+			return []
+		out.append([float(k[0]), Vector3(float(k[1][0]), float(k[1][1]), float(k[1][2])), Vector3(float(k[2][0]), float(k[2][1]), float(k[2][2]))])
+	return out if out.size() >= 2 else []
 
 
 func view_transform() -> Transform3D:

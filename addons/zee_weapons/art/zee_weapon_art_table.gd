@@ -158,6 +158,16 @@ static func reload_keys(pose: StringName) -> Array:
 			return ZeeWeaponPose.RELOAD_KEYS_RIFLE
 
 
+## A reload key set by class name ("rifle", "smg", "tube"...), for a profile's `art: reload_class`. Empty if unknown.
+static func named_reload_keys(name: String) -> Array:
+	var table: Variant = null
+	var pose: Script = ZeeWeaponPose
+	while pose != null and table == null:
+		table = pose.get_script_constant_map().get("RELOAD_KEYS_" + name.to_upper())
+		pose = pose.get_base_script()
+	return table if table is Array else []
+
+
 ## The keys a reload plays: the art's own, else its pose's class keys. Empty only for melee and thrown.
 static func effective_reload_keys(art: ZeeWeaponArt) -> Array:
 	if art == null:
