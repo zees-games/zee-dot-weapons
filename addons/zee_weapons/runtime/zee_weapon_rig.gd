@@ -280,7 +280,10 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	if ramp < fire_min and (command.buttons & DotWeaponCommand.BUTTON_ATTACK) != 0:
 		command = command.duplicate_command()
 		command.buttons &= ~DotWeaponCommand.BUTTON_ATTACK
-	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom]
+	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom, b.recoil_pitch, b.recoil_yaw]
+	var rk := lerpf(1.0, ads_rules.recoil_for(def.id), ramp)
+	b.recoil_pitch *= rk
+	b.recoil_yaw *= rk
 	b.spread *= k
 	b.spread_moving *= k
 	b.spread_airborne *= k
@@ -290,6 +293,8 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.spread_moving = kept[1]
 	b.spread_airborne = kept[2]
 	b.bloom = kept[3]
+	b.recoil_pitch = kept[4]
+	b.recoil_yaw = kept[5]
 	if outcome.used and outcome.kind == DotWeaponOutcome.KIND_SHOT:
 		_tag_aimed_shots(outcome, art != null and art.aim_scoped)
 	return outcome

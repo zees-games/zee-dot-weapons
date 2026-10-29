@@ -454,6 +454,7 @@ func _ads_rules() -> void:
 	var _s := tweaked.set_value(&"", "spread_multiplier", 0.1)
 	var _p := tweaked.set_value(&"pistol", "enabled", false)
 	_check("and a changed server value replaces the client's (%s)" % tweaked.wire_hash(), clone.adopt_wire(tweaked.to_wire()) and is_equal_approx(float(clone.value_for(&"rifle", "spread_multiplier")), 0.1) and not clone.enabled_for(&"pistol"))
+	_check("recoil while aimed is a predicted, bounded key (%s)" % ZeeAdsRules.SPECS["recoil_multiplier"], ZeeAdsRules.PREDICTED.has("recoil_multiplier") and is_equal_approx(rules.recoil_for(&"rifle"), float(ZeeAdsRules.SPECS["recoil_multiplier"]["default"])) and not tweaked.set_value(&"", "recoil_multiplier", 2.0))
 	_check("while garbage is refused and changes nothing", not clone.adopt_wire("nope") and not clone.enabled_for(&"pistol"))
 	_check("the def is put back after: a hip shot is as wide as before", is_equal_approx(after, plain))
 	_check("and the hip walks at full speed", is_equal_approx(rig.ads_move_scale(), 1.0))

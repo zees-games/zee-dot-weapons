@@ -7,7 +7,7 @@ extends Resource
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
-const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "quickscope_fire_min"]
+const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "recoil_multiplier", "quickscope_fire_min"]
 
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
@@ -25,6 +25,7 @@ const SPECS := {
 	"zoom": {"default": 0.0, "min": 0.0, "max": 1.0},
 	"move_speed_multiplier": {"default": 0.8, "min": 0.05, "max": 1.0},
 	"spread_multiplier": {"default": 0.6, "min": 0.0, "max": 1.0},
+	"recoil_multiplier": {"default": 0.6, "min": 0.0, "max": 1.0},
 	"sway_multiplier": {"default": 0.5, "min": 0.0, "max": 1.0},
 	"toggle": {"default": false},
 	"quickscope_fire_min": {"default": 0.0, "min": 0.0, "max": 1.0},
@@ -158,6 +159,11 @@ func move_speed_for(id: StringName) -> float:
 
 func spread_for(id: StringName) -> float:
 	return float(value_for(id, "spread_multiplier")) if enabled_for(id) else 1.0
+
+
+## What is left of the recoil kick at full aim.
+func recoil_for(id: StringName) -> float:
+	return float(value_for(id, "recoil_multiplier"))
 
 
 ## What is left of the sway and bob at full aim, on top of `mp_vm_aim_steadiness`.
