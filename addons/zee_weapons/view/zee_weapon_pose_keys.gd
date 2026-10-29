@@ -140,3 +140,46 @@ const RELOAD_KEYS_MUZZLE := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
+
+## A revolver: brought up and in, tipped muzzle-up and turned in like the pistol, then a sharp roll to the right as the
+## cylinder swings out (0.14-0.22), held while the rounds go in, a flick back as it snaps shut (0.70-0.76).
+const RELOAD_KEYS_REVOLVER := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.12, Vector3(-0.06, 0.07, 0.0), Vector3(24.0, 16.0, -16.0)],
+	[0.22, Vector3(-0.075, 0.085, 0.0), Vector3(30.0, 20.0, -48.0)],
+	[0.62, Vector3(-0.077, 0.087, 0.0), Vector3(32.0, 20.0, -50.0)],
+	[0.70, Vector3(-0.07, 0.08, 0.0), Vector3(30.0, 18.0, -36.0)],
+	[0.76, Vector3(-0.06, 0.07, 0.0), Vector3(22.0, 16.0, -10.0)],
+	[0.88, Vector3(-0.015, 0.015, 0.0), Vector3(5.0, 5.0, -3.0)],
+	[0.94, Vector3(0.0, -0.003, 0.01), Vector3(-1.0, 1.0, 0.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## A submachine gun or machine pistol: the rifle's swap, quicker and tighter. Dipped and rolled for the drop (0.08-0.16),
+## the fresh magazine slapped home (0.46-0.52), a short rack and back to the hip (0.72-0.80).
+const RELOAD_KEYS_SMG := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.08, Vector3(-0.035, 0.03, 0.005), Vector3(6.0, 8.0, -24.0)],
+	[0.16, Vector3(-0.06, 0.05, 0.01), Vector3(10.0, 12.0, -38.0)],
+	[0.38, Vector3(-0.064, 0.053, 0.01), Vector3(9.0, 13.0, -40.0)],
+	[0.46, Vector3(-0.06, 0.045, 0.008), Vector3(12.0, 12.0, -36.0)],
+	[0.52, Vector3(-0.06, 0.058, 0.008), Vector3(7.0, 12.0, -34.0)],
+	[0.66, Vector3(-0.03, 0.025, 0.0), Vector3(3.0, 5.0, -12.0)],
+	[0.76, Vector3(0.0, -0.003, 0.022), Vector3(-3.0, 2.0, -3.0)],
+	[0.82, Vector3(0.0, -0.003, -0.005), Vector3(1.5, 0.0, 0.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]
+
+## An energy weapon with a cell: the gun cants over so the cell's slot faces the eye, the cell is pulled (0.14-0.30),
+## a fresh one pushed in with a settle (0.52-0.62), then a charge-up lift before it drops to the hip (0.80-0.88).
+const RELOAD_KEYS_CELL := [
+	[0.0, Vector3.ZERO, Vector3.ZERO],
+	[0.14, Vector3(-0.05, 0.05, 0.01), Vector3(6.0, 10.0, -34.0)],
+	[0.30, Vector3(-0.08, 0.075, 0.015), Vector3(10.0, 14.0, -52.0)],
+	[0.48, Vector3(-0.082, 0.077, 0.015), Vector3(10.0, 14.0, -52.0)],
+	[0.56, Vector3(-0.078, 0.066, 0.012), Vector3(13.0, 14.0, -48.0)],
+	[0.62, Vector3(-0.078, 0.08, 0.012), Vector3(8.0, 14.0, -46.0)],
+	[0.80, Vector3(-0.03, 0.035, 0.0), Vector3(2.0, 5.0, -12.0)],
+	[0.88, Vector3(0.0, 0.01, 0.015), Vector3(-2.0, 1.0, -2.0)],
+	[1.0, Vector3.ZERO, Vector3.ZERO],
+]

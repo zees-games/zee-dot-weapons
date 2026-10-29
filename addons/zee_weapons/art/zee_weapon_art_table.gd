@@ -158,6 +158,13 @@ static func reload_keys(pose: StringName) -> Array:
 			return ZeeWeaponPose.RELOAD_KEYS_RIFLE
 
 
+## The keys a reload plays: the art's own, else its pose's class keys. Empty only for melee and thrown.
+static func effective_reload_keys(art: ZeeWeaponArt) -> Array:
+	if art == null:
+		return []
+	return art.reload_keys if not art.reload_keys.is_empty() else reload_keys(art.pose)
+
+
 ## How much a weapon of each pose sways, before its own [member ZeeWeaponArt.weight].
 static func pose_weight(pose: StringName) -> float:
 	match pose:
@@ -358,6 +365,7 @@ static func pistol() -> ZeeWeaponArt:
 ## A full-lug revolver: the round goes into the cylinder, a third of the way from the back.
 static func revolver() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.REVOLVER, "revolver", POSE_PISTOL)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_REVOLVER
 	return _loose(art, ROUND_CARTRIDGE, Vector3(0.0, 0.02, 0.07))
 
 
@@ -365,12 +373,15 @@ static func machine_pistol() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.MACHINE_PISTOL, "machine_pistol", POSE_PISTOL).with_magazine(
 		GUNS + "machine_pistol_magazine.glb", Vector3(0.0, -0.125, 0.138)
 	)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_SMG
 	return art
 
 
 ## Two stacked barrels over a stub of a grip: the smallest gun in the pack, 26 cm.
 static func derringer() -> ZeeWeaponArt:
-	return _loose(_gun(ZeeWeaponIds.DERRINGER, "derringer", POSE_PISTOL), DART, Vector3(0.0, -0.05, 0.0))
+	var art := _loose(_gun(ZeeWeaponIds.DERRINGER, "derringer", POSE_PISTOL), DART, Vector3(0.0, -0.05, 0.0))
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_BREAK
+	return art
 
 
 # --- Primaries --------------------------------------------------------------
@@ -379,6 +390,7 @@ static func smg() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.SMG, "smg", POSE_RIFLE).with_magazine(
 		GUNS + "smg_magazine.glb", Vector3(0.0, -0.068, -0.044)
 	)
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_SMG
 	return art
 
 
@@ -518,6 +530,7 @@ static func beamer() -> ZeeWeaponArt:
 	art.magazine_part = &"cell"
 	art.magazine_offset = Vector3(0.0, -0.18, -0.10)
 	art.magazine_scale = 1.3
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_CELL
 	return art
 
 
@@ -532,6 +545,7 @@ static func charge_rifle() -> ZeeWeaponArt:
 	art.magazine_part = &"cell"
 	art.magazine_offset = Vector3(0.0, -0.33, -0.15)
 	art.magazine_scale = 1.5
+	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_CELL
 	return art
 
 

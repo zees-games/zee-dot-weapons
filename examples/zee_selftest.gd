@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_pose.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 602
+const CHECKS := 604
 
 
 func _ready() -> void:
@@ -169,6 +169,20 @@ func _pose_stability() -> void:
 	_check("a reload's keys are at rest at 0 and at 1",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 0.0)[1].length() < 0.0001
 		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 1.0)[1].length() < 0.0001)
+	# Every gun resolves to a reload (its own or its class's), and every key set is at rest at both ends.
+	var no_reload: PackedStringArray = []
+	var bad_ends: PackedStringArray = []
+	for art in ZeeWeaponArtTable.all():
+		if art.pose == ZeeWeaponArtTable.POSE_MELEE or art.pose == ZeeWeaponArtTable.POSE_THROWN:
+			continue
+		var keys := ZeeWeaponArtTable.effective_reload_keys(art)
+		if keys.is_empty():
+			no_reload.append(String(art.id))
+			continue
+		if ZeeWeaponPose.sample_keys(keys, 0.0)[0].length() > 0.0001 or ZeeWeaponPose.sample_keys(keys, 1.0)[0].length() > 0.0001:
+			bad_ends.append(String(art.id))
+	_check("every gun resolves to a reload animation (missing: %s)" % ", ".join(no_reload), no_reload.is_empty())
+	_check("every gun's reload starts and ends at rest (bad: %s)" % ", ".join(bad_ends), bad_ends.is_empty())
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
 	# [b]A melee weapon moves when it strikes.[/b] A swing was the recoil spring alone and a melee
