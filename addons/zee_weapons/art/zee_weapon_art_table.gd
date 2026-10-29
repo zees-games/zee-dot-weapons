@@ -428,6 +428,8 @@ static func rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.RIFLE, "rifle", POSE_RIFLE).with_magazine(
 		GUNS + "rifle_magazine.glb", Vector3(0.0, -0.078, 0.011)
 	)
+	art.fore_along = 0.56
+	art.fore_up = 0.32
 	return art
 
 
@@ -454,7 +456,10 @@ static func burst_rifle() -> ZeeWeaponArt:
 
 
 static func shotgun() -> ZeeWeaponArt:
-	return _tube(_gun(ZeeWeaponIds.SHOTGUN, "shotgun", POSE_RIFLE))
+	var art := _tube(_gun(ZeeWeaponIds.SHOTGUN, "shotgun", POSE_RIFLE))
+	art.fore_along = 0.56
+	art.fore_up = 0.32
+	return art
 
 
 ## A long barrel over a fore-end, a drum under it and a full stock.
