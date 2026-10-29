@@ -17,6 +17,9 @@ const CHANNEL := "zee.view"
 ## For a muzzle flash, laser or scope overlay that cannot be hung before the model exists.
 signal model_ready(id: StringName, weapon: Node3D)
 
+## Every frame, where the hands belong: [param grip] and [param fore] in [param anchor]'s space, for a game that draws its own arms (with [member show_arms] off).
+signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringName)
+
 @export_group("Wiring")
 
 ## The arms. Left null, the view model builds its own on first use.
@@ -387,11 +390,14 @@ func _bounds_in(space: Node3D, node: Node) -> AABB:
 ## node, so the hands come up to the sight with the gun while the shoulders stay below the
 ## screen. Cheap (two transforms), so it runs every frame.
 func _place_hands() -> void:
-	if _arms == null or _art == null or not _arms.has_method("reach"):
+	if _art == null or _aim_node == null:
 		return
-	var aim := _aim_node.transform if _aim_node != null else Transform3D.IDENTITY
+	var aim := _aim_node.transform
 	var pose := _art.pose if _art.has_model() else &"fists"
 	var fore := aim * _support_hand()
+	hands_reached.emit(_animated, aim * _grip_at, fore, pose)
+	if _arms == null or not _arms.has_method("reach"):
+		return
 	if "support_free" in _arms:
 		_arms.set("support_free", _has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0)
 	# A game's own arms may answer the older three-argument reach; they get no axes.
