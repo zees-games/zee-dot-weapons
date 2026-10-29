@@ -247,6 +247,8 @@ const MIN_HIP_WIDTH := 0.18
 ## The barrel as drawn, degrees off screen-up toward the middle: below it the gun is seen end-on, above it diagonal.
 const HIP_LEAN := Vector2(10.0, 35.0)
 const MAX_HIP_CANT := 12.0
+## A thrown weapon is a small round object: under the floor it vanishes, over the ceiling it hides the view.
+const THROWN_HIP_WIDTH := Vector2(0.20, 0.351)
 
 
 ## What the player sees, measured through a camera, so a check cannot pass while the render is diagonal.
@@ -276,6 +278,15 @@ func _view_screen() -> void:
 	_check("hip: every gun is drawn canted at most %d degrees %s" % [int(MAX_HIP_CANT), str(canted)], canted.is_empty())
 	_check("hip: every gun spans at least %d%% of the screen %s" % [int(MIN_HIP_WIDTH * 100.0), str(small)], small.is_empty())
 	_check("aim: every sight sits on the screen centre " + str(off_centre), off_centre.is_empty())
+	var thrown_off := []
+	for id in ZeeWeaponIds.all():
+		var art := ZeeWeaponArtTable.get_art(id)
+		if art == null or art.pose != ZeeWeaponArtTable.POSE_THROWN:
+			continue
+		var w: Dictionary = measure.measure(id, false)
+		if w.is_empty() or float(w.width) < THROWN_HIP_WIDTH.x or float(w.width) > THROWN_HIP_WIDTH.y:
+			thrown_off.append("%s %.0f%%" % [id, float(w.get("width", 0.0)) * 100.0])
+	_check("hip: every thrown weapon spans %d-%d%% of the screen %s" % [int(THROWN_HIP_WIDTH.x * 100.0), int(THROWN_HIP_WIDTH.y * 100.0), str(thrown_off)], thrown_off.is_empty())
 	# A game that assigns no rules (the art's own hip) is stood up too.
 	measure.view.ads_rules = null
 	var bare := []

@@ -691,6 +691,7 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 		if _fx != null:
 			var def := arsenal.current_def()
 			var weapon_id: StringName = def.id if def != null else &""
+			_fx.first_person_flash_scale = _view.flash_scale()
 			_fx.play_use(outcome, _view.muzzle_transform(), weapon_id)
 			if outcome.kind == DotWeaponOutcome.KIND_SHOT and _view.has_method(&"ejects") and _view.ejects():
 				_fx.play_eject(_view.eject_transform(), weapon_id)

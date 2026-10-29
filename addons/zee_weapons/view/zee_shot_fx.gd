@@ -100,6 +100,9 @@ var catalogue: DotWeaponCatalogue = null
 ## Multiplier on every flash's size, on top of the weapon class's own ([constant FLASH]).
 @export_range(0.0, 3.0, 0.05) var flash_scale: float = 1.0
 
+## Size of a first-person flash on top of everything else; the rig sets it below 1 while the view is scoped, because the zoom magnifies the flash with the world.
+var first_person_flash_scale: float = 1.0
+
 ## Multiplier on the flash's light. 0 draws no light at all.
 @export_range(0.0, 3.0, 0.05) var flash_light_scale: float = 1.0
 
@@ -690,6 +693,7 @@ func _pack_flash(muzzle: Transform3D, weapon_class: StringName, id: StringName, 
 	if flash == null:
 		return true
 	flash.global_transform = muzzle
+	flash.scale = Vector3.ONE * (first_person_flash_scale if first_person else 1.0)
 	DotWeaponMuzzle.fire(flash)
 	return true
 

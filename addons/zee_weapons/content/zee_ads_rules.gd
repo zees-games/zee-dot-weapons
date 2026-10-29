@@ -34,8 +34,10 @@ const SPECS := {
 	"view_shift_x": {"default": 0.12, "min": -0.5, "max": 0.5},
 	"view_shift_y": {"default": -0.10, "min": -0.5, "max": 0.5},
 	"view_shift_z": {"default": -0.15, "min": -0.5, "max": 0.5},
+	"thrown_span": {"default": 0.31, "min": 0.05, "max": 1.0},
 	"hip_cant": {"default": 0.3, "min": 0.0, "max": 1.0},
 	"hip_lean": {"default": 25.0, "min": -30.0, "max": 60.0},
+	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 }
 
 ## The profile every weapon without an override uses.
@@ -149,7 +151,6 @@ func view_scale_for(id: StringName) -> float:
 	return float(value_for(id, "view_scale"))
 
 
-## How much of the art's hip roll is kept: 1 is the table's full cant, 0 holds the gun upright.
 ## How far into the aim-in (0 to 1) the weapon may fire: 0 fires at any moment (a quick scope), 1 only once fully aimed.
 func quickscope_fire_min_for(id: StringName) -> float:
 	return float(value_for(id, "quickscope_fire_min"))
@@ -165,6 +166,12 @@ func scope_lens_min_for(id: StringName) -> float:
 	return float(value_for(id, "scope_lens_min"))
 
 
+## Metres the longest side of a thrown weapon's model is drawn at, so a small model and a large one fill the same share of the screen.
+func thrown_span_for(id: StringName) -> float:
+	return float(value_for(id, "thrown_span"))
+
+
+## How much of the art's hip roll is kept: 1 is the table's full cant, 0 holds the gun upright.
 func hip_cant_for(id: StringName) -> float:
 	return float(value_for(id, "hip_cant"))
 
@@ -172,6 +179,11 @@ func hip_cant_for(id: StringName) -> float:
 ## Degrees the barrel leans toward the screen's middle at the hip, as drawn. The view model turns the gun to it.
 func hip_lean_for(id: StringName) -> float:
 	return float(value_for(id, "hip_lean"))
+
+
+## How much a hit shakes the view and wobbles the aim while this weapon is held, on top of the server's `sv_hit_*` numbers: 0 steady, 1 as set.
+func hit_flinch_for(id: StringName) -> float:
+	return float(value_for(id, "hit_flinch_multiplier"))
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).

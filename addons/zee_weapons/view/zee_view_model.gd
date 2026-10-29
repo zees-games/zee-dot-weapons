@@ -712,7 +712,9 @@ func is_aim_held() -> bool:
 
 ## [param art] at the rules' size and place for it: a copy, the table's own is never changed.
 func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
-	# Only a gun: a knife or a grenade sized like a rifle is a fist round a log.
+	# A knife or a grenade sized like a rifle is a fist round a log: a grenade has its own span, a knife none.
+	if art.pose == ZeeWeaponArtTable.POSE_THROWN:
+		return _sized_thrown(art)
 	if not art.model_forward.is_equal_approx(Vector3.FORWARD):
 		return art
 	var sized := art.duplicate() as ZeeWeaponArt
@@ -726,6 +728,19 @@ func _sized(art: ZeeWeaponArt) -> ZeeWeaponArt:
 		cant = ads_rules.hip_cant_for(art.id)
 	var yaw := hip_yaw(sized.view_offset + Vector3(0.0, 0.0, position.z), lean)
 	sized.view_rotation = Vector3(art.view_rotation.x, yaw, art.view_rotation.z * cant)
+	return sized
+
+
+## A grenade drawn so its longest side is the rules' `thrown_span`, whatever model the table or a pack gives it.
+func _sized_thrown(art: ZeeWeaponArt) -> ZeeWeaponArt:
+	if ads_rules == null or art.model_path == "":
+		return art
+	var size := ZeeModelCache.bounds(art.model_path).size
+	var extent := maxf(size.x, maxf(size.y, size.z))
+	if extent <= 0.0:
+		return art
+	var sized := art.duplicate() as ZeeWeaponArt
+	sized.view_scale = ads_rules.thrown_span_for(art.id) / extent
 	return sized
 
 
@@ -752,6 +767,11 @@ func can_aim() -> bool:
 	return _art != null and _art.aim_enabled and (ads_rules == null or ads_rules.enabled_for(_art.id))
 
 
+## How big a muzzle flash is drawn: 1 at the hip, the scope's own zoom through a scope, which cancels the magnification.
+func flash_scale() -> float:
+	return clampf(aim_fov_scale(), 0.1, 1.0) if is_scoped() else 1.0
+
+
 ## The field-of-view multiplier this frame: 1 at the hip, the zoom at full aim; the game applies it (`DotFpsView.external_fov_scale`).
 func aim_fov_scale() -> float:
 	if _art == null:
@@ -765,6 +785,27 @@ func aim_fov_scale() -> float:
 ## Whether the view is through a scope right now: a scoped weapon at (nearly) full aim.
 func is_scoped() -> bool:
 	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= 0.95
+
+
+## Whether the weapon in hand is looked through (a scope), at any point of the aim-in.
+func has_scope() -> bool:
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false))
+
+
+## How visible the scope's surround is, 0 to 1: it fades in over the last of the aim-in, not at the end.
+func scope_fraction() -> float:
+	if not has_scope():
+		return 0.0
+	var start := 0.6 if ads_rules == null else ads_rules.scope_fade_start_for(_art.id)
+	return smoothstep(start, 1.0, _aim_fraction)
+
+
+## The scope lens's size, a share of its full size: small at the start of the aim-in, growing toward the eye.
+func scope_lens_scale() -> float:
+	if not has_scope():
+		return 1.0
+	var least := 0.3 if ads_rules == null else ads_rules.scope_lens_min_for(_art.id)
+	return lerpf(least, 1.0, _ease(_aim_fraction))
 
 
 func _advance_aim(delta: float) -> void:
@@ -787,27 +828,6 @@ func _advance_aim(delta: float) -> void:
 func _apply_aim(f: float) -> void:
 	if _art == null or _aim_node == null:
 		return
-## Whether the weapon in hand is looked through (a scope), at any point of the aim-in.
-func has_scope() -> bool:
-	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false))
-
-
-## How visible the scope's surround is, 0 to 1: it fades in over the last of the aim-in, not at the end.
-func scope_fraction() -> float:
-	if not has_scope():
-		return 0.0
-	var start := 0.6 if ads_rules == null else ads_rules.scope_fade_start_for(_art.id)
-	return smoothstep(start, 1.0, _aim_fraction)
-
-
-## The scope lens's size, a share of its full size: small at the start of the aim-in, growing toward the eye.
-func scope_lens_scale() -> float:
-	if not has_scope():
-		return 1.0
-	var least := 0.3 if ads_rules == null else ads_rules.scope_lens_min_for(_art.id)
-	return lerpf(least, 1.0, _ease(_aim_fraction))
-
-
 
 	var hip := _art.view_transform()
 
