@@ -38,6 +38,8 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 @export var hands_scale: float = 1.0
 ## How far into the aim-in a scoped weapon's arms are hidden: past it the raised gun is out of the arms' reach and the scope covers the view.
 @export_range(0.0, 1.0, 0.01) var scope_arms_hide: float = 0.6
+## A game's setting (a cvar) that beats the weapon's art and [member scope_arms_hide]; below 0 is off.
+var scope_arms_hide_override: float = -1.0
 ## The nearest the hands frame brings the grip to the eye, metres (0 = no limit): a weapon drawn close, a pistol, would
 ## otherwise put a life-size hand over the whole view.
 @export var hands_min_distance: float = 0.0
@@ -824,9 +826,16 @@ func is_scoped() -> bool:
 	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= 0.95
 
 
-## Whether a scoped weapon's arms are hidden: from [member scope_arms_hide] of the aim-in on.
+## The aim fraction the arms hide at: the override, else the weapon's art key, else [member scope_arms_hide].
+func scope_arms_hide_at() -> float:
+	if scope_arms_hide_override >= 0.0:
+		return scope_arms_hide_override
+	return _art.scope_arms_hide if _art != null and _art.scope_arms_hide >= 0.0 else scope_arms_hide
+
+
+## Whether a scoped weapon's arms are hidden: from [method scope_arms_hide_at] of the aim-in on.
 func arms_hidden_by_scope() -> bool:
-	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide_at()
 
 
 ## Whether the weapon in hand is looked through (a scope), at any point of the aim-in.
@@ -1086,6 +1095,11 @@ func art_hand_scale() -> float:
 
 func art_forearm_scale() -> float:
 	return _art.forearm_scale if _art != null else 0.0
+
+
+## The weapon's arm-lean cap, or below 0 for the arms' own.
+func art_max_lean() -> float:
+	return _art.max_lean if _art != null else -1.0
 
 
 ## Measures the muzzle, honouring an override on the art.

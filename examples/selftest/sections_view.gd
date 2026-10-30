@@ -227,6 +227,18 @@ func _pose_keys() -> void:
 		sock.grip_socket.is_equal_approx(Vector3(0.01, -0.02, 0.03)) and sock.support_grip.is_equal_approx(Vector3(0, 0.05, -0.2)) and is_equal_approx(sock.hand_scale, 0.36) and is_equal_approx(sock.forearm_scale, 0.5) and is_equal_approx(over_hand.hand_scale, 0.4) and over_hand.grip_socket.is_equal_approx(Vector3(0, 0, 0.1)))
 	var thin := base_art.with_overrides({"forearm_scale": 0.4})
 	_check("a row or profile sizes the first-person forearm, and the default keeps the arms' own", is_equal_approx(thin.forearm_scale, 0.4) and is_equal_approx(base_art.forearm_scale, 0.0) and is_equal_approx(ZeeWeaponArt.new().forearm_scale, 0.0))
+	var tuned := base_art.with_overrides({"scope_arms_hide": 0.3, "max_lean": 0.1})
+	var dressed_art := ZeeWeaponArt.new()
+	ZeeArtDress.apply(dressed_art, {"model": "res://assets/low-poly-guns/smg.glb", "scope_arms_hide": 0.2, "max_lean": 0.0})
+	var vm := ZeeViewModel.new()
+	vm.set("_art", tuned)
+	var at_art := vm.scope_arms_hide_at()
+	vm.scope_arms_hide_override = 0.9
+	var at_override := vm.scope_arms_hide_at()
+	vm.free()
+	_check("scope_arms_hide and max_lean are art keys and a cvar override beats the weapon's",
+		is_equal_approx(tuned.scope_arms_hide, 0.3) and is_equal_approx(tuned.max_lean, 0.1) and is_equal_approx(dressed_art.scope_arms_hide, 0.2) and is_equal_approx(dressed_art.max_lean, 0.0)
+		and is_equal_approx(at_art, 0.3) and is_equal_approx(at_override, 0.9) and base_art.scope_arms_hide < 0.0 and base_art.max_lean < 0.0)
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
 	_pose_swing()

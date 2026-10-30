@@ -164,6 +164,10 @@ extends Resource
 
 ## Size of the first-person hands on this weapon (a small gun wants smaller hands); 0 keeps the arms' own.
 @export var hand_scale: float = 0.0
+## Aim fraction at which this weapon's arms hide behind a scope; below 0 keeps [member ZeeViewModel.scope_arms_hide].
+@export var scope_arms_hide: float = -1.0
+## Most the first-person arms lean toward an out-of-reach hand with this weapon; below 0 keeps the arms' own.
+@export var max_lean: float = -1.0
 
 ## Size of the first-person forearm on this weapon (a short grip near the eye wants a slimmer one); 0 keeps the arms' own.
 @export var forearm_scale: float = 0.0
@@ -301,7 +305,7 @@ func with_overrides(row: Variant) -> ZeeWeaponArt:
 				out.hands = int(value)
 			"world_scale":
 				out.world_scale = float(value)
-			"fore_along", "fore_up", "grip_along", "grip_up", "muzzle_distance", "hand_scale", "forearm_scale":
+			"fore_along", "fore_up", "grip_along", "grip_up", "muzzle_distance", "hand_scale", "forearm_scale", "scope_arms_hide", "max_lean":
 				out.set(key, float(value))
 			"support_grip", "grip_socket", "muzzle_socket", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation":
 				if value is Array and (value as Array).size() == 3:

@@ -177,3 +177,5 @@ Sprinting lowers the weapon on its own layer, separate from the aim layer: `ZeeV
 **The wall response is a spring that starts at the gun's real reach.** The probe length is the drawn muzzle distance divided by the exaggeration (`view_scale`), times `wall_reach`; a wall beyond it does nothing. Slow approaches nudge the gun up and sideways, fast ones push it back harder; floors and ceilings count only when the camera looks at them (`wall_floor_look`), and the whole offset fades with the aim fraction so the sight line stays put. The suite checks no push before the reach and identity under aim.
 
 `forearm_scale` is an art key beside `hand_scale` (0 keeps the arms' own): a one-hand pistol row sets it near 0.36 so the forearm no longer fills the lower right of the screen.
+
+`scope_arms_hide` (aim fraction 0 to 1, below 0 keeps `ZeeViewModel.scope_arms_hide`, 0.6) is when a scoped weapon's arms vanish, and `max_lean` (metres-ish cap, below 0 keeps the arms' own 0.4, 0 is no lean) caps how far the arms lean to reach a hand target; both are art keys per weapon, and a game's cvar overrides them (`ZeeViewModel.scope_arms_hide_override`, `art_max_lean()`).
