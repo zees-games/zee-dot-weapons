@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_view.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 648
+const CHECKS := 650
 
 
 func _ready() -> void:
@@ -192,6 +192,18 @@ func _view_models() -> void:
 	var built := arms.build()
 	_check("the first-person arms build: %s" % _why(built), built.ok)
 	_check("and there are two of them", arms.has_arms())
+
+	# A game mounting its own arms turns show_arms off after the model is in the tree: one arm set, never two.
+	var late := ZeeViewModel.new()
+	add_child(late)
+	var _e := late.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
+	var had := late.find_children("*", "ZeeViewArms", true, false).size()
+	late.show_arms = false
+	_check("show_arms turned off after the build removes the built arms (%d before, %d after)" % [had, late.find_children("*", "ZeeViewArms", true, false).size()],
+		had == 1 and late.find_children("*", "ZeeViewArms", true, false).is_empty())
+	late.show_arms = true
+	_check("and turned back on builds them again", late.find_children("*", "ZeeViewArms", true, false).size() == 1)
+	late.queue_free()
 
 	view.queue_free()
 	arms.queue_free()

@@ -32,7 +32,24 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 
 ## Whether to build and show hands at all.
 ## A real configuration (non-humanoid characters, a gun with no holder), not a debug switch.
-@export var show_arms: bool = true
+## Turned off after the model is built (a game mounting its own arms once this is in the tree), the built hands go too.
+@export var show_arms: bool = true:
+	set(value):
+		show_arms = value
+		if not _built:
+			return
+		if not value and _arms != null:
+			if _arms.get_parent() == _animated:
+				_animated.remove_child(_arms)
+				_arms.queue_free()
+			else:
+				_arms.visible = false
+			_arms = null
+		elif value and _arms == null:
+			_build_arms()
+			if _art != null and _arms != null:
+				_arms.set_pose(_art.pose)
+				_reach_for(_art)
 
 ## Which skin the hands wear. Passed to [ZeeViewArms] when this builds its own.
 @export_file("*.png", "*.jpg", "*.webp") var arm_skin: String = ""
