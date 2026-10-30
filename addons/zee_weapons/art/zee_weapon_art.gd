@@ -158,6 +158,13 @@ extends Resource
 ## from [member fore_along] and [member fore_up] over the mesh's bounds.
 @export var support_grip: Vector3 = Vector3.INF
 
+## Where the firing hand's palm goes and where the bore ends, in the weapon model's own space; [constant Vector3.INF] measures them.
+@export var grip_socket: Vector3 = Vector3.INF
+@export var muzzle_socket: Vector3 = Vector3.INF
+
+## Size of the first-person hands on this weapon (a small gun wants smaller hands); 0 keeps the arms' own.
+@export var hand_scale: float = 0.0
+
 @export_group("Sprint")
 
 ## The sprint carry, a layer over the hip hold: [constant Vector3.INF] takes the pose's default
@@ -278,7 +285,7 @@ func with_magazine(path: String, offset: Vector3 = Vector3.ZERO) -> ZeeWeaponArt
 
 ## The first-person transform, before any animation the rig applies.
 ## [param row] (a profile's `extra: art:`; vectors as 3-number arrays) over a copy of this art, or this
-## art itself when the row says nothing. Keys: `hands`, `support_grip`, `sprint_offset`, `sprint_rotation`,
+## art itself when the row says nothing. Keys: `hands`, `support_grip`, `grip_socket`, `muzzle_socket`, `fore_along`, `fore_up`, `grip_along`, `grip_up`, `muzzle_distance`, `hand_scale`, `sprint_offset`, `sprint_rotation`,
 ## `sprint_world_offset`, `sprint_world_rotation`, `world_scale`, `reload` (merged over the art's).
 func with_overrides(row: Variant) -> ZeeWeaponArt:
 	if not (row is Dictionary) or (row as Dictionary).is_empty():
@@ -291,7 +298,9 @@ func with_overrides(row: Variant) -> ZeeWeaponArt:
 				out.hands = int(value)
 			"world_scale":
 				out.world_scale = float(value)
-			"support_grip", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation":
+			"fore_along", "fore_up", "grip_along", "grip_up", "muzzle_distance", "hand_scale":
+				out.set(key, float(value))
+			"support_grip", "grip_socket", "muzzle_socket", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation":
 				if value is Array and (value as Array).size() == 3:
 					out.set(key, Vector3(float(value[0]), float(value[1]), float(value[2])))
 				elif value is Vector3:

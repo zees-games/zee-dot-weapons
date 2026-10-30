@@ -1072,8 +1072,16 @@ func _add_part(path: String, at: Transform3D) -> Node3D:
 	return part
 
 
+## The held weapon art's first-person hand size, 0 when it keeps the arms' own.
+func art_hand_scale() -> float:
+	return _art.hand_scale if _art != null else 0.0
+
+
 ## Measures the muzzle, honouring an override on the art.
 func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
+	if art.muzzle_socket.is_finite():
+		return art.muzzle_socket
+
 	var distance := art.muzzle_distance
 
 	if distance <= 0.0:

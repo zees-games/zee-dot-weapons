@@ -63,6 +63,13 @@ static func measure(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D) -> Dictio
 					grip_axis = (up + forward * 0.3).normalized()
 					radius = box.size.x * 0.3
 
+	# A profile's sockets, in the model's own space, replace what the mesh bounds gave.
+	if weapon != null:
+		if art.grip_socket.is_finite():
+			grip = weapon.transform * art.grip_socket
+		if art.support_grip.is_finite():
+			fore = weapon.transform * art.support_grip
+
 	return {"grip": grip, "fore": fore, "grip_axis": grip_axis, "fore_axis": fore_axis, "radius": radius}
 
 

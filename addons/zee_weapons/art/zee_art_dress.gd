@@ -30,6 +30,7 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	art.model_forward = Vector3.FORWARD
 	art.muzzle_distance = float(row.get("muzzle", 0.0))
 	art.muzzle_offset = Vector3.ZERO
+	_sockets(art, row)
 	art.ejects = false
 	# The model's own sight is aimed down, nothing built over it; the built ring and post only when the row asks
 	# (`iron: true`) or the model has neither a sight nor a written `aim`.
@@ -61,3 +62,17 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 		art.aim_zoom = float(view["zoom"])
 
 	art.aim_scoped = bool(view.get("scoped", false))
+
+
+## A row's declared sockets (model space, 3-number arrays or vectors) and hand fractions, where the mesh bounds would be measured.
+static func _sockets(art: ZeeWeaponArt, row: Dictionary) -> void:
+	for key: String in ["grip_socket", "muzzle_socket", "support_grip"]:
+		var v: Variant = row.get(key)
+		if v is Array and (v as Array).size() == 3:
+			art.set(key, Vector3(float(v[0]), float(v[1]), float(v[2])))
+		elif v is Vector3:
+			art.set(key, v)
+
+	for key: String in ["fore_along", "fore_up", "grip_along", "grip_up", "hand_scale"]:
+		if row.has(key):
+			art.set(key, float(row[key]))

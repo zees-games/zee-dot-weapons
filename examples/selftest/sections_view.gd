@@ -220,6 +220,11 @@ func _pose_keys() -> void:
 	var by_class := base_art.with_overrides({"reload_class": "smg"})
 	var by_keys := base_art.with_overrides({"reload_keys": [[0.0, [0, 0, 0], [0, 0, 0]], [0.5, [0, 0.1, 0], [10, 0, 0]], [1.0, [0, 0, 0], [0, 0, 0]]]})
 	_check("a profile names a reload class or gives its own keys", by_class.reload_keys == ZeeWeaponPose.RELOAD_KEYS_SMG and by_keys.reload_keys.size() == 3 and base_art.with_overrides({"reload_class": "nope"}).reload_keys == base_art.reload_keys)
+	var sock := ZeeWeaponArt.new()
+	ZeeArtDress.apply(sock, {"model": "", "motion": "gun", "grip_socket": [0.01, -0.02, 0.03], "support_grip": Vector3(0, 0.05, -0.2), "hand_scale": 0.36})
+	var over_hand := base_art.with_overrides({"hand_scale": 0.4, "grip_socket": [0, 0, 0.1]})
+	_check("a row names the grip socket, the support grip and the hand size, and a profile overrides them",
+		sock.grip_socket.is_equal_approx(Vector3(0.01, -0.02, 0.03)) and sock.support_grip.is_equal_approx(Vector3(0, 0.05, -0.2)) and is_equal_approx(sock.hand_scale, 0.36) and is_equal_approx(over_hand.hand_scale, 0.4) and over_hand.grip_socket.is_equal_approx(Vector3(0, 0, 0.1)))
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
 	_pose_swing()
