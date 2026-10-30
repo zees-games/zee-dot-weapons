@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_view.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 644
+const CHECKS := 648
 
 
 func _ready() -> void:
@@ -60,6 +60,7 @@ func _ready() -> void:
 	_input_bindings()
 	await _stock_sounds()
 	await _wall_slam()
+	await _wall_arms()
 	_effects_pack_light()
 	_view_screen()
 
@@ -571,6 +572,53 @@ func _wall_slam() -> void:
 	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.9, 1.0) == 0.0)
 	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.9, 0.8) > 0.1)
 	_check("the retract is capped", ZeeWallSlam.obstruction(0.9, 0.0) == ZeeWallSlam.MAX_RETRACT)
+	camera.queue_free()
+	wall.queue_free()
+	_end()
+
+
+## A scripted run into a wall, then a reload against it: every frame the hands stay on the gun, each arm
+## stays an arm's length, and the shoulders stay below the screen and in front of the near plane.
+func _wall_arms() -> void:
+	_begin("the arms while the weapon is pulled back from a wall")
+	var camera := Camera3D.new()
+	add_child(camera)
+	var view := ZeeViewModel.new()
+	camera.add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"bullpup"))
+	var grip := {}
+	view.hands_reached.connect(func(at: Node3D, hand: Vector3, _fore: Vector3, _pose: StringName) -> void: grip["at"] = at.global_transform * hand)
+	var wall := StaticBody3D.new()
+	var box := CollisionShape3D.new()
+	box.shape = BoxShape3D.new()
+	(box.shape as BoxShape3D).size = Vector3(20.0, 20.0, 1.0)
+	wall.add_child(box)
+	wall.position = Vector3(0.0, 0.0, -3.5)
+	add_child(wall)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var arms := view.get_node_or_null("Animated/Arms") as ZeeViewArms
+	var worst := {"gap": 0.0, "long": 0.0, "high": -INF, "near": -INF, "pulled": 0.0}
+	for i in range(150):
+		camera.position.z = maxf(-0.1 * i, -2.65)
+		view.on_reload(clampf((i - 90) / 50.0, 0.0, 1.0))
+		view.advance(1.0 / 60.0)
+		if arms == null or arms.last_hands.is_empty():
+			break
+		var to_cam := camera.global_transform.affine_inverse() * arms.global_transform
+		var hands := arms.last_hands
+		worst["gap"] = maxf(worst["gap"], (arms.global_transform * (hands["right"] as Vector3)).distance_to(grip.get("at", Vector3.INF)))
+		worst["pulled"] = maxf(worst["pulled"], view.wall_amount())
+		for side in ["right", "left"]:
+			var shoulder: Vector3 = to_cam * (hands[side + "_shoulder"] as Vector3)
+			worst["long"] = maxf(worst["long"], shoulder.distance_to(to_cam * (hands[side] as Vector3)))
+			worst["high"] = maxf(worst["high"], shoulder.y)
+			worst["near"] = maxf(worst["near"], shoulder.z)
+	_check("the run reaches the wall and pulls the weapon back (%.3f m)" % worst["pulled"], worst["pulled"] > 0.2)
+	_check("the right hand stays on the grip every frame (%.4f m at most)" % worst["gap"], worst["gap"] < 0.002)
+	_check("no arm is drawn longer than an arm (%.3f m at most)" % worst["long"], worst["long"] < 0.6)
+	_check("the shoulders stay below the screen and in front of the near plane (y %.3f, z %.3f at most)" % [worst["high"], worst["near"]],
+		worst["high"] < -0.3 and worst["near"] < -camera.near)
 	camera.queue_free()
 	wall.queue_free()
 	_end()

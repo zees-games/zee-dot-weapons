@@ -191,6 +191,8 @@ func build() -> DotResult:
 ## True while the support hand is sent somewhere ([method reach]'s `fore`) even though the pose
 ## would cup it on the grip: set by the view model through a pistol's magazine change.
 var support_free := false
+## Where each shoulder and hand was put last ([method _hands_for]'s keys), in this node's space, for a check.
+var last_hands: Dictionary = {}
 
 
 ## Points each arm from a shoulder below the screen to its hand on the weapon: the right
@@ -225,6 +227,7 @@ func reach(
 		# width from the fist that is supposed to carry it.
 		hands["left"] = fore
 		hands["left_shoulder"] = Vector3(minf(fore.x - 0.05, -0.05), -0.46, minf(fore.z + 0.26, -0.09))
+	last_hands = hands
 
 	if _style_built == &"rigged":
 		_right.visible = true

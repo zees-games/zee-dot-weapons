@@ -327,8 +327,9 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 	_grip_radius = radius * art.view_scale
 	_place_hands()
 
-## node, so the hands come up to the sight with the gun while the shoulders stay below the
-## screen. Cheap (two transforms), so it runs every frame.
+
+## Every frame, the arms onto the hands: the hands follow the gun while the built arms' shoulders stay
+## put in the view, so neither a wall's pull-back nor a reload swings them up into view or past the near plane.
 func _place_hands() -> void:
 	if _art == null or _aim_node == null:
 		return
@@ -338,6 +339,12 @@ func _place_hands() -> void:
 	hands_reached.emit(_animated, aim * _grip_at, fore, pose)
 	if _arms == null or not _arms.has_method("reach"):
 		return
+	var into := Transform3D.IDENTITY
+	if _arms.get_parent() == _animated:
+		_arms.transform = _animated.transform.affine_inverse()
+		into = _arms.transform.affine_inverse()
+	aim = into * aim
+	fore = into * fore
 	if "support_free" in _arms:
 		_arms.set("support_free", _has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0)
 	# A game's own arms may answer the older three-argument reach; they get no axes.
