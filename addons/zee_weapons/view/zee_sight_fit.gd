@@ -179,7 +179,7 @@ static func _flat(color: Color, see_through: bool) -> StandardMaterial3D:
 ## Keeps a red dot under [param sight] on its axis as seen from [param eye] (holder space), as a collimated sight does,
 ## and hides it once that leaves the window; 0 brightness hides it for good.
 static func track(sight: Node3D, eye: Vector3) -> void:
-	var red := sight as Node3D if sight.name == RED_DOT_NAME else sight.get_node_or_null(RED_DOT_NAME) as Node3D
+	var red := red_of(sight)
 	if red == null:
 		return
 	var dot := red.get_node(RETICLE_NAME) as Node3D
@@ -187,6 +187,17 @@ static func track(sight: Node3D, eye: Vector3) -> void:
 	# In the root's frame the axis is +Y and the window is the plane y = 0: the dot is the eye's foot on it.
 	dot.position = Vector3(local.x, 0.0, local.z)
 	dot.visible = float(dot.get_meta(&"glow", 0.0)) > 0.0 and Vector2(local.x, local.z).length() < float(red.get_meta(&"window", 0.0))
+
+
+## The red-dot root [param sight] is or holds, else null. By its meta, not its name: added beside the last gun's
+## (queue_free'd, still in the tree) it is renamed.
+static func red_of(sight: Node3D) -> Node3D:
+	if sight == null or sight.has_meta(&"window"):
+		return sight
+	for child in sight.get_children():
+		if child is Node3D and child.has_meta(&"window"):
+			return child
+	return null
 
 
 ## Shows the dot under [param sight] by the aim fraction [param f]: none at the hip, full at the eye.

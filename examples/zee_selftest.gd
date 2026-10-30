@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 731
+const CHECKS := 732
 
 
 func _ready() -> void:
@@ -490,7 +490,14 @@ func _red_dot() -> void:
 	_check("the dot follows the eye across the lens, at the lens (%s)" % str(at), dot != null and dot.visible and at.is_equal_approx(Vector3(0.004, -0.002, -0.2)))
 	fit.track(sight, Vector3(0.05, 0.0, 0.0))
 	_check("and hides once the eye is outside the window", not dot.visible)
+	# The next gun's dot is added beside this one while it waits to be freed, so the engine renames it.
 	sight.queue_free()
+	var next: Node3D = fit._red_dot(cone, 0.2, rules.red_dot_for(&"gl"))
+	add_child(next)
+	var next_dot := next.find_child(fit.RETICLE_NAME, true, false) as Node3D
+	fit.track(next, Vector3(0.004, -0.002, 0.0))
+	_check("the next gun's dot, renamed (%s), still tracks the eye" % next.name, next.name != fit.RED_DOT_NAME and next.to_global(next_dot.position).is_equal_approx(Vector3(0.004, -0.002, -0.2)))
+	next.queue_free()
 
 
 func _previews() -> void:
