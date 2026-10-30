@@ -36,6 +36,8 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 
 ## The size of a game's own arms against life size: [signal hands_reached]'s anchor shrinks the weapon to match, about the eye.
 @export var hands_scale: float = 1.0
+## How far into the aim-in a scoped weapon's arms are hidden: past it the raised gun is out of the arms' reach and the scope covers the view.
+@export_range(0.0, 1.0, 0.01) var scope_arms_hide: float = 0.6
 ## The nearest the hands frame brings the grip to the eye, metres (0 = no limit): a weapon drawn close, a pistol, would
 ## otherwise put a life-size hand over the whole view.
 @export var hands_min_distance: float = 0.0
@@ -696,7 +698,7 @@ func advance(delta: float) -> void:
 	var scoped := is_scoped()
 	_animated.visible = not scoped
 	if _arms != null:
-		_arms.visible = not scoped
+		_arms.visible = not (scoped or arms_hidden_by_scope())
 
 
 ## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
@@ -820,6 +822,11 @@ func aim_fov_scale() -> float:
 ## Whether the view is through a scope right now: a scoped weapon at (nearly) full aim.
 func is_scoped() -> bool:
 	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= 0.95
+
+
+## Whether a scoped weapon's arms are hidden: from [member scope_arms_hide] of the aim-in on.
+func arms_hidden_by_scope() -> bool:
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide
 
 
 ## Whether the weapon in hand is looked through (a scope), at any point of the aim-in.
