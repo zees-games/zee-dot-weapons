@@ -78,6 +78,31 @@ func _heard_reloads(role: ZeeWeaponRig.Role, replay: bool) -> Array[StringName]:
 	return heard
 
 
+func _heard_mode_clicks(role: ZeeWeaponRig.Role, replay: bool, weapon: StringName, presses: int) -> Array[StringName]:
+	var heard: Array[StringName] = []
+	var r := ZeeWeaponRig.new()
+	r.role = role
+	r.authority = true
+	r.tick_rate = ZeeWeaponPack.TICK_RATE
+	add_child(r)
+	r.setup()
+	r.arsenal.give(weapon)
+	r.arsenal.equip(ZeeWeaponPack.catalogue().get_def(weapon).slot)
+	r.mode_click.connect(func(sound: StringName) -> void: heard.append(sound))
+	_run_rig(r, 0, 60, 0)
+	if replay:
+		r.begin_replay()
+	var tick := 60
+	for i in range(presses):
+		_run_rig(r, tick, tick + 1, DotWeaponCommand.BUTTON_FIRE_MODE)
+		_run_rig(r, tick + 1, tick + 3, 0)
+		tick += 3
+	if replay:
+		r.end_replay()
+	_cleanup(r)
+	return heard
+
+
 func _make_arsenal() -> DotWeaponArsenal:
 	var arsenal := DotWeaponArsenal.new()
 	arsenal.catalogue = ZeeWeaponPack.catalogue()

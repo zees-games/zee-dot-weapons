@@ -797,6 +797,13 @@ func play_reload(stage: StringName, at: Vector3, weapon_id: StringName = &"") ->
 	_play(ZeeWeaponSound.reload_stream(weapon_id, stage), at, -4.0)
 
 
+## The selector switch of weapon [param weapon_id] at [param at]; the click differs per gun class.
+func play_mode_click(at: Vector3, weapon_id: StringName) -> void:
+	if not sounds or not is_inside_tree():
+		return
+	_play(ZeeWeaponSound.stream(ZeeWeaponSound.mode_click_for(weapon_id)), at, -2.0)
+
+
 ## The hammer falling on nothing. Throttled, because a held trigger asks every tick.
 func play_dry(at: Vector3) -> void:
 	var now := Time.get_ticks_msec()

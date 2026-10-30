@@ -54,6 +54,11 @@ const DRY := &"dry"
 const EQUIP := &"equip"
 const CASING := &"casing"
 const RELOAD_SHELL := &"reload_shell"
+## The selector switch changing fire mode: a small click for a pistol, a firmer one for a
+## rifle, a heavy detent for the big guns.
+const MODE_CLICK_LIGHT := &"mode_click_light"
+const MODE_CLICK_RIFLE := &"mode_click_rifle"
+const MODE_CLICK_HEAVY := &"mode_click_heavy"
 
 ## How each class is built. Every field is optional; the defaults are silence.
 ##
@@ -183,6 +188,21 @@ const RECIPES := {
 		"whoosh": 0.50, "whoosh_lo": 500.0, "whoosh_hi": 1800.0,
 		"crack": 0.60, "crack_hz": 2800.0, "crack_s": 0.006,
 	},
+	MODE_CLICK_LIGHT: {
+		"length": 0.06, "gain": 0.30,
+		"crack": 0.80, "crack_hz": 4600.0, "crack_s": 0.003,
+		"body": 0.30, "body_hz": 900.0, "body_to": 600.0, "body_s": 0.008,
+	},
+	MODE_CLICK_RIFLE: {
+		"length": 0.09, "gain": 0.38,
+		"crack": 0.80, "crack_hz": 3000.0, "crack_s": 0.004,
+		"body": 0.45, "body_hz": 600.0, "body_to": 380.0, "body_s": 0.014,
+	},
+	MODE_CLICK_HEAVY: {
+		"length": 0.13, "gain": 0.45,
+		"crack": 0.70, "crack_hz": 1800.0, "crack_s": 0.006,
+		"body": 0.65, "body_hz": 300.0, "body_to": 170.0, "body_s": 0.024,
+	},
 	CASING: {
 		"length": 0.10, "gain": 0.25,
 		"crack": 0.60, "crack_hz": 6500.0, "crack_s": 0.012,
@@ -268,6 +288,18 @@ static func class_for(id: StringName, kind: StringName) -> StringName:
 		return _classes[id]
 
 	return LAUNCHER if kind == DotWeaponOutcome.KIND_SPAWN else RIFLE
+
+
+## The selector click for weapon [param id]: light for pistols, rifle for submachine guns and rifles, heavy for the rest.
+static func mode_click_for(id: StringName) -> StringName:
+	if id == ZeeWeaponIds.MACHINE_PISTOL:
+		return MODE_CLICK_LIGHT
+	match class_for(id, &""):
+		LIGHT, MAGNUM:
+			return MODE_CLICK_LIGHT
+		SMG, RIFLE:
+			return MODE_CLICK_RIFLE
+	return MODE_CLICK_HEAVY
 
 
 ## The stream to play for [param id] using [param kind]: an override if a game set one,

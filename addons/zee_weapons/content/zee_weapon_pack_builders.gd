@@ -24,6 +24,10 @@ static func sec_ticks(seconds: float) -> int:
 
 
 
+## Automatic guns that also offer a burst on the selector; the rest of the automatics offer semi only.
+const BURST_SELECTOR: Array[StringName] = [&"machine_pistol", &"smg", &"carbine", &"rifle", &"bullpup"]
+
+
 ## The fields every blaster shares. Hitscan unless the caller changes it.
 static func _gun(
 	id: StringName,
@@ -39,6 +43,7 @@ static func _gun(
 	def.behaviour_path = HITSCAN
 	def.slot = slot
 	def.fire_mode = fire
+	def.fire_modes = DotWeaponDef.selector_modes(fire, id in BURST_SELECTOR)
 	def.use_interval_ticks = interval
 	def.cost_per_use = 1
 	# Every blaster can bash, and the bash is the same for all of them bar the reach and

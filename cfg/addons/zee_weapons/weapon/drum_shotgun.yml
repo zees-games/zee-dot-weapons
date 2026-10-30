@@ -8,7 +8,7 @@ authored_tick_rate: 64
 deploy_ticks: 27
 holster_ticks: 19
 fire_mode: "auto"
-fire_modes: []
+fire_modes: ["auto", "semi"]
 use_interval_ticks: 20
 burst_count: 3
 burst_interval_ticks: 3

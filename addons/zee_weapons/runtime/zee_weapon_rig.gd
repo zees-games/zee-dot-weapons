@@ -22,6 +22,9 @@ signal equipped(id: StringName)
 ## A reload sound played (RELOAD_OUT at the start, RELOAD_IN at the end); never on a server or in a replay.
 signal reload_sound(stage: StringName)
 
+## The fire-mode selector clicked (the sound id); never on a server or in a replay.
+signal mode_click(sound: StringName)
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -132,6 +135,7 @@ func _connect_arsenal() -> void:
 	arsenal.reload_finished.connect(_on_reload_finished)
 	arsenal.switched.connect(_on_switched)
 	arsenal.dry_used.connect(_on_dry_used)
+	arsenal.fire_mode_changed.connect(_on_fire_mode_changed)
 
 
 ## Gives the carrier a weapon, by id.
@@ -627,6 +631,18 @@ func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
 	if def.reload_per_round:
 		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space, 1)
 	return maxi(1, arsenal.ticks_for(def, ticks))
+
+
+func _on_fire_mode_changed(slot: int, _mode: int) -> void:
+	if _replaying or role == Role.SERVER:
+		return
+	var carried := arsenal.slot_at(slot)
+	if carried == null:
+		return
+	var click := ZeeWeaponSound.mode_click_for(carried.def.id)
+	mode_click.emit(click)
+	if _fx != null:
+		_fx.play_mode_click(_listen_at(), carried.def.id)
 
 
 func _on_dry_used(_slot: int) -> void:

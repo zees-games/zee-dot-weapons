@@ -121,6 +121,18 @@ func _rig() -> void:
 	_check("but not on a server", (_heard_reloads(ZeeWeaponRig.Role.SERVER, false) as Array).is_empty())
 	_check("and not in a replay", (_heard_reloads(ZeeWeaponRig.Role.LOCAL, true) as Array).is_empty())
 
+	# The fire-mode selector clicks on every change, by gun class, and is silent on a server, in a replay and on a one-mode gun.
+	var rifle_clicks: Array[StringName] = _heard_mode_clicks(ZeeWeaponRig.Role.LOCAL, false, ZeeWeaponIds.RIFLE, 3)
+	_check("the selector clicks on every cycle (%s)" % ", ".join(rifle_clicks), rifle_clicks.size() == 3 and rifle_clicks[0] == ZeeWeaponSound.MODE_CLICK_RIFLE)
+	var mp_clicks: Array[StringName] = _heard_mode_clicks(ZeeWeaponRig.Role.LOCAL, false, ZeeWeaponIds.MACHINE_PISTOL, 1)
+	var mg_clicks: Array[StringName] = _heard_mode_clicks(ZeeWeaponRig.Role.LOCAL, false, ZeeWeaponIds.MINIGUN, 1)
+	_check("a pistol, a rifle and a heavy gun click differently", mp_clicks == [ZeeWeaponSound.MODE_CLICK_LIGHT] and mg_clicks == [ZeeWeaponSound.MODE_CLICK_HEAVY])
+	_check("no click on a server", (_heard_mode_clicks(ZeeWeaponRig.Role.SERVER, false, ZeeWeaponIds.RIFLE, 2) as Array).is_empty())
+	_check("no click in a replay", (_heard_mode_clicks(ZeeWeaponRig.Role.LOCAL, true, ZeeWeaponIds.RIFLE, 2) as Array).is_empty())
+	_check("no click on a gun with one mode", (_heard_mode_clicks(ZeeWeaponRig.Role.LOCAL, false, ZeeWeaponIds.PISTOL, 2) as Array).is_empty())
+	var bakes := ZeeWeaponSound.stream(ZeeWeaponSound.MODE_CLICK_LIGHT) != null and ZeeWeaponSound.stream(ZeeWeaponSound.MODE_CLICK_HEAVY) != null
+	_check("the three clicks bake to streams", bakes)
+
 	_rig_art_override(rig)
 	_rig_reload_motion()
 	_rig_world_attachments()
