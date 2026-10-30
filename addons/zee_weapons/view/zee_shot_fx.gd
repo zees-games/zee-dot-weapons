@@ -503,6 +503,8 @@ func _animate(fx: Dictionary, node: Node3D, through: float) -> void:
 			_place_along(node, mid, to - from, span, _screen_width(mid, float(fx["width"])))
 		&"beam", &"petal":
 			node.transparency = through
+		&"flashlight":
+			(node as OmniLight3D).light_energy = float(fx["energy"]) * (1.0 - through)
 		&"flash":
 			var grow := 1.0 + through * 0.6
 			node.scale = Vector3.ONE * float(fx["size"]) * grow
@@ -615,7 +617,7 @@ func _beam(from: Vector3, to: Vector3) -> void:
 
 func _flash(muzzle: Transform3D, size: float, weapon_class: StringName = ZeeWeaponSound.RIFLE,
 		id: StringName = &"", first_person: bool = false) -> void:
-	if binbun_flash and _pack_flash(muzzle, weapon_class, id, first_person):
+	if binbun_flash and _pack_flash(muzzle, size, weapon_class, id, first_person):
 		return
 	var profile: Dictionary = FLASH.get(weapon_class, FLASH[ZeeWeaponSound.RIFLE])
 	size *= float(profile["size"]) * flash_scale
@@ -650,16 +652,8 @@ func _flash(muzzle: Transform3D, size: float, weapon_class: StringName = ZeeWeap
 		petals.append(petal)
 
 	var fx := {"kind": &"flash", "life": 0.06, "size": across}
-	if flash_light_scale > 0.0 and _lights_live() < max_flash_lights:
-		var light := OmniLight3D.new()
-		light.light_color = Color(1.0, 0.72, 0.38)
-		light.omni_range = 4.5 * size
-		light.light_energy = 2.2 * size * float(profile["light"]) / maxf(0.01, float(profile["size"])) \
-			* flash_light_scale
-		light.shadow_enabled = false
-		node.add_child(light)
-		light.top_level = true
-		light.global_position = muzzle.origin - forward * 0.05
+	var light := _flash_light(muzzle, size, profile, node)
+	if light != null:
 		fx["light"] = light
 		fx["energy"] = light.light_energy
 		fx["has_light"] = true
@@ -667,6 +661,34 @@ func _flash(muzzle: Transform3D, size: float, weapon_class: StringName = ZeeWeap
 	_add(node, fx)
 	for petal in petals:
 		_add(petal, {"kind": &"petal", "life": 0.05})
+
+
+## The dynamic muzzle light: short, shadowless, capped by [member max_flash_lights]. Null when off or at the cap.
+func _flash_light(muzzle: Transform3D, size: float, profile: Dictionary, parent: Node3D) -> OmniLight3D:
+	if flash_light_scale <= 0.0 or _lights_live() >= max_flash_lights:
+		return null
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.72, 0.38)
+	light.omni_range = 4.5 * size
+	light.light_energy = 2.2 * size * float(profile["light"]) / maxf(0.01, float(profile["size"])) \
+		* flash_light_scale
+	light.shadow_enabled = false
+	parent.add_child(light)
+	light.top_level = true
+	light.global_position = muzzle.origin - (-muzzle.basis.z.normalized()) * 0.05
+	return light
+
+
+## Pack flashes draw no light of their own: ours is the one that is capped and cvar-controlled.
+func _pack_flash_light(muzzle: Transform3D, size: float, weapon_class: StringName, flash: Node3D) -> void:
+	for child in flash.get_children():
+		if child.get("light_enable") == true:
+			child.set("light_enable", false)
+	var profile: Dictionary = FLASH.get(weapon_class, FLASH[ZeeWeaponSound.RIFLE])
+	var light := _flash_light(muzzle, size * float(profile["size"]) * flash_scale, profile, self)
+	if light != null:
+		_add(light, {"kind": &"flashlight", "life": 0.05, "light": light,
+			"energy": light.light_energy, "has_light": true})
 
 
 ## Weapon class to the dot-fx category `DotMuzzleFlash.size_for` sizes by.
@@ -678,7 +700,7 @@ const CLASS_CATEGORY := {
 }
 
 ## One pooled flash per size and view, moved to the muzzle for each shot. False only when dot-fx is not linked; size none, quality off and a headless server draw nothing and count as handled.
-func _pack_flash(muzzle: Transform3D, weapon_class: StringName, id: StringName, first_person: bool) -> bool:
+func _pack_flash(muzzle: Transform3D, size: float, weapon_class: StringName, id: StringName, first_person: bool) -> bool:
 	if not ResourceLoader.exists(DotWeaponMuzzle.SCRIPT_PATH):
 		return false
 	var def: DotWeaponDef = catalogue.get_def(id) if catalogue != null and catalogue.has(id) else null
@@ -695,6 +717,7 @@ func _pack_flash(muzzle: Transform3D, weapon_class: StringName, id: StringName, 
 	flash.global_transform = muzzle
 	flash.scale = Vector3.ONE * (first_person_flash_scale if first_person else 1.0)
 	DotWeaponMuzzle.fire(flash)
+	_pack_flash_light(muzzle, size, weapon_class, flash)
 	return true
 
 

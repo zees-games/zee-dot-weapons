@@ -66,6 +66,11 @@ func _ready() -> void:
 		var yaw := deg_to_rad(_argument("--wall-yaw").to_float())
 		_controller.teleport(Vector3(0.0, 0.0, -17.5 + 0.36), yaw, 0.0)
 
+	# `--dark`: no sun and almost no ambient, so only a muzzle light lights the wall beside the player.
+	if OS.get_cmdline_user_args().has("--dark"):
+		(get_node("Sun") as DirectionalLight3D).light_energy = 0.0
+		(get_node("Environment") as WorldEnvironment).environment.ambient_light_energy = 0.03
+
 	_crosshair.text = "+"
 
 	print("zee-dot-weapons range — %d weapons" % ZeeWeaponIds.all().size())

@@ -17,6 +17,8 @@
 ## The look pass: class flashes, cases, finish
 
 - **A flash is the weapon class's** (`ZeeShotFx.FLASH`, keyed by the sound class): size, light, petal count and length (a shotgun a fat four-petal star, a sniper two long tongues, an SMG small). `flash_scale`, `flash_light_scale` and `max_flash_lights` (2) are exported; past the cap the flash is drawn without its light. Per shot: 3 to 5 quads (3 to 5 draws, additive) and at most one 0.06 s omni light.
+
+- **A dot-fx or pack flash keeps our light.** `_pack_flash` replaces the procedural flash with the pooled art, so `_pack_flash_light` switches the art's own `light_enable` lights off and adds the same capped, shadowless omni light (one cap, no double light). Before this, games linking dot-fx fired with no muzzle light at all.
 - **Cases are pooled, not bodies.** `play_eject(port, id)` writes a hand-made ballistic arc (velocity, gravity, tumble) for `shell_life` (0.7 s) on a pool of `max_shells` (10) six-sided cylinders, one draw call each, oldest reused; threadless and fine on the web. The port is `ZeeViewModel.eject_transform()`, measured from the mesh bounds (right side, 72% up, 55% back from the muzzle). Only art with `ejects` (the real-world guns) throws a case; a revolver has no `case` in its class and keeps them; a sniper and a shotgun cycle first (`delay`). A watcher's world model does not eject yet.
 - **Finish** (`ZeeWeaponFinish`, `ZeeViewModel.finish_*`): each surface keeps its own material (a mesh-wide override had flattened every gun to its first surface, one tan plank), and metal, polymer, wood and glass get their own metallic and roughness by material name. Factors only, no texture, so nothing to deliver.
 

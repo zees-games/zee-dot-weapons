@@ -270,6 +270,7 @@ func _pose_jitter() -> void:
 func _effects_budgets() -> void:
 	# Budgets: a held minigun asks for a flash and a case per shot, and neither may grow.
 	var capped := ZeeShotFx.new()
+	capped.binbun_flash = false
 	add_child(capped)
 	for i in 40:
 		capped.call(&"_flash", Transform3D(Basis.IDENTITY, Vector3(0, 0, -1)), 1.0, ZeeWeaponSound.MINIGUN)
@@ -284,6 +285,53 @@ func _effects_budgets() -> void:
 	_check("a case is gone after its life, and its flash with it",
 		capped.shell_count() == 0 and capped.live_count() == 0)
 	capped.queue_free()
+
+
+## A flash (dot-fx's when linked, else ours) still makes the one capped muzzle light, and the art's own is off (no double).
+func _effects_pack_light() -> void:
+	_begin("dot-fx muzzle light")
+	var linked := ResourceLoader.exists(DotWeaponMuzzle.SCRIPT_PATH)
+	var script: GDScript = load(DotWeaponMuzzle.SCRIPT_PATH) if linked else null
+	if linked:
+		script.set("force_available", true)
+	var fx := ZeeShotFx.new()
+	add_child(fx)
+	var at := Transform3D(Basis.IDENTITY, Vector3(0, 0, -1))
+	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
+	var lights := int(fx.call(&"_lights_live"))
+	_check("a dot-fx flash makes a muzzle light (%d)" % lights, lights == 1)
+	var lit := _lit_lights(fx)
+	_check("a dot-fx flash adds only our light, the art's is off (%d lit)" % lit, lit == 1)
+	for i in 40:
+		fx.call(&"_flash", at, 1.0, ZeeWeaponSound.MINIGUN, &"", false)
+	lights = int(fx.call(&"_lights_live"))
+	_check("dot-fx flash lights stay under the cap (%d of %d)" % [lights, fx.max_flash_lights],
+		lights >= 1 and lights <= fx.max_flash_lights)
+	var node := fx.get_children().filter(func(c: Node) -> bool: return c is OmniLight3D)[0] as OmniLight3D
+	_check("the muzzle light has no shadows", not node.shadow_enabled)
+	fx.flash_light_scale = 0.0
+	fx.advance(1.0)
+	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
+	_check("flash_light_scale 0 draws no light with a dot-fx flash",
+		int(fx.call(&"_lights_live")) == 0 and _lit_lights(fx) == 0)
+	fx.flash_light_scale = 1.0
+	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
+	fx.advance(0.2)
+	_check("the muzzle light is gone after its life", int(fx.call(&"_lights_live")) == 0)
+	fx.queue_free()
+	if linked:
+		script.set("force_available", false)
+	_end()
+
+
+## Lights shining under [param root] that are visible and lit (ours or the art's).
+func _lit_lights(root: Node) -> int:
+	var count := 0
+	for light in root.find_children("*", "OmniLight3D", true, false):
+		var l := light as OmniLight3D
+		if not l.is_queued_for_deletion() and l.is_visible_in_tree() and l.light_energy > 0.0 and l.get_parent().get("light_enable") != false:
+			count += 1
+	return count
 
 
 ## The carrier's own world model and somebody else's; returns the stranger it made.
