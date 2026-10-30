@@ -40,6 +40,7 @@ const SPECS := {
 	"hip_lean": {"default": 25.0, "min": -30.0, "max": 60.0},
 	"hip_zero": {"default": 20.0, "min": 0.0, "max": 200.0},
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
+	"sight_dot": {"default": 0.15, "min": 0.0, "max": 1.0},
 }
 
 ## The profile every weapon without an override uses.
@@ -215,6 +216,11 @@ func hip_zero_for(id: StringName) -> float:
 ## How much a hit shakes the view and wobbles the aim while this weapon is held, on top of the server's `sv_hit_*` numbers: 0 steady, 1 as set.
 func hit_flinch_for(id: StringName) -> float:
 	return float(value_for(id, "hit_flinch_multiplier"))
+
+
+## Degrees of the glowing dot on a model's own front post when aimed; 0 draws none.
+func sight_dot_for(id: StringName) -> float:
+	return float(value_for(id, "sight_dot"))
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).

@@ -68,81 +68,8 @@ func _pose_stability() -> void:
 	var apart := (slow.offset().origin - fast.offset().origin).length()
 	_check("sway lands in the same place at 60 fps and at 144", apart < 0.005)
 
-	# Turning right (yaw falling: the controller's yaw is positive to the left) leaves the
-	# weapon behind on the left. It led the turn until the contact sheet showed it.
-	var turning := ZeeWeaponPose.make(1.0)
-	for i in range(12):
-		turning.advance(1.0 / 60.0, Vector2(-3.0, 0.0), 0.0, true)
-	_check("turning right leaves the weapon behind, to the left (x %.3f)" % turning.offset().origin.x,
-		turning.offset().origin.x < -0.005)
-
-	# The authored keys start and finish at rest, and read through no NaN.
-	_check("a reload's keys are at rest at 0 and at 1",
-		ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 0.0)[1].length() < 0.0001
-		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 1.0)[1].length() < 0.0001)
-	# Every gun resolves to a reload (its own or its class's), and every key set is at rest at both ends.
-	var no_reload: PackedStringArray = []
-	var bad_ends: PackedStringArray = []
-	for art in ZeeWeaponArtTable.all():
-		if art.pose == ZeeWeaponArtTable.POSE_MELEE or art.pose == ZeeWeaponArtTable.POSE_THROWN:
-			continue
-		var keys := ZeeWeaponArtTable.effective_reload_keys(art)
-		if keys.is_empty():
-			no_reload.append(String(art.id))
-			continue
-		if ZeeWeaponPose.sample_keys(keys, 0.0)[0].length() > 0.0001 or ZeeWeaponPose.sample_keys(keys, 1.0)[0].length() > 0.0001:
-			bad_ends.append(String(art.id))
-	_check("every gun resolves to a reload animation (missing: %s)" % ", ".join(no_reload), no_reload.is_empty())
-	_check("every gun's reload starts and ends at rest (bad: %s)" % ", ".join(bad_ends), bad_ends.is_empty())
-	var base_art := ZeeWeaponArtTable.all()[0] as ZeeWeaponArt
-	var by_class := base_art.with_overrides({"reload_class": "smg"})
-	var by_keys := base_art.with_overrides({"reload_keys": [[0.0, [0, 0, 0], [0, 0, 0]], [0.5, [0, 0.1, 0], [10, 0, 0]], [1.0, [0, 0, 0], [0, 0, 0]]]})
-	_check("a profile names a reload class or gives its own keys", by_class.reload_keys == ZeeWeaponPose.RELOAD_KEYS_SMG and by_keys.reload_keys.size() == 3 and base_art.with_overrides({"reload_class": "nope"}).reload_keys == base_art.reload_keys)
-	_check("the draw's keys are at rest in hand",
-		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
-	_pose_swing()
-
-	var odd: Vector3 = ZeeWeaponPose.sample_keys([[0.0, Vector3.ONE, Vector3.ONE]], NAN)[0]
-	_check("malformed keys sample as rest", odd == Vector3.ZERO)
-
-	# [b]No jitter.[/b] A whole draw and reload at 144 fps while walking and turning (a kick is
-	# meant to be fast, and the recoil sections hold it): no frame may move the weapon further than a smooth motion of that size could,
-	# and every key is a curve, so no frame jumps. A step in a key table or a spring that
-	# rings shows here as one frame far bigger than the frames either side of it.
-	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY,
-			ZeeWeaponPose.RELOAD_KEYS_BOLT, ZeeWeaponPose.RELOAD_KEYS_BREAK, ZeeWeaponPose.RELOAD_KEYS_MUZZLE,
-			ZeeWeaponPose.RELOAD_KEYS_TUBE]:
-		var smooth := ZeeWeaponPose.make(1.0)
-		smooth.pivot = Vector3(0.19, -0.23, -0.40)
-		smooth.tunables.reload_keys = keys
-		var dt := 1.0 / 144.0
-		smooth.set_deploy(0.0)
-		var last := smooth.offset()
-		var last_step := Vector3.ZERO
-		var last_turn := 0.0
-		var worst_move := 0.0
-		var worst_turn := 0.0
-		var frames := 720
-		for i in range(frames):
-			var t := float(i) / float(frames)
-			smooth.set_deploy(clampf(t * 4.0, 0.0, 1.0))
-			smooth.set_reload(clampf((t - 0.3) * 2.0, 0.0, 1.0))
-			smooth.advance(dt, Vector2(-0.6, 0.1), 5.0, true)
-			var now := smooth.offset()
-			# The change in the frame's movement, not the movement: a fast smooth motion
-			# changes speed a little each frame, a jolt changes it all at once.
-			var step := now.origin - last.origin
-			var turn := rad_to_deg(
-				now.basis.get_rotation_quaternion().angle_to(last.basis.get_rotation_quaternion())
-			)
-			if i > 1:
-				worst_move = maxf(worst_move, (step - last_step).length())
-				worst_turn = maxf(worst_turn, absf(turn - last_turn))
-			last_step = step
-			last_turn = turn
-			last = now
-		_check("a draw and reload at 144 fps never jolts (worst %.5f m, %.3f deg a frame on a frame)" % [worst_move, worst_turn],
-			worst_move < 0.0015 and worst_turn < 0.3 and last.origin.is_finite())
+	_pose_keys()
+	_pose_jitter()
 
 	_pose_cadence()
 
@@ -246,6 +173,101 @@ func _effects() -> void:
 
 	_check("a real gun's shot throws a case (%d)" % fx.shell_count(), fx.shell_count() >= 1)
 
+	_effects_budgets()
+	var stranger := _effects_world(carrier)
+	_effects_world_motion(stranger)
+
+	_effects_impacts(fx)
+
+	var server := _make_rig()
+	server.setup()
+	_check("a server rig draws and plays nothing", server.shot_fx() == null)
+
+	_cleanup(server)
+	carrier.queue_free()
+	stranger.queue_free()
+	_end()
+
+
+func _pose_keys() -> void:
+	# Turning right (yaw falling: the controller's yaw is positive to the left) leaves the
+	# weapon behind on the left. It led the turn until the contact sheet showed it.
+	var turning := ZeeWeaponPose.make(1.0)
+	for i in range(12):
+		turning.advance(1.0 / 60.0, Vector2(-3.0, 0.0), 0.0, true)
+	_check("turning right leaves the weapon behind, to the left (x %.3f)" % turning.offset().origin.x,
+		turning.offset().origin.x < -0.005)
+
+	# The authored keys start and finish at rest, and read through no NaN.
+	_check("a reload's keys are at rest at 0 and at 1",
+		ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 0.0)[1].length() < 0.0001
+		and ZeeWeaponPose.sample_keys(ZeeWeaponPose.RELOAD_KEYS_RIFLE, 1.0)[1].length() < 0.0001)
+	# Every gun resolves to a reload (its own or its class's), and every key set is at rest at both ends.
+	var no_reload: PackedStringArray = []
+	var bad_ends: PackedStringArray = []
+	for art in ZeeWeaponArtTable.all():
+		if art.pose == ZeeWeaponArtTable.POSE_MELEE or art.pose == ZeeWeaponArtTable.POSE_THROWN:
+			continue
+		var keys := ZeeWeaponArtTable.effective_reload_keys(art)
+		if keys.is_empty():
+			no_reload.append(String(art.id))
+			continue
+		if ZeeWeaponPose.sample_keys(keys, 0.0)[0].length() > 0.0001 or ZeeWeaponPose.sample_keys(keys, 1.0)[0].length() > 0.0001:
+			bad_ends.append(String(art.id))
+	_check("every gun resolves to a reload animation (missing: %s)" % ", ".join(no_reload), no_reload.is_empty())
+	_check("every gun's reload starts and ends at rest (bad: %s)" % ", ".join(bad_ends), bad_ends.is_empty())
+	var base_art := ZeeWeaponArtTable.all()[0] as ZeeWeaponArt
+	var by_class := base_art.with_overrides({"reload_class": "smg"})
+	var by_keys := base_art.with_overrides({"reload_keys": [[0.0, [0, 0, 0], [0, 0, 0]], [0.5, [0, 0.1, 0], [10, 0, 0]], [1.0, [0, 0, 0], [0, 0, 0]]]})
+	_check("a profile names a reload class or gives its own keys", by_class.reload_keys == ZeeWeaponPose.RELOAD_KEYS_SMG and by_keys.reload_keys.size() == 3 and base_art.with_overrides({"reload_class": "nope"}).reload_keys == base_art.reload_keys)
+	_check("the draw's keys are at rest in hand",
+		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
+	_pose_swing()
+
+	var odd: Vector3 = ZeeWeaponPose.sample_keys([[0.0, Vector3.ONE, Vector3.ONE]], NAN)[0]
+	_check("malformed keys sample as rest", odd == Vector3.ZERO)
+
+
+func _pose_jitter() -> void:
+	# No jitter: a whole draw and reload at 144 fps while walking and turning. A step in a key table
+	# or a ringing spring shows as one frame far bigger than the frames either side of it.
+	for keys: Array in [ZeeWeaponPose.RELOAD_KEYS_RIFLE, ZeeWeaponPose.RELOAD_KEYS_PISTOL, ZeeWeaponPose.RELOAD_KEYS_HEAVY,
+			ZeeWeaponPose.RELOAD_KEYS_BOLT, ZeeWeaponPose.RELOAD_KEYS_BREAK, ZeeWeaponPose.RELOAD_KEYS_MUZZLE,
+			ZeeWeaponPose.RELOAD_KEYS_TUBE]:
+		var smooth := ZeeWeaponPose.make(1.0)
+		smooth.pivot = Vector3(0.19, -0.23, -0.40)
+		smooth.tunables.reload_keys = keys
+		var dt := 1.0 / 144.0
+		smooth.set_deploy(0.0)
+		var last := smooth.offset()
+		var last_step := Vector3.ZERO
+		var last_turn := 0.0
+		var worst_move := 0.0
+		var worst_turn := 0.0
+		var frames := 720
+		for i in range(frames):
+			var t := float(i) / float(frames)
+			smooth.set_deploy(clampf(t * 4.0, 0.0, 1.0))
+			smooth.set_reload(clampf((t - 0.3) * 2.0, 0.0, 1.0))
+			smooth.advance(dt, Vector2(-0.6, 0.1), 5.0, true)
+			var now := smooth.offset()
+			# The change in the frame's movement, not the movement: a fast smooth motion
+			# changes speed a little each frame, a jolt changes it all at once.
+			var step := now.origin - last.origin
+			var turn := rad_to_deg(
+				now.basis.get_rotation_quaternion().angle_to(last.basis.get_rotation_quaternion())
+			)
+			if i > 1:
+				worst_move = maxf(worst_move, (step - last_step).length())
+				worst_turn = maxf(worst_turn, absf(turn - last_turn))
+			last_step = step
+			last_turn = turn
+			last = now
+		_check("a draw and reload at 144 fps never jolts (worst %.5f m, %.3f deg a frame on a frame)" % [worst_move, worst_turn],
+			worst_move < 0.0015 and worst_turn < 0.3 and last.origin.is_finite())
+
+
+func _effects_budgets() -> void:
 	# Budgets: a held minigun asks for a flash and a case per shot, and neither may grow.
 	var capped := ZeeShotFx.new()
 	add_child(capped)
@@ -263,6 +285,9 @@ func _effects() -> void:
 		capped.shell_count() == 0 and capped.live_count() == 0)
 	capped.queue_free()
 
+
+## The carrier's own world model and somebody else's; returns the stranger it made.
+func _effects_world(carrier: Node3D) -> Node3D:
 	# The local player's own world model, driven by the replicated counter the way
 	# game-playground drives every player's: it must not play the shot a second time.
 	var own := ZeeWorldModel.new()
@@ -293,7 +318,10 @@ func _effects() -> void:
 		"and turning their sounds off after a shot silences the next one",
 		their_fx != null and not their_fx.sounds
 	)
+	return stranger
 
+
+func _effects_world_motion(stranger: Node3D) -> void:
 	# [b]Somebody else's swing and throw are keys on their world model[/b], as one's own are on
 	# the view model: a watcher saw the knife ride the arm rigid, and a grenade thrown from a
 	# hand that never moved.
@@ -342,17 +370,6 @@ func _effects() -> void:
 	lobbed.advance(NAN)
 	_check("and a NaN step moves nothing",
 		(lobbed.get_node(^"Holder") as Node3D).transform.origin.is_finite())
-
-	_effects_impacts(fx)
-
-	var server := _make_rig()
-	server.setup()
-	_check("a server rig draws and plays nothing", server.shot_fx() == null)
-
-	_cleanup(server)
-	carrier.queue_free()
-	stranger.queue_free()
-	_end()
 
 
 func _effects_sound() -> void:

@@ -114,6 +114,10 @@ extends Resource
 ## mesh to measure, aim is the written [member aim_offset] as before.
 @export var iron_sight: bool = true
 
+## Whether aiming looks along the model's own sight, read off its mesh (`view/zee_own_sight.gd`), with nothing built over it.
+## Found, it wins over [member iron_sight]; not found, [member iron_sight] decides between the built sight and [member aim_offset].
+@export var sight_own: bool = false
+
 ## Metres from the eye to the rear sight at full aim, before the view model pushes it out
 ## far enough that the gun's back end stays in front of the near plane.
 @export_range(0.05, 1.0, 0.01) var aim_eye_relief: float = 0.2

@@ -46,6 +46,11 @@ var _markers: Array[Node3D] = []
 
 func _ready() -> void:
 	ZeeWeaponInput.register_default_actions()
+	# `--pack <spawn_provider.gd>`: another pack's weapons join the range, dressed in its own models.
+	var pack := _argument("--pack")
+	if pack != "" and ResourceLoader.exists(pack):
+		var provider := load(pack) as Script
+		ZeePackSource.register(&"range_pack", provider, Callable(provider, &"weapon_defs"))
 	_auto_fire = OS.get_cmdline_user_args().has("--fire")
 	_build_world()
 	_build_weapons()
@@ -73,6 +78,9 @@ func _ready() -> void:
 
 	if _argument("--sheet") != "":
 		_run_sheet(_argument("--sheet"))
+	# `--still PATH`: one frame saved by the range itself three seconds in, then quit (a box with no screen grabber).
+	if _argument("--still") != "":
+		get_tree().create_timer(3.0).timeout.connect(_save_still)
 
 
 ## `--dummy`: a character standing in the line of fire, so a capture shows a shot landing on a
@@ -691,6 +699,13 @@ func _sheet_steps(count: int) -> void:
 	# The HUD's half of aiming, as _process does it: without it a scoped weapon's aimed frame
 	# was an empty range, the gun hidden and no scope drawn.
 	_scope.follow(_view)
+
+
+func _save_still() -> void:
+	await RenderingServer.frame_post_draw
+	var err := get_viewport().get_texture().get_image().save_png(_argument("--still"))
+	print("captured %s (%s)" % [_argument("--still"), error_string(err)])
+	get_tree().quit()
 
 
 ## Quits after `--seconds N`, so a screenshot sweep can open this without a person.

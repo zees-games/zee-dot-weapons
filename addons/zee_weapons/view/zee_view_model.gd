@@ -3,7 +3,7 @@ class_name ZeeViewModel
 extends "zee_view_model_state.gd"
 
 ## By path, not by class_name: see the file's own header.
-const IronSight := preload("zee_iron_sight.gd")
+const SightFit := preload("zee_sight_fit.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
 const Dress := preload("zee_attachment_dress.gd")
 const HipHold := preload("zee_hip_hold.gd")
@@ -717,7 +717,8 @@ func _apply_aim(f: float) -> void:
 		return
 
 	var hip := _art.view_transform()
-
+	if _sight != null:
+		SightFit.fade(_sight, f)
 	if f <= 0.0:
 		_aim_node.transform = Transform3D.IDENTITY
 		_pose.pivot = hip.origin
@@ -742,37 +743,21 @@ func _aim_target() -> Transform3D:
 	return _sight_aim if not _sight_line.is_empty() else _art.aim_transform()
 
 
-## Measures [param art]'s sight line on the mesh just built (an optic's glass overrides a marked one), builds the sight on it, and derives the aim hold that puts the line through the eye.
+## Fits [param art]'s sight on the mesh just built (see zee_sight_fit.gd) and keeps the aim hold that puts it through the eye.
 func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_line = {}
-	if not art.iron_sight or not art.aim_enabled or art.aim_scoped or _weapon == null:
-		return
-	# A model with its own sights marks their line; one without gets a sight measured and built.
-	var line := IronSight.from_marks(_weapon, _holder, art.model_forward)
-	var marked := not line.is_empty()
-	if marked:
-		line.merge(_dressed.get("line", {}), true)
-	if not marked:
-		line = IronSight.measure(_weapon, _holder, art.model_forward)
-	if line.is_empty():
-		return
-	var basis := art.orientation().scaled(Vector3.ONE * art.view_scale)
-	# The eye stands back far enough to keep the gun's back end past the near plane (a clip plane slices).
-	var behind := maxf(0.0, (basis * (line.back as Vector3)).z - (basis * (line.rear as Vector3)).z)
 	var camera := get_parent() as Camera3D
-	var near := camera.near if camera != null else 0.05
-	var relief := maxf(art.aim_eye_relief, behind + near + NEAR_MARGIN)
-	# The ring is sized to how far out it ends up, so a toy blaster and a real-sized rifle read alike.
-	var span := absf((basis * (line.front as Vector3)).z - (basis * (line.rear as Vector3)).z)
-	if not marked:
-		var ring := (relief + span) * tan(deg_to_rad(IronSight.RING_DEGREES)) / art.view_scale
-		line = IronSight.with_ring(line, clampf(ring, IronSight.RING_FIT_MIN, IronSight.RING_FIT_MAX))
-		_sight = IronSight.build(line, art.model_forward)
+	var near := (camera.near if camera != null else 0.05) + NEAR_MARGIN
+	var dot := ads_rules.sight_dot_for(art.id) if ads_rules != null else float(ZeeAdsRules.SPECS["sight_dot"]["default"])
+	var fitted := SightFit.fit(art, _weapon, _holder, _dressed.get("line", {}), near, dot)
+	if fitted.is_empty():
+		return
+	_sight_line = fitted.line
+	_sight_aim = fitted.aim
+	_sight = fitted.sight
+	if _sight != null:
 		_holder.add_child(_sight)
 		_set_on_top(_sight)
-
-	_sight_line = line
-	_sight_aim = Transform3D(basis, Vector3(0.0, 0.0, -relief) - basis * (line.rear as Vector3))
 
 
 ## The sight's rear and front points this frame in the camera's space (before the hands' lens), as `{rear, front}`; empty without a sight.
@@ -972,6 +957,7 @@ func _view_material(source: Material) -> Material:
 	if material is BaseMaterial3D:
 		var base := material as BaseMaterial3D
 		base.disable_receive_shadows = true
+		SightFit.sharpen(base)
 		if finish_materials:
 			ZeeWeaponFinish.apply(base, finish_metal, finish_metal_roughness,
 				finish_polymer_roughness, finish_wood_roughness, finish_lift)

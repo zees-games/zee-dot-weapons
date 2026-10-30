@@ -20,6 +20,9 @@
 #
 #   EXTRA="--moves" tools/screenshot.sh --sheet rifle   # 14 frames: strafe, turn, walk, landing, sprint, hip and aimed
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
+#   tools/screenshot.sh --aim --all                # every weapon aimed down its sight, tiled into screenshots/all_aim.png
+#   tools/screenshot.sh --aim --pack res://addons/arena_weapons/spawn_provider.gd aw_rifle aw_pistol
+#   (--aim and --pack also reach a GPU box, which carries only SHOT_* variables: SHOT_EXTRA is added to EXTRA)
 #
 # EXTRA is passed straight through to the range. `--no-arms` is the one that earns
 # its keep: an arm drawn wrongly and a weapon drawn wrongly look identical in a
@@ -46,7 +49,8 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 command -v Xvfb >/dev/null || { echo "Xvfb not installed (apt install xvfb)" >&2; exit 3; }
-command -v scrot >/dev/null || { echo "scrot not installed (apt install scrot)" >&2; exit 3; }
+# Without scrot (a GPU box) the range saves its own frame (`--still`).
+command -v scrot >/dev/null || SCROT=0
 
 SIZE="1280x720"
 WAIT=14
@@ -57,6 +61,8 @@ WORLD=0
 WEAPONS=()
 WEAPON=""
 OUT=""
+AIM=0
+EXTRA="${EXTRA:-} ${SHOT_EXTRA:-}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -64,6 +70,8 @@ while [ $# -gt 0 ]; do
         --rack) RACK=1; shift ;;
         --sheet) SHEET=1; shift ;;
         --world) WORLD=1; shift ;;
+        --aim) AIM=1; EXTRA="$EXTRA --aim"; shift ;;
+        --pack) EXTRA="$EXTRA --pack $2"; shift 2 ;;
         --wait) WAIT="$2"; shift 2 ;;
         --size) SIZE="$2"; shift 2 ;;
         -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -85,6 +93,7 @@ shoot() {
     local log; log="$(mktemp)"
 
     mkdir -p "$(dirname "$out")"
+    touch "$(dirname "$out")/.gdignore"
 
     DISPLAY=":$disp" ; export DISPLAY
     export LIBGL_ALWAYS_SOFTWARE=1
@@ -97,12 +106,17 @@ shoot() {
     # produces a black frame under Xvfb, and a black frame reads as a broken scene.
     timeout $((WAIT + 40)) godot --path . --resolution "$SIZE" \
         --rendering-driver opengl3 $scene \
-        -- --seconds $((WAIT + 20)) --weapon "$weapon" ${EXTRA:-} >"$log" 2>&1 &
+        -- --seconds $((WAIT + 20)) --weapon "$weapon" ${EXTRA:-} \
+        $([ "${SCROT:-1}" = 0 ] && [ -z "$scene" ] && echo "--still $PWD/$out") >"$log" 2>&1 &
     local gpid=$!
 
-    sleep "$WAIT"
-
-    if scrot -o "$out" 2>/dev/null && [ -s "$out" ]; then
+    if [ "${SCROT:-1}" = 0 ]; then
+        wait "$gpid" 2>/dev/null
+    else
+        sleep "$WAIT"
+        scrot -o "$out" 2>/dev/null
+    fi
+    if [ -s "$out" ]; then
         echo "wrote $out ($(du -h "$out" | cut -f1))"
     else
         echo "capture failed for $weapon:" >&2
@@ -213,12 +227,23 @@ if [ $RACK -eq 1 ]; then
     exit 0
 fi
 
-if [ $ALL -eq 1 ]; then
-    for w in $ALL_IDS; do
-        shoot "$w" "screenshots/$w.png"
+# Several weapons (--all, or more than one id): one frame each, then tiled four across.
+if [ $ALL -eq 1 ] || [ ${#WEAPONS[@]} -gt 2 ]; then
+    [ $ALL -eq 1 ] && WEAPONS=($ALL_IDS)
+    suffix=""; [ $AIM -eq 1 ] && suffix="_aim"
+    frames=()
+    for w in "${WEAPONS[@]}"; do
+        rm -f "screenshots/$w$suffix.png"
+        shoot "$w" "screenshots/$w$suffix.png"
+        [ -s "screenshots/$w$suffix.png" ] && frames+=("screenshots/$w$suffix.png")
     done
+    args=(); for f in "${frames[@]}"; do args+=(-i "$f"); done
+    n=${#frames[@]}; rows=$(( (n + 3) / 4 ))
+    ffmpeg -v error -y "${args[@]}" -filter_complex "$(for i in $(seq 0 $((n - 1))); do printf '[%d]scale=640:-1[s%d];' "$i" "$i"; done)$(for i in $(seq 0 $((n - 1))); do printf '[s%d]' "$i"; done)concat=n=$n:v=1:a=0,tile=4x$rows:padding=4:color=black" \
+        -frames:v 1 "screenshots/all$suffix.png" && echo "wrote screenshots/all$suffix.png"
     exit 0
 fi
 
-[ -n "$WEAPON" ] || { echo "usage: $0 <weapon-id> [out.png] [--wait N] [--size WxH] | --all" >&2; exit 2; }
-shoot "$WEAPON" "${OUT:-screenshots/$WEAPON.png}"
+[ -n "$WEAPON" ] || { echo "usage: $0 <weapon-id> [out.png] [--wait N] [--size WxH] [--aim] [--pack res://x.gd] | --all" >&2; exit 2; }
+suffix=""; [ $AIM -eq 1 ] && suffix="_aim"
+shoot "$WEAPON" "${OUT:-screenshots/$WEAPON$suffix.png}"

@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_view.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 626
+const CHECKS := 631
 
 
 func _ready() -> void:
@@ -355,6 +355,80 @@ func _aim_marked_sights() -> void:
 		and absf((marked.back as Vector3).z + 0.3) < 0.001)
 	_check("and a model without marks has none", (sight_script.from_marks(body, body, Vector3.BACK) as Dictionary).is_empty())
 	marked_gun.queue_free()
+	_aim_own_sights()
+
+
+## A gun from boxes along -Z: a receiver, with rear sight parts and a front post as `[centre, size]` pairs.
+func _box_gun(parts: Array) -> Node3D:
+	var gun := Node3D.new()
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for part: Array in [[Vector3.ZERO, Vector3(0.05, 0.05, 0.6)]] + parts:
+		var box := BoxMesh.new()
+		box.size = part[1]
+		tool.append_from(box, 0, Transform3D(Basis.IDENTITY, part[0]))
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Body"
+	mesh.mesh = tool.commit()
+	gun.add_child(mesh)
+	mesh.owner = gun
+	return gun
+
+
+func _aim_own_sights() -> void:
+	# A model's own notch and post, or its aperture, are read off the mesh: the line runs over the post's tip, and nothing is built.
+	var own := load("res://addons/zee_weapons/view/zee_own_sight.gd")
+	var post := [Vector3(0.0, 0.0325, -0.2575), Vector3(0.004, 0.015, 0.005)]
+	var notched := _box_gun([[Vector3(0.012, 0.035, 0.16), Vector3(0.01, 0.02, 0.02)],
+		[Vector3(-0.012, 0.035, 0.16), Vector3(0.01, 0.02, 0.02)], post])
+	var ringed := _box_gun([[Vector3(0.0, 0.0625, 0.155), Vector3(0.034, 0.005, 0.01)],
+		[Vector3(0.0145, 0.045, 0.155), Vector3(0.005, 0.04, 0.01)], [Vector3(-0.0145, 0.045, 0.155), Vector3(0.005, 0.04, 0.01)],
+		[Vector3(0.0, 0.035, -0.2575), Vector3(0.004, 0.02, 0.005)]])
+	var plain := _box_gun([])
+	for gun: Node3D in [notched, ringed, plain]:
+		add_child(gun)
+	var a: Dictionary = own.measure(notched, notched, Vector3.FORWARD, -0.1)
+	_check("a notch and post: the line runs over the post's tip (%s)" % str(a),
+		a.get("kind", "") == "post" and a.get("post", false) and absf((a.front as Vector3).y - 0.04) < 0.001
+		and absf((a.front as Vector3).z + 0.255) < 0.001 and is_equal_approx((a.rear as Vector3).z, 0.1))
+	var b: Dictionary = own.measure(ringed, ringed, Vector3.FORWARD, -0.1)
+	_check("a ring round a post: the line runs through the ring onto the post's tip (%s)" % str(b),
+		b.get("kind", "") == "aperture" and b.get("post", false) and absf((b.front as Vector3).y - 0.045) < 0.001)
+	_check("and a gun with neither has no sight of its own", (own.measure(plain, plain, Vector3.FORWARD, -0.1) as Dictionary).is_empty())
+	plain.queue_free()
+	ringed.queue_free()
+
+	# Aimed in a view model, the own line goes through the screen's centre, nothing is built over it, and the post's dot shows.
+	var scene := PackedScene.new()
+	notched.get_parent().remove_child(notched)
+	scene.pack(notched)
+	var path := "user://zee_selftest_own_sight.scn"
+	ResourceSaver.save(scene, path)
+	notched.free()
+	var art := ZeeWeaponArt.make(&"own_sight_test", path)
+	art.model_forward = Vector3.FORWARD
+	art.iron_sight = false
+	art.sight_own = true
+	art.aim_eye_relief = 0.32
+	art.aim_offset = Vector3(0.0, -0.04, -0.42)
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	add_child(view)
+	view.equip(art)
+	view.aim(true)
+	for _i in 40:
+		view._process(0.02)
+	var points := view.sight_points()
+	var off := 1.0
+	if not points.is_empty():
+		off = maxf(Vector2((points.rear as Vector3).x, (points.rear as Vector3).y).length(),
+			Vector2((points.front as Vector3).x, (points.front as Vector3).y).length())
+	_check("aimed, a model's own sight runs through the screen's centre (%.4f m)" % off, off < 0.002)
+	var built := view.find_child("Sight", true, false)
+	var dot := view.find_child("SightDot", true, false) as MeshInstance3D
+	_check("with no sight built over it, and its post's dot shown", built == null and dot != null and dot.visible)
+	view.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 
 func _previews() -> void:
