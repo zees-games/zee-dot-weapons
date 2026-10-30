@@ -307,8 +307,8 @@ func _effects_pack_light() -> void:
 	lights = int(fx.call(&"_lights_live"))
 	_check("dot-fx flash lights stay under the cap (%d of %d)" % [lights, fx.max_flash_lights],
 		lights >= 1 and lights <= fx.max_flash_lights)
-	var node := fx.get_children().filter(func(c: Node) -> bool: return c is OmniLight3D)[0] as OmniLight3D
-	_check("the muzzle light has no shadows", not node.shadow_enabled)
+	var found := fx.find_children("*", "OmniLight3D", true, false)
+	_check("the muzzle light exists and has no shadows", not found.is_empty() and not (found[0] as OmniLight3D).shadow_enabled)
 	fx.flash_light_scale = 0.0
 	fx.advance(1.0)
 	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
@@ -325,11 +325,20 @@ func _effects_pack_light() -> void:
 
 
 ## Lights shining under [param root] that are visible and lit (ours or the art's).
+## Whether a node, or the flash it hangs under, is already queued to be freed (its light dies with it).
+func _going(node: Node) -> bool:
+	while node != null:
+		if node.is_queued_for_deletion():
+			return true
+		node = node.get_parent()
+	return false
+
+
 func _lit_lights(root: Node) -> int:
 	var count := 0
 	for light in root.find_children("*", "OmniLight3D", true, false):
 		var l := light as OmniLight3D
-		if not l.is_queued_for_deletion() and l.is_visible_in_tree() and l.light_energy > 0.0 and l.get_parent().get("light_enable") != false:
+		if not _going(l) and l.is_visible_in_tree() and l.light_energy > 0.0 and l.get_parent().get("light_enable") != false:
 			count += 1
 	return count
 

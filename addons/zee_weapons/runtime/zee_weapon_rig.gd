@@ -272,7 +272,7 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	if ramp < fire_min and (command.buttons & DotWeaponCommand.BUTTON_ATTACK) != 0:
 		command = command.duplicate_command()
 		command.buttons &= ~DotWeaponCommand.BUTTON_ATTACK
-	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom, b.recoil_pitch, b.recoil_yaw]
+	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom, b.recoil_pitch, b.recoil_yaw, b.spread_aim, b.recoil_aim]
 	var rk := lerpf(1.0, ads_rules.recoil_for(def.id), ramp)
 	b.recoil_pitch *= rk
 	b.recoil_yaw *= rk
@@ -280,6 +280,7 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.spread_moving *= k
 	b.spread_airborne *= k
 	b.bloom *= k
+	_ease_class_aim(b, def, ramp)
 	var outcome := arsenal.simulate_tick(command, context, _previous_command)
 	b.spread = kept[0]
 	b.spread_moving = kept[1]
@@ -287,9 +288,21 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.bloom = kept[3]
 	b.recoil_pitch = kept[4]
 	b.recoil_yaw = kept[5]
+	b.spread_aim = kept[6]
+	b.recoil_aim = kept[7]
 	if outcome.used and outcome.kind == DotWeaponOutcome.KIND_SHOT:
 		_tag_aimed_shots(outcome, art != null and art.aim_scoped)
 	return outcome
+
+
+## The class's aim factors and hip spread (dot-weapon switches both the instant the aim bit is set) follow the sights' ramp.
+static func _ease_class_aim(b: DotWeaponBallistics, def: DotWeaponDef, ramp: float) -> void:
+	var klass := DotWeaponAccuracyClass.resolve(b.accuracy_class, def.tags, def.id)
+	var factor := lerpf(1.0, b.accuracy("spread_aim", klass), ramp)
+	b.spread_aim = factor
+	# The factor scales the whole cone, so divide it out of the hip term to leave hip * (1 - ramp).
+	b.spread += b.accuracy("spread_hip", klass) * (1.0 - ramp) / maxf(factor, 0.001)
+	b.recoil_aim = lerpf(1.0, b.accuracy("recoil_aim", klass), ramp)
 
 
 ## The aim facts [method _tag_aimed_shots] put on a shot, for a stat rule: `ads_progress` (-1 when untagged) and `quickscope`.

@@ -44,12 +44,25 @@ extra:
     bloom: 0.3
     bloom_max: 4.0
     bloom_recovery: 0.15
+    accuracy_class: ""
+    bloom_delay_ticks: -1
+    spread_aim: -1.0
+    spread_hip: -1.0
+    spread_sprint: -1.0
+    spread_slide: -1.0
+    settle_ticks: -1
+    spread_flinch: -1.0
+    bloom_crouch: -1.0
     recoil_pitch: 0.32
     recoil_yaw: 0.2
     recoil_build: 0.06
     recoil_build_max: 0.8
     recoil_recovery: 6.0
     recoil_seed: 0
+    recoil_aim: -1.0
+    recoil_crouch: -1.0
+    recoil_move: -1.0
+    recoil_camera: -1.0
     muzzle_velocity: 0.0
     bullet_gravity: 1.0
     drag: 0.0005

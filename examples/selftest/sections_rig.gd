@@ -447,7 +447,10 @@ func _ads_rules() -> void:
 	var _given := rig.give_everything()
 	rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
 	_run_rig(rig, 0, 60, 0)
-	(rig.arsenal.current_def().tuning as DotWeaponBallistics).bloom = 0.0
+	var tuning := rig.arsenal.current_def().tuning as DotWeaponBallistics
+	tuning.bloom = 0.0
+	# The neutral class isolates this pack's multiplier from dot-weapon's per-class aim factors.
+	tuning.accuracy_class = "none"
 	var plain := _first_spread(rig, 60, 0)
 	rig.ads_rules = rules
 	var fresh := _first_spread(rig, 240, DotWeaponCommand.BUTTON_USER_0)
@@ -456,8 +459,17 @@ func _ads_rules() -> void:
 	_check("the aim bit is a ramp: a first tick of aiming is still nearly the hip spread (%.3f)" % fresh, fresh > plain * 0.8)
 	_check("a shot while aiming is tighter by the multiplier (%.3f -> %.3f)" % [plain, held],
 		plain > 0.0 and is_equal_approx(held, plain * 0.5))
+	tuning.accuracy_class = "sniper"
+	var class_plain := _first_spread(rig, 600, 0)
+	var class_fresh := _first_spread(rig, 840, DotWeaponCommand.BUTTON_USER_0)
+	_run_rig(rig, 900, 960, DotWeaponCommand.BUTTON_USER_0)
+	var class_held := _first_spread(rig, 960, DotWeaponCommand.BUTTON_USER_0)
+	_check("a class's hip spread is still there on the first tick of aiming, not dropped at once (%.3f of %.3f)" % [class_fresh, class_plain],
+		class_fresh > class_plain * 0.6)
+	_check("with the sights up the class's aim factor closes the cone (%.3f)" % class_held, class_held < 0.01)
+	tuning.accuracy_class = "none"
 	_check("walk speed drops while the aim button is held", is_equal_approx(rig.ads_move_scale(), 0.8))
-	var after := _first_spread(rig, 600, 0)
+	var after := _first_spread(rig, 1200, 0)
 	var wire := rules.to_wire()
 	var clone := ZeeAdsRules.new()
 	_check("the rules cross the wire: a client adopting the server's text predicts the same", clone.adopt_wire(wire) and clone.to_wire() == wire and clone.wire_hash() == rules.wire_hash())
