@@ -35,6 +35,17 @@ ads:
     red_dot_size: 0.25
     red_dot_brightness: 4.0
     red_dot_color: "#ff2a1a"
+    # the gun nears a wall: reach multiplies the drawn length (1 = the gun's real length), margin is the gap kept (m),
+    # stiffness/damping the spring, push/nudge the back and up/sideways strength, max the deepest pull (m),
+    # floor_look the degrees you must look down before the floor counts (0 = always)
+    wall_reach: 1.0
+    wall_margin: 0.03
+    wall_stiffness: 160.0
+    wall_damping: 20.0
+    wall_push: 1.0
+    wall_nudge: 0.6
+    wall_max: 0.34
+    wall_floor_look: 40.0
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:
     sniper:

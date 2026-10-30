@@ -702,9 +702,33 @@ func advance(delta: float) -> void:
 ## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
 func _advance_wall(delta: float) -> void:
 	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()
-	_wall.step(ZeeWallSlam.target(self, muzzle_transform().origin, wall_mask, wall_ignore_characters, _wall_exclude()) if on else 0.0, delta)
+	var w := _wall_numbers()
+	var target := 0.0
+	if on:
+		var muzzle := muzzle_transform().origin
+		var cam: Node3D = (get_parent() as Node3D) if get_parent() is Node3D else self
+		var to_muzzle := muzzle - cam.global_position
+		var dist := to_muzzle.length()
+		if dist > 0.01:
+			var scale_now: float = ads_rules.view_scale_for(_art.id) if ads_rules != null and _art != null else 2.0
+			var reach := ZeeWallSlam.reach_of(dist, scale_now, w["reach"])
+			var hit := ZeeWallSlam.probe(self, reach, wall_mask, wall_ignore_characters, _wall_exclude(), to_muzzle / dist,
+				w["margin"], w["max"], w["floor_look"])
+			target = hit["depth"]
+			_wall.aim_at(hit["normal"], _speed)
+	_wall.step(target, delta, w["stiffness"], w["damping"])
 	if _wall.amount > 0.0:
-		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt) * _animated.transform
+		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction()) * _animated.transform
+
+
+## The wall response's numbers for the held weapon (the profile's, or the defaults).
+func _wall_numbers() -> Dictionary:
+	if ads_rules != null and _art != null:
+		return ads_rules.wall_for(_art.id)
+	var out := {}
+	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look"]:
+		out[key] = float(ZeeAdsRules.SPECS["wall_" + key]["default"])
+	return out
 
 
 ## The carrier's own body, so the probe never stops on the player it hangs from.

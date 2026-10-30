@@ -42,6 +42,14 @@ const SPECS := {
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 	"sight_dot": {"default": 0.15, "min": 0.0, "max": 1.0},
 	"sight_cut": {"default": 2.0, "min": 0.0, "max": 15.0},
+	"wall_reach": {"default": 1.0, "min": 0.0, "max": 3.0},
+	"wall_margin": {"default": 0.03, "min": 0.0, "max": 0.3},
+	"wall_stiffness": {"default": 160.0, "min": 10.0, "max": 1000.0},
+	"wall_damping": {"default": 20.0, "min": 1.0, "max": 100.0},
+	"wall_push": {"default": 1.0, "min": 0.0, "max": 4.0},
+	"wall_nudge": {"default": 0.6, "min": 0.0, "max": 4.0},
+	"wall_max": {"default": 0.34, "min": 0.0, "max": 1.0},
+	"wall_floor_look": {"default": 40.0, "min": 0.0, "max": 90.0},
 	"red_dot": {"default": false},
 	"red_dot_window": {"default": 4.0, "min": 0.5, "max": 20.0},
 	"red_dot_size": {"default": 0.25, "min": 0.02, "max": 1.0},
@@ -242,6 +250,15 @@ func red_dot_for(id: StringName) -> Dictionary:
 	return {"window": float(value_for(id, "red_dot_window")), "size": float(value_for(id, "red_dot_size")),
 		"brightness": float(value_for(id, "red_dot_brightness")), "color": Color.html(str(value_for(id, "red_dot_color"))),
 		"on": bool(value_for(id, "red_dot"))}
+
+
+## The wall response's numbers for [param id]: reach (share of the gun's real length), margin (m), stiffness, damping,
+## push (back, with approach speed), nudge (up and sideways, slow), max (m) and floor_look (degrees down before the floor counts).
+func wall_for(id: StringName) -> Dictionary:
+	var out := {}
+	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look"]:
+		out[key] = float(value_for(id, "wall_" + key))
+	return out
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).

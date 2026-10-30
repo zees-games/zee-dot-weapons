@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 734
+const CHECKS := 742
 
 
 func _ready() -> void:
@@ -541,16 +541,24 @@ func _wall_slam() -> void:
 	_check("in open air nothing is retracted", view.wall_amount() == 0.0)
 	var rest := -(camera.global_transform.affine_inverse() * view.muzzle_transform().origin).z
 
-	var surface := rest - 0.12
+	var reach := rest / 2.0
+	wall.position = Vector3(0.0, 0.0, -(rest * 0.8 + 0.5))
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("a wall short of the drawn muzzle but past the gun's real reach pushes nothing (%.3f m, reach %.2f)" % [view.wall_amount(), reach],
+		view.wall_amount() == 0.0)
+
+	var surface := reach - 0.12
 	wall.position = Vector3(0.0, 0.0, -(surface + 0.5))
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	for i in range(60):
 		view.advance(1.0 / 60.0)
 	var slammed := -(camera.global_transform.affine_inverse() * view.muzzle_transform().origin).z
-	_check("a muzzle inside the wall retracts the weapon (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.05)
-	_check("the muzzle, where tracers and flashes leave, is in front of the wall (%.3f of %.3f)" % [slammed, surface],
-		slammed <= surface)
+	_check("a wall inside the real reach retracts the weapon (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.05)
+	_check("and the gun is drawn back (%.3f of %.3f)" % [slammed, rest], slammed < rest - 0.05)
 	var up := (view.muzzle_transform().basis * Vector3.FORWARD).y
 	_check("and the barrel is tipped up (%.2f)" % up, up > 0.05)
 
@@ -588,10 +596,51 @@ func _wall_slam() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	_check("obstruction maths: no hit is 0", ZeeWallSlam.obstruction(0.9, INF) == 0.0)
-	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.9, 1.0) == 0.0)
-	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.9, 0.8) > 0.1)
-	_check("the retract is capped", ZeeWallSlam.obstruction(0.9, 0.0) == ZeeWallSlam.MAX_RETRACT)
+	_check("obstruction maths: no hit is 0", ZeeWallSlam.obstruction(0.45, INF) == 0.0)
+	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.45, 0.6) == 0.0)
+	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.45, 0.3) > 0.1)
+	_check("the retract is capped", ZeeWallSlam.obstruction(0.9, 0.0) == 0.34)
+	_check("the reach is the drawn distance over the drawn scale", is_equal_approx(ZeeWallSlam.reach_of(1.0, 2.0, 1.0), 0.5))
+
+	# A floor under a low eye (crouch, slide) is not an obstacle unless the view looks down at it.
+	wall.position = Vector3(0.0, 0.0, -100.0)
+	var floor_body := StaticBody3D.new()
+	var fbox := CollisionShape3D.new()
+	var fshape := BoxShape3D.new()
+	fshape.size = Vector3(40.0, 1.0, 40.0)
+	fbox.shape = fshape
+	floor_body.add_child(fbox)
+	floor_body.position = Vector3(0.0, -0.2 - 0.5, 0.0)
+	add_child(floor_body)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("a floor just below a level view does not move the gun (%.3f m)" % view.wall_amount(), view.wall_amount() == 0.0)
+	camera.rotation_degrees.x = -75.0
+	for i in range(60):
+		view.advance(1.0 / 60.0)
+	_check("looking down at it, the floor is an obstacle (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.03)
+	camera.rotation_degrees.x = 0.0
+	floor_body.queue_free()
+
+	# The response: a spring that settles, direction by approach speed, and nothing while aimed.
+	var slam := ZeeWallSlam.new()
+	var peak := 0.0
+	for i in range(120):
+		slam.step(0.2, 1.0 / 60.0)
+		peak = maxf(peak, slam.amount)
+	_check("the spring settles on its target with little overshoot (%.4f, peak %.4f)" % [slam.amount, peak],
+		absf(slam.amount - 0.2) < 0.002 and peak < 0.24)
+	slam.aim_at(Vector3(0.6, 0.0, 0.8), 0.0)
+	var slow := slam.offset(1.0, 1.0)
+	slam.aim_at(Vector3(0.0, 0.0, 1.0), 8.0)
+	var fast := slam.offset(1.0, 1.0)
+	_check("a slow angled approach nudges up and sideways (%s)" % str(slow.origin), slow.origin.y > 0.01 and absf(slow.origin.x) > 0.01)
+	_check("a fast head-on sprint pushes back harder with no nudge (%.3f vs %.3f)" % [fast.origin.z, slow.origin.z],
+		fast.origin.z > slow.origin.z and absf(fast.origin.x) < 0.001 and fast.origin.y < 0.001)
+	var aimed := slam.offset(1.0, 1.0, 1.0, 0.6, 1.0)
+	_check("fully aimed the gun is not moved off the sight line", aimed.origin.is_zero_approx() and aimed.basis.is_equal_approx(Basis.IDENTITY))
 	camera.queue_free()
 	wall.queue_free()
 	_end()
@@ -620,7 +669,7 @@ func _wall_arms() -> void:
 	var arms := view.get_node_or_null("Animated/Arms") as ZeeViewArms
 	var worst := {"gap": 0.0, "long": 0.0, "high": -INF, "near": -INF, "pulled": 0.0}
 	for i in range(150):
-		camera.position.z = maxf(-0.1 * i, -2.65)
+		camera.position.z = maxf(-0.1 * i, -2.82)
 		view.on_reload(clampf((i - 90) / 50.0, 0.0, 1.0))
 		view.advance(1.0 / 60.0)
 		if arms == null or arms.last_hands.is_empty():

@@ -38,6 +38,6 @@ The contact sheet's fire frames (`tools/screenshot.sh --sheet`) pull the trigger
 
 ## Wall slam and flash lifetime
 
-Against a wall the first-person view model retracts and tips its barrel up (`ZeeWallSlam`, cvars `cl_vm_wall` and `cl_vm_wall_tilt`, 0 turns it off), so tracers and muzzle flashes leave the barrel in front of the wall. The server-authoritative shot still starts at the eye: the retract is presentation, and an eye-origin shot cannot start inside a wall the eye is outside of.
+Against a wall the first-person view model is pushed back by a spring (`ZeeWallSlam`, cvars `cl_vm_wall` and `cl_vm_wall_tilt` scale it, 0 turns it off; reach, spring and strength are the `wall_*` keys of the ads profile, per weapon). It starts only inside the gun's real length, ignores the floor unless you look down at it, and is off while aiming, so tracers and muzzle flashes leave the barrel in front of the wall. The server-authoritative shot still starts at the eye: the retract is presentation, and an eye-origin shot cannot start inside a wall the eye is outside of.
 
 Muzzle flashes (dot-fx `DotMuzzleFlash`) last `DotMuzzleFlashConfig.lifetime` (50 ms), one at a time; `ZeeShotFx.stop_flashes` hides them on a weapon switch and a reset.
