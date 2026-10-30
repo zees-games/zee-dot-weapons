@@ -22,6 +22,8 @@ const CHANNEL := "zee.view"
 signal model_ready(id: StringName, weapon: Node3D)
 
 ## Every frame, where the hands belong: [param grip] and [param fore] in [param anchor]'s space, for a game that draws its own arms (with [member show_arms] off).
+## With [member hands_scale] or [member hands_min_distance] set, the anchor is the drawn weapon scaled about the eye to
+## that share of life size ([ZeeHandsFrame]), so a game's own arms reach it; otherwise the drawn weapon itself.
 signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringName)
 
 @export_group("Wiring")
@@ -31,6 +33,12 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 @export var arms_ref: DotNodeRef = null
 
 @export_group("Behaviour")
+
+## The size of a game's own arms against life size: [signal hands_reached]'s anchor shrinks the weapon to match, about the eye.
+@export var hands_scale: float = 1.0
+## The nearest the hands frame brings the grip to the eye, metres (0 = no limit): a weapon drawn close, a pistol, would
+## otherwise put a life-size hand over the whole view.
+@export var hands_min_distance: float = 0.0
 
 ## Whether to build and show hands at all.
 ## A real configuration (non-humanoid characters, a gun with no holder), not a debug switch.
@@ -160,6 +168,9 @@ func _build_structure() -> void:
 	_holder = Node3D.new()
 	_holder.name = "Holder"
 	_aim_node.add_child(_holder)
+	_hands_frame = Node3D.new()
+	_hands_frame.name = "HandsFrame"
+	add_child(_hands_frame)
 
 	if show_arms:
 		_build_arms()
@@ -357,7 +368,14 @@ func _place_hands() -> void:
 	var fore := aim * _support_hand()
 	var in_seq := _seq != null and _reload_fraction > 0.0 and _reload_fraction < 1.0
 	var grip := aim * (_grip_at + (_seq.right_offset(_reload_fraction) if in_seq else Vector3.ZERO))
-	hands_reached.emit(_animated, grip, fore, pose)
+	var anchor := _animated
+	if hands_scale != 1.0 or hands_min_distance > 0.0:
+		var to_holder := transform * _animated.transform * aim * _holder.transform
+		var scale := ZeeHandsFrame.life_scale(to_holder, _art) / maxf(hands_scale, 0.01)
+		scale = ZeeHandsFrame.keep_distance(scale, (transform * _animated.transform * grip).length(), hands_min_distance)
+		ZeeHandsFrame.place(_hands_frame, self, _animated, scale)
+		anchor = _hands_frame
+	hands_reached.emit(anchor, grip, fore, pose)
 	if _arms == null or not _arms.has_method("reach"):
 		return
 	var into := Transform3D.IDENTITY
@@ -560,6 +578,7 @@ func on_reload(fraction: float) -> void:
 
 ## The reload being played as phases (zee_reload_sequence.gd), or null for the generic one.
 var _seq: ReloadSequence = null
+var _hands_frame: Node3D = null
 var _seq_ran := false
 var _props: ReloadProps = null
 
