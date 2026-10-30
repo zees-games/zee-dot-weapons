@@ -2,7 +2,7 @@ class_name ZeeArtDress
 extends RefCounted
 
 ## Gives a stand-in [ZeeWeaponArt] another pack's model and hold from that pack's art row
-## (`{model, muzzle, motion, view: {hold, rot, scale, aim, zoom, scoped, iron}}`); aimed, the model's own sight is used. The hip hold is a layer of its own
+## (`{model, muzzle, motion, view: {hold, rot, scale, aim, zoom, scoped, iron, sight}}`, `sight: "red_dot"` for an optic); aimed, the model's own sight is used. The hip hold is a layer of its own
 ## (`view_offset`, `view_rotation`, `view_scale`) that a sprint or lowered pose blends over in [ZeeWeaponPose]; nothing here animates.
 
 const SIGHT_RELIEF := 0.32
@@ -34,6 +34,7 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	# (`iron: true`) or the model has neither a sight nor a written `aim`.
 	art.sight_own = true
 	art.iron_sight = bool(view.get("iron", not view.has("aim")))
+	art.sight_red_dot = str(view.get("sight", "")) == "red_dot"
 	art.aim_eye_relief = SIGHT_RELIEF
 	art.world_offset = Vector3.ZERO
 	art.world_rotation = Vector3.ZERO

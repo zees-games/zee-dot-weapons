@@ -27,6 +27,14 @@ ads:
     thrown_span: 0.31
     # radius in degrees of a glowing dot on a gun's own front post, shown as the aim arrives; 0 draws none
     sight_dot: 0.15
+    # half-angle in degrees of the cone round the aim line cut out of the gun's mesh, so iron sights and optics are see-through
+    sight_cut: 2.0
+    # a red-dot optic (also a weapon's art `sight: red_dot`): lens half-angle and dot size in degrees, glow multiplier, colour
+    red_dot: false
+    red_dot_window: 4.0
+    red_dot_size: 0.25
+    red_dot_brightness: 4.0
+    red_dot_color: "#ff2a1a"
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:
     sniper:

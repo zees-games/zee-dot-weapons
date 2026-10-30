@@ -118,6 +118,9 @@ extends Resource
 ## Found, it wins over [member iron_sight]; not found, [member iron_sight] decides between the built sight and [member aim_offset].
 @export var sight_own: bool = false
 
+## Whether the sight is a red dot: a glowing dot on the aim axis in a lens window cut through the housing (ADS rules `red_dot_*`).
+@export var sight_red_dot: bool = false
+
 ## Metres from the eye to the rear sight at full aim, before the view model pushes it out
 ## far enough that the gun's back end stays in front of the near plane.
 @export_range(0.05, 1.0, 0.01) var aim_eye_relief: float = 0.2

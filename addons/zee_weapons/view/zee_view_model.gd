@@ -562,6 +562,8 @@ func advance(delta: float) -> void:
 	_advance_wall(delta)
 	_place_hands()
 	_apply_hands_lens()
+	if _sight != null:
+		SightFit.track(_sight, (transform * _animated.transform * _aim_node.transform * _holder.transform).affine_inverse() * Vector3.ZERO)
 	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
 	# a game's own arms (arms_ref) may live anywhere, so they are hidden by name too.
 	var scoped := is_scoped()
@@ -750,11 +752,17 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	var near := (camera.near if camera != null else 0.05) + NEAR_MARGIN
 	var dot := ads_rules.sight_dot_for(art.id) if ads_rules != null else float(ZeeAdsRules.SPECS["sight_dot"]["default"])
 	var fitted := SightFit.fit(art, _weapon, _holder, _dressed.get("line", {}), near, dot)
-	if fitted.is_empty():
-		return
-	_sight_line = fitted.line
-	_sight_aim = fitted.aim
-	_sight = fitted.sight
+	if not fitted.is_empty():
+		_sight_line = fitted.line
+		_sight_aim = fitted.aim
+		_sight = fitted.sight
+	var roots: Array = [_weapon]
+	roots.append_array(_dressed.get("parts", []))
+	var red := SightFit.cut(art, ads_rules, roots, _holder, _aim_target(), _sight_line)
+	if red != null and _sight != null:
+		_sight.add_child(red)
+	elif red != null:
+		_sight = red
 	if _sight != null:
 		_holder.add_child(_sight)
 		_set_on_top(_sight)

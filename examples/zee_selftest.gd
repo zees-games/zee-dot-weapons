@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_view.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 637
+const CHECKS := 644
 
 
 func _ready() -> void:
@@ -430,6 +430,53 @@ func _aim_own_sights() -> void:
 	_check("with no sight built over it, and its post's dot shown", built == null and dot != null and dot.visible)
 	view.queue_free()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	_aim_cut()
+	_red_dot()
+
+
+func _aim_cut() -> void:
+	# A housing across the aim line is cut away round it as far as the post, and the rest of the gun is kept.
+	var cut_script := load("res://addons/zee_weapons/view/zee_sight_cut.gd")
+	var gun := _box_gun([[Vector3(0.0, 0.1, -0.1), Vector3(0.04, 0.04, 0.06)], [Vector3(0.0, 0.1, -0.3), Vector3(0.006, 0.006, 0.006)]])
+	add_child(gun)
+	var cone: Dictionary = cut_script.cone(Transform3D(Basis.IDENTITY, Vector3(0.0, -0.1, -0.2)), 2.0, Vector3(0.0, 0.1, -0.297))
+	var before: int = cut_script.occluders(gun, gun, cone)
+	var done: Dictionary = cut_script.apply([gun], gun, cone)
+	var after: int = cut_script.occluders(gun, gun, cone)
+	_check("a housing over the aim line blocks it until cut (%d of 49 rays), then nothing does (%d)" % [before, after], before > 20 and after == 0)
+	var past := {"eye": cone.eye, "axis": cone.axis, "tan": cone.tan, "stop": INF}
+	_check("the post past the stop is kept, and so is the housing outside the cone (%s)" % str(done),
+		int(done.get("removed", 0)) > 0 and cut_script.occluders(gun, gun, past) > 0
+		and _hits(gun, Vector3(0.0, 0.115, 0.0), Vector3(0.0, 0.115, -0.2)))
+	_check("a cone of 0 degrees cuts nothing", (cut_script.cone(Transform3D.IDENTITY, 0.0) as Dictionary).is_empty())
+	gun.queue_free()
+
+
+func _hits(node: Node3D, from: Vector3, to: Vector3) -> bool:
+	for tri: Dictionary in load("res://addons/zee_weapons/view/zee_iron_sight.gd").triangles_of(node, node):
+		if Geometry3D.segment_intersects_triangle(from, to, tri.a, tri.b, tri.c) != null:
+			return true
+	return false
+
+
+func _red_dot() -> void:
+	# A red-dot rule parses its colour, and the dot sits where the eye's line along the axis meets the lens.
+	var rules := ZeeAdsRules.new()
+	var red: Dictionary = rules.red_dot_for(&"gl")
+	_check("a red dot is off by default and red when on (%s)" % str(red), not red.on and (red.color as Color).r > 0.9 and (red.color as Color).g < 0.3)
+	_check("its colour is a colour or refused", rules.set_value(&"gl", "red_dot_color", "#00ff00") and not rules.set_value(&"gl", "red_dot_color", "nope")
+		and (rules.red_dot_for(&"gl").color as Color).is_equal_approx(Color(0, 1, 0)) and rules.set_value(&"gl", "red_dot", true) and rules.red_dot_for(&"gl").on)
+	var fit := ZeeViewModel.SightFit
+	var cone: Dictionary = fit.Cut.cone(Transform3D.IDENTITY, 4.0)
+	var sight: Node3D = fit._red_dot(cone, 0.2, rules.red_dot_for(&"gl"))
+	add_child(sight)
+	var dot := sight.find_child(fit.RETICLE_NAME, true, false) as Node3D
+	fit.track(sight, Vector3(0.004, -0.002, 0.0))
+	var at := sight.to_global(dot.position) if dot != null else Vector3.INF
+	_check("the dot follows the eye across the lens, at the lens (%s)" % str(at), dot != null and dot.visible and at.is_equal_approx(Vector3(0.004, -0.002, -0.2)))
+	fit.track(sight, Vector3(0.05, 0.0, 0.0))
+	_check("and hides once the eye is outside the window", not dot.visible)
+	sight.queue_free()
 
 
 func _previews() -> void:

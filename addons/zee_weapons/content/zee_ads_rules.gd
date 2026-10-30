@@ -41,6 +41,12 @@ const SPECS := {
 	"hip_zero": {"default": 20.0, "min": 0.0, "max": 200.0},
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 	"sight_dot": {"default": 0.15, "min": 0.0, "max": 1.0},
+	"sight_cut": {"default": 2.0, "min": 0.0, "max": 15.0},
+	"red_dot": {"default": false},
+	"red_dot_window": {"default": 4.0, "min": 0.5, "max": 20.0},
+	"red_dot_size": {"default": 0.25, "min": 0.02, "max": 1.0},
+	"red_dot_brightness": {"default": 4.0, "min": 0.0, "max": 16.0},
+	"red_dot_color": {"default": "#ff2a1a"},
 }
 
 ## The profile every weapon without an override uses.
@@ -94,6 +100,9 @@ func set_value(id: StringName, key: String, value: Variant) -> bool:
 	var clean: Variant = null
 	if spec["default"] is bool:
 		if value is bool:
+			clean = value
+	elif spec["default"] is String:
+		if value is String and Color.html_is_valid(value):
 			clean = value
 	elif (value is float or value is int) and is_finite(float(value)):
 		var number := float(value)
@@ -221,6 +230,18 @@ func hit_flinch_for(id: StringName) -> float:
 ## Degrees of the glowing dot on a model's own front post when aimed; 0 draws none.
 func sight_dot_for(id: StringName) -> float:
 	return float(value_for(id, "sight_dot"))
+
+
+## Degrees of the see-through hole cut along the aim line through the gun's own rear sight or housing; 0 cuts none.
+func sight_cut_for(id: StringName) -> float:
+	return float(value_for(id, "sight_cut"))
+
+
+## The red-dot sight for [param id] (on when the art or this profile says so): `{window, size, brightness, color}`, window and size in degrees.
+func red_dot_for(id: StringName) -> Dictionary:
+	return {"window": float(value_for(id, "red_dot_window")), "size": float(value_for(id, "red_dot_size")),
+		"brightness": float(value_for(id, "red_dot_brightness")), "color": Color.html(str(value_for(id, "red_dot_color"))),
+		"on": bool(value_for(id, "red_dot"))}
 
 
 ## Metres added to the art's hip place (view space: +X right, +Y up, +Z toward the eye).
