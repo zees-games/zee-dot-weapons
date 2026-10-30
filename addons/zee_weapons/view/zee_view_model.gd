@@ -8,6 +8,8 @@ const ReloadParts := preload("zee_reload_parts.gd")
 const Dress := preload("zee_attachment_dress.gd")
 const HipHold := preload("zee_hip_hold.gd")
 const HandReach := preload("zee_hand_reach.gd")
+const ReloadSequence := preload("zee_reload_sequence.gd")
+const ReloadProps := preload("zee_reload_props.gd")
 
 ## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
 ## and never reads a device, a clock or the arsenal, so it draws a remote player's gun the same way.
@@ -222,6 +224,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	_clear_models()
 
+	_end_sequence()
 	_source_art = art
 	_art = HipHold.sized(art, ads_rules, position.z)
 	art = _art
@@ -231,8 +234,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_pose.feel = maxf(0.0, feel)
 	_pose.tunables.draw_keys = art.draw_keys if not art.draw_keys.is_empty() \
 		else ZeeWeaponPose.DRAW_KEYS
-	_pose.tunables.reload_keys = art.reload_keys if not art.reload_keys.is_empty() \
-		else ZeeWeaponArtTable.reload_keys(art.pose)
+	_pose.tunables.reload_keys = _default_reload_keys()
 	var carry := ZeeWeaponArtTable.sprint_view(art.pose)
 	_pose.tunables.sprint_offset = art.sprint_offset if art.sprint_offset.is_finite() else carry[0]
 	_pose.tunables.sprint_rotation = art.sprint_rotation if art.sprint_rotation.is_finite() else carry[1]
@@ -353,7 +355,9 @@ func _place_hands() -> void:
 	var aim := _aim_node.transform
 	var pose := _art.pose if _art.has_model() else &"fists"
 	var fore := aim * _support_hand()
-	hands_reached.emit(_animated, aim * _grip_at, fore, pose)
+	var in_seq := _seq != null and _reload_fraction > 0.0 and _reload_fraction < 1.0
+	var grip := aim * (_grip_at + (_seq.right_offset(_reload_fraction) if in_seq else Vector3.ZERO))
+	hands_reached.emit(_animated, grip, fore, pose)
 	if _arms == null or not _arms.has_method("reach"):
 		return
 	var into := Transform3D.IDENTITY
@@ -363,15 +367,15 @@ func _place_hands() -> void:
 	aim = into * aim
 	fore = into * fore
 	if "support_free" in _arms:
-		_arms.set("support_free", _has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0)
+		_arms.set("support_free", in_seq or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
 	# A game's own arms may answer the older three-argument reach; they get no axes.
 	if _arms.get_method_argument_count("reach") >= 6:
 		_arms.call(
-			"reach", aim * _grip_at, fore, pose,
+			"reach", grip, fore, pose,
 			aim.basis * _grip_axis, aim.basis * _fore_axis, _grip_radius
 		)
 	else:
-		_arms.call("reach", aim * _grip_at, fore, pose)
+		_arms.call("reach", grip, fore, pose)
 
 
 ## Where the support hand is this frame: on the fore-end, or, through a reload of a weapon with
@@ -379,6 +383,8 @@ func _place_hands() -> void:
 ## one, and back to the fore-end. Keys in the same shape as the gun's, so the two agree.
 func _support_hand() -> Vector3:
 	var f := _reload_fraction
+	if _seq != null and f > 0.0 and f < 1.0:
+		return _seq.left_hand(f)
 	if not _has_well or f <= 0.0 or f >= 1.0:
 		return _fore_at
 	if _feeds:
@@ -542,8 +548,85 @@ func on_deploy(fraction: float) -> void:
 ## How far through a reload, 0 to 1; the magazine is animated from the same number.
 func on_reload(fraction: float) -> void:
 	_reload_fraction = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
+	if _seq != null:
+		if _reload_fraction > 0.0:
+			_seq_ran = true
+		elif _seq_ran:
+			_end_sequence()
 	_pose.set_reload(_reload_fraction)
 	_animate_magazine(_reload_fraction)
+
+
+## The reload being played as phases (zee_reload_sequence.gd), or null for the generic one.
+var _seq: ReloadSequence = null
+var _seq_ran := false
+var _props: ReloadProps = null
+
+
+## A reload began with [param left] of [param magazine] rounds in: plays the weapon's own phases, sized to what is there.
+## [param start_share] is the part before the first round of a reload by the round. Off under `cl_vm_reload_detail` 0.
+func on_reload_begin(left: int, magazine: int, start_share: float = 0.0) -> void:
+	_end_sequence()
+	if _art == null or _weapon == null or _holder == null or feel_rules.reload_detail <= 0.0:
+		return
+	if ReloadSequence.style_of(_art) == &"generic":
+		return
+	var to_aim := _holder.transform
+	var well: Variant = _well if _has_well and _art.reload.is_empty() else null
+	var anchors := ReloadSequence.anchors_for(_grip_at, _fore_at, to_aim * (_weapon.transform * _muzzle), well, _art.reload.get("anchors", {}), to_aim)
+	var seq := ReloadSequence.new()
+	seq.compose(_art, anchors, magazine, left, start_share)
+	if seq.phases.is_empty():
+		return
+	_seq = seq
+	_seq_ran = false
+	_pose.tunables.reload_keys = seq.gun_keys
+	var props := ReloadProps.new()
+	props.name = "ReloadProps"
+	props.on_top = _set_on_top
+	_holder.add_child(props)
+	_props = props
+
+
+## The sequence playing now, or null.
+func reload_sequence() -> ReloadSequence:
+	return _seq
+
+
+## How many reload parts named [param part] are drawn now (every part when empty).
+func reload_parts_shown(part: StringName = &"") -> int:
+	return _props.shown(part) if _props != null else 0
+
+
+func _end_sequence() -> void:
+	_seq = null
+	_seq_ran = false
+	if _props != null:
+		_props.queue_free()
+		_props = null
+	if _art != null:
+		_pose.tunables.reload_keys = _default_reload_keys()
+		if _magazine != null:
+			_magazine.visible = true
+			_magazine.transform = _art.magazine_transform()
+
+
+func _default_reload_keys() -> Array:
+	return _art.reload_keys if not _art.reload_keys.is_empty() else ZeeWeaponArtTable.reload_keys(_art.pose)
+
+
+func _animate_sequence(f: float) -> void:
+	var out: bool = _seq.own_magazine_out(f)
+	if _magazine != null:
+		_magazine.visible = not _art.magazine_loose and not out
+		_magazine.transform = _art.magazine_transform()
+	if _art.hide_during_reload != &"" and _weapon != null:
+		var own := _weapon.find_child(String(_art.hide_during_reload), true, false) as Node3D
+		if own != null:
+			own.visible = not out
+	if _props != null:
+		var scale := maxf(_holder.transform.basis.get_scale().x, 0.0001)
+		_props.show_at(_seq, f if f > 0.0 and f < 1.0 else -1.0, _holder.transform.affine_inverse(), float(_seq.prop_scale) / scale)
 
 
 ## A charged weapon's draw, 0 to 1.
@@ -865,6 +948,9 @@ func _look_delta() -> Vector2:
 
 ## Drops the magazine out and slides a fresh one in, if there is one to animate.
 func _animate_magazine(fraction: float) -> void:
+	if _seq != null:
+		_animate_sequence(clampf(fraction, 0.0, 1.0))
+		return
 	if _magazine == null or _art == null:
 		return
 
@@ -1037,6 +1123,7 @@ func describe() -> Dictionary:
 		"magazine": _magazine != null,
 		"attachments": _attachments.size(),
 		"arms": _arms.describe() if _arms != null else {},
+		"reload": _seq.describe() if _seq != null else {},
 		"pose": _pose.describe(),
 		"muzzle": _muzzle,
 		"aim": "%.2f%s%s" % [_aim_fraction, " held" if _aim_held else "", " scoped" if is_scoped() else ""],

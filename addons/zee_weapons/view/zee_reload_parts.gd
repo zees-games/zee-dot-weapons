@@ -18,18 +18,137 @@ extends RefCounted
 const CELL := &"cell"
 const AMMO_BOX := &"ammo_box"
 const BOX_MAGAZINE := &"box_magazine"
+## The reload sequence's loose pieces (zee_reload_sequence.gd): cases thrown out, rounds carried in.
+const LOOSE := [&"casing", &"round", &"shell", &"grenade", &"grenade_case", &"rocket", &"speedloader", &"clip", &"belt"]
 
 
-## The part named [param part], or null for a name this file does not know.
+## The part named [param part] (tagged with it as the `part` meta), or null for a name this file does not know.
 static func build(part: StringName) -> Node3D:
+	var node: Node3D = null
 	match part:
 		CELL:
-			return cell()
+			node = cell()
 		AMMO_BOX:
-			return ammo_box()
+			node = ammo_box()
 		BOX_MAGAZINE:
-			return box_magazine()
-	return null
+			node = box_magazine()
+		&"casing":
+			node = _cartridge(0.006, 0.026, false)
+		&"round":
+			node = _cartridge(0.006, 0.030, true)
+		&"shell":
+			node = _shell()
+		&"grenade":
+			node = _grenade(true)
+		&"grenade_case":
+			node = _grenade(false)
+		&"rocket":
+			node = _rocket()
+		&"speedloader":
+			node = _speedloader()
+		&"clip":
+			node = _clip()
+		&"belt":
+			node = _belt()
+	if node != null:
+		node.set_meta(&"part", part)
+	return node
+
+
+static func _brass() -> StandardMaterial3D:
+	return _material(Color(0.85, 0.62, 0.22), 0.6, 0.35)
+
+
+## A pistol or rifle cartridge standing on its base; a spent one has no bullet.
+static func _cartridge(radius: float, tall: float, live: bool) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Round" if live else "Casing"
+	_cylinder(root, radius, tall, Vector3(0.0, tall * 0.5, 0.0), _brass())
+	if live:
+		_cylinder(root, radius * 0.8, tall * 0.4, Vector3(0.0, tall * 1.2, 0.0), _material(Color(0.55, 0.36, 0.24), 0.5, 0.4))
+	return root
+
+
+## A red shotgun shell with a brass head, 7 cm: bright enough to read in a moving hand.
+static func _shell() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Shell"
+	_cylinder(root, 0.011, 0.016, Vector3(0.0, 0.008, 0.0), _brass())
+	_cylinder(root, 0.0105, 0.052, Vector3(0.0, 0.042, 0.0), _material(Color(0.75, 0.12, 0.10), 0.0, 0.6))
+	return root
+
+
+## A 40 mm grenade round, 10 cm: a brass case and, live, a dark olive ogive with a yellow band.
+static func _grenade(live: bool) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Grenade" if live else "GrenadeCase"
+	_cylinder(root, 0.021, 0.045, Vector3(0.0, 0.0225, 0.0), _brass())
+	if live:
+		_cylinder(root, 0.020, 0.040, Vector3(0.0, 0.065, 0.0), _material(Color(0.30, 0.34, 0.20), 0.1, 0.7))
+		_cylinder(root, 0.0205, 0.006, Vector3(0.0, 0.050, 0.0), _material(Color(0.95, 0.80, 0.15), 0.0, 0.5))
+		var tip := SphereMesh.new()
+		tip.radius = 0.019
+		tip.height = 0.026
+		tip.material = _material(Color(0.30, 0.34, 0.20), 0.1, 0.7)
+		var node := MeshInstance3D.new()
+		node.mesh = tip
+		node.position = Vector3(0.0, 0.086, 0.0)
+		root.add_child(node)
+	return root
+
+
+## A rocket, 45 cm along its own +Y: an olive body, a dark cone nose and crossed fins.
+static func _rocket() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Rocket"
+	var olive := _material(Color(0.36, 0.42, 0.24), 0.1, 0.7)
+	var dark := _material(Color(0.12, 0.13, 0.16), 0.2, 0.6)
+	_cylinder(root, 0.03, 0.34, Vector3(0.0, 0.17, 0.0), olive)
+	var nose := CylinderMesh.new()
+	nose.top_radius = 0.0
+	nose.bottom_radius = 0.03
+	nose.height = 0.11
+	nose.material = dark
+	var node := MeshInstance3D.new()
+	node.mesh = nose
+	node.position = Vector3(0.0, 0.395, 0.0)
+	root.add_child(node)
+	for i in 2:
+		_box(root, Vector3(0.004, 0.06, 0.09), Vector3(0.0, 0.03, 0.0), dark, Basis(Vector3.UP, PI * 0.5 * i))
+	return root
+
+
+## A speedloader: a dark ring with six rounds standing in it.
+static func _speedloader() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Speedloader"
+	_cylinder(root, 0.022, 0.014, Vector3(0.0, 0.007, 0.0), _material(Color(0.12, 0.13, 0.16), 0.3, 0.6))
+	for i in 6:
+		var a := TAU * float(i) / 6.0
+		_cylinder(root, 0.0055, 0.03, Vector3(cos(a) * 0.014, 0.028, sin(a) * 0.014), _brass())
+	return root
+
+
+## A stripper clip of five rifle rounds in a row.
+static func _clip() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Clip"
+	_box(root, Vector3(0.010, 0.004, 0.062), Vector3(0.0, 0.002, 0.0), _material(Color(0.30, 0.32, 0.36), 0.6, 0.4))
+	for i in 5:
+		_cylinder(root, 0.0055, 0.055, Vector3(0.0, 0.03, -0.024 + 0.012 * i), _brass())
+	return root
+
+
+## A short length of linked belt, eight rounds across the feed tray.
+static func _belt() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Belt"
+	var dark := _material(Color(0.12, 0.13, 0.16), 0.0, 0.7)
+	for i in 8:
+		var at := Vector3(-0.07 + 0.02 * i, 0.0, 0.0)
+		_cylinder(root, 0.0065, 0.05, at, _brass(), Basis(Vector3.RIGHT, PI * 0.5))
+		_box(root, Vector3(0.016, 0.004, 0.012), at + Vector3(0.0, -0.007, 0.008), dark)
+	return root
 
 
 ## An energy cell, 16 cm tall: grey caps round a glowing cyan charge with dark bands across it.

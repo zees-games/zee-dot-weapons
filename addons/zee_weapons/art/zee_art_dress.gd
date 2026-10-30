@@ -20,6 +20,7 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	art.model_path = model
 	art.magazine_path = ""
 	art.attachments = []
+	art.reload = (row.get("reload", {}) as Dictionary).duplicate(true)
 
 	# A melee model stands along +Y and a thrown one has no front: the stand-in's carry stays.
 	if motion != "gun":

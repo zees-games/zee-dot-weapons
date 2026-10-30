@@ -601,6 +601,9 @@ func _on_reload_started(slot: int) -> void:
 
 	_reload_started = _last_tick
 	_reload_ticks = reload_motion_ticks(carried.def, carried.magazine_space())
+	if _view != null and not _replaying:
+		var start := float(arsenal.ticks_for(carried.def, carried.def.reload_start_ticks)) if carried.def.reload_per_round else 0.0
+		_view.on_reload_begin(carried.magazine, carried.def.magazine, start / float(_reload_ticks))
 
 
 ## Ticks the reload motion spans: a per-round reload is the start plus one round time per missing

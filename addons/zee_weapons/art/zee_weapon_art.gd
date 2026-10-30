@@ -138,6 +138,10 @@ extends Resource
 ## ([method ZeeWeaponArtTable.reload_keys]).
 @export var reload_keys: Array = []
 
+## The reload's phases (view/zee_reload_sequence.gd): `style` and its parts, timing weights, hand targets, anchors.
+## Empty: the style the rest of this art implies.
+@export var reload: Dictionary = {}
+
 @export_group("Third person")
 
 ## Where the weapon sits relative to the character's hand attachment point.
@@ -275,7 +279,7 @@ func with_magazine(path: String, offset: Vector3 = Vector3.ZERO) -> ZeeWeaponArt
 ## The first-person transform, before any animation the rig applies.
 ## [param row] (a profile's `extra: art:`; vectors as 3-number arrays) over a copy of this art, or this
 ## art itself when the row says nothing. Keys: `hands`, `support_grip`, `sprint_offset`, `sprint_rotation`,
-## `sprint_world_offset`, `sprint_world_rotation`, `world_scale`.
+## `sprint_world_offset`, `sprint_world_rotation`, `world_scale`, `reload` (merged over the art's).
 func with_overrides(row: Variant) -> ZeeWeaponArt:
 	if not (row is Dictionary) or (row as Dictionary).is_empty():
 		return self
@@ -296,6 +300,11 @@ func with_overrides(row: Variant) -> ZeeWeaponArt:
 				var table := ZeeWeaponArtTable.named_reload_keys(String(value))
 				if not table.is_empty():
 					out.reload_keys = table
+			"reload":
+				if value is Dictionary:
+					var merged := out.reload.duplicate(true)
+					merged.merge(value as Dictionary, true)
+					out.reload = merged
 			"reload_keys":
 				var parsed := _parse_keys(value)
 				if not parsed.is_empty():

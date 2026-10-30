@@ -29,6 +29,7 @@ const CVAR_AIM_STEADY := "mp_vm_aim_steadiness"
 const CVAR_KICK := "cl_vm_kick"
 const CVAR_WALL := "cl_vm_wall"
 const CVAR_WALL_TILT := "cl_vm_wall_tilt"
+const CVAR_RELOAD := "cl_vm_reload_detail"
 
 ## Look lag and inertia: the weapon trails a turn, and rolls into it.
 var sway: float = 1.0
@@ -55,6 +56,9 @@ var wall_retract: float = 1.0
 ## How far it also pitches up against a wall, a multiplier: 0 off.
 var wall_tilt: float = 1.0
 
+## Each weapon's own reload phases (magazine out, cases thrown, rounds fed), 1; 0 plays one generic reload for every gun.
+var reload_detail: float = 1.0
+
 
 func cvar_specs() -> Array[Dictionary]:
 	return [
@@ -74,6 +78,8 @@ func cvar_specs() -> Array[Dictionary]:
 			"description": "How far the view model pulls back from a wall, a multiplier: 0 off, 1 default"},
 		{"name": CVAR_WALL_TILT, "value": str(wall_tilt), "min": 0.0, "max": 3.0,
 			"description": "How far the view model pitches up against a wall, a multiplier: 0 off, 1 default"},
+		{"name": CVAR_RELOAD, "value": str(reload_detail), "min": 0.0, "max": 1.0,
+			"description": "Each weapon's own reload (magazine, cases, rounds in sight): 1 on, 0 one generic reload"},
 	]
 
 
@@ -139,6 +145,7 @@ func set_cvar(cvar_name: String, value: String) -> bool:
 			CVAR_KICK: kick = number
 			CVAR_WALL: wall_retract = number
 			CVAR_WALL_TILT: wall_tilt = number
+			CVAR_RELOAD: reload_detail = number
 		changed.emit()
 		return true
 	return false
@@ -155,7 +162,7 @@ func _on_replicated_cvar(cvar_name: String, value: String) -> void:
 func describe() -> Dictionary:
 	return {"sway": sway, "strafe_tilt": strafe_tilt, "bob": bob, "landing": landing,
 		"aim_steadiness": aim_steadiness, "kick": kick,
-		"wall_retract": wall_retract, "wall_tilt": wall_tilt}
+		"wall_retract": wall_retract, "wall_tilt": wall_tilt, "reload_detail": reload_detail}
 
 
 func describe_lines() -> PackedStringArray:
