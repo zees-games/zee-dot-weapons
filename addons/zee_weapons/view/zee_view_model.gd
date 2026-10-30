@@ -365,6 +365,7 @@ func _place_hands() -> void:
 		_arms.transform = _animated.transform.affine_inverse()
 		into = _arms.transform.affine_inverse()
 	aim = into * aim
+	grip = into * grip
 	fore = into * fore
 	if "support_free" in _arms:
 		_arms.set("support_free", in_seq or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
