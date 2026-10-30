@@ -1077,6 +1077,10 @@ func art_hand_scale() -> float:
 	return _art.hand_scale if _art != null else 0.0
 
 
+func art_forearm_scale() -> float:
+	return _art.forearm_scale if _art != null else 0.0
+
+
 ## Measures the muzzle, honouring an override on the art.
 func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 	if art.muzzle_socket.is_finite():
