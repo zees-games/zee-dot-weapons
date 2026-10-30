@@ -171,6 +171,7 @@ static func apply(
 
 	if world_model != null:
 		world_model.on_switching(bool(source.get(&"net_switching")))
+		world_model.on_reloading(source.get(&"net_reloading") == true)
 
 		if &"net_fitted" in source:
 			world_model.on_fitted(int(source.get(&"net_fitted")))

@@ -425,6 +425,7 @@ func _update_presentation(tick: int) -> void:
 
 	if _world != null:
 		_world.on_switching(arsenal.is_switching())
+		_world.on_reloading(arsenal.is_reloading())
 
 
 ## Tells both models what is fitted to the weapon in hand, when that changes.

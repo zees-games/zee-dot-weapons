@@ -80,6 +80,19 @@ const THROW_SECONDS := 0.55
 const THROW_RELEASE := 0.36
 const THROW_BACK := 0.9
 
+## A watcher's reload, in the hand's frame like the swing: the gun dipped and rolled so its well faces the support
+## hand, which goes from the fore-end to the well, down to the belt and back once per cycle (one reload, or one round).
+const RELOAD_DIP := Vector3(0.0, -0.05, 0.03)
+const RELOAD_TURN := Vector3(-18.0, 12.0, 38.0)
+const RELOAD_SUPPORT_KEYS := [
+	[0.0, Vector3(0.0, 0.0, 0.0), Vector3.ZERO],
+	[0.25, Vector3(1.0, 0.0, 0.0), Vector3.ZERO],
+	[0.5, Vector3(1.0, 1.0, 0.0), Vector3.ZERO],
+	[0.75, Vector3(1.0, 0.0, 0.0), Vector3.ZERO],
+	[0.9, Vector3(1.0, 0.0, 0.0), Vector3.ZERO],
+	[1.0, Vector3(0.0, 0.0, 0.0), Vector3.ZERO],
+]
+
 @export_group("Attachment")
 
 ## The attachment point on the character to hang from.
@@ -147,6 +160,12 @@ var _sprint: float = 0.0
 var _support_local := Vector3.INF
 var _support_sent: bool = false
 var _sprint_was_on: bool = false
+
+## The reload a watcher sees: whether one is on, its blend in and out, time into it and one cycle's length.
+var _reloading: bool = false
+var _reload_blend: float = 0.0
+var _reload_time: float = 0.0
+var _reload_period: float = 1.5
 
 
 func _ready() -> void:
@@ -373,6 +392,28 @@ func on_switching(switching: bool) -> void:
 		visible = not switching
 
 
+## Whether the character is reloading (the replicated flag): plays the watcher's reload while it is on.
+func on_reloading(reloading: bool) -> void:
+	if reloading and not _reloading:
+		_reload_time = 0.0
+		_reload_period = _cycle_seconds()
+	_reloading = reloading
+
+
+## How far into the watcher's reload, 0 to 1 per cycle; -1 when none is showing.
+func reload_fraction() -> float:
+	return fposmod(_reload_time / _reload_period, 1.0) if _reload_blend > 0.0 else -1.0
+
+
+## One cycle of the support hand: the weapon's whole reload, or one round of a reload by the round.
+func _cycle_seconds() -> float:
+	var def: DotWeaponDef = ZeeWeaponPack.catalogue().get_def(_id) if _id != &"" else null
+	if def == null or def.reload_ticks <= 0:
+		return 1.5
+	var rate := float(def.authored_tick_rate) if def.authored_tick_rate > 0 else float(ZeeWeaponPack.TICK_RATE)
+	return clampf(float(def.reload_ticks) / rate, 0.4, 6.0)
+
+
 func _process(delta: float) -> void:
 	advance(delta)
 
@@ -386,8 +427,10 @@ func advance(delta: float) -> void:
 	if not is_finite(delta) or delta < 0.0:
 		return
 
+	_reload_blend = move_toward(_reload_blend, 1.0 if _reloading else 0.0, delta / 0.2)
+	_reload_time += delta
 	_follow_person()
-	if _kick <= 0.00001 and _action >= 1.0 and _sprint <= 0.0 and not _sprint_was_on:
+	if _kick <= 0.00001 and _action >= 1.0 and _sprint <= 0.0 and not _sprint_was_on and _reload_blend <= 0.0 and not _reloading:
 		return
 	_sprint_was_on = _sprint > 0.0
 
@@ -406,6 +449,10 @@ func advance(delta: float) -> void:
 			deg_to_rad(degrees.x), deg_to_rad(degrees.y), deg_to_rad(degrees.z)
 		))
 	_show_in_hand(not (_action_hides and _action >= THROW_RELEASE and _action < THROW_BACK))
+	if _reload_blend > 0.0:
+		var share := smoothstep(0.0, 1.0, _reload_blend)
+		moved += RELOAD_DIP * share
+		turn = turn * Basis.from_euler(RELOAD_TURN * share * (PI / 180.0))
 
 	# About the grip, which is where the hand is: the rest transform's origin.
 	var rest := _rest()
@@ -446,10 +493,22 @@ func _follow_person() -> void:
 	var two := _art != null and _weapon != null and visible and _weapon.visible and _support_local.is_finite() \
 		and (_art.hands == 2 or (_art.hands == 0 and ZeeWeaponArtTable.pose_two_handed(_art.pose)))
 	if two:
-		person.call(&"set_support_grip", _holder.global_transform * _support_local)
+		person.call(&"set_support_grip", _support_world())
 		_support_sent = true
 	else:
 		_send_support(false)
+
+
+## The support hand's point in the world: on the fore-end, or on the reload's path (well, belt) while one shows.
+func _support_world() -> Vector3:
+	var fore := _holder.global_transform * _support_local
+	if _reload_blend <= 0.0:
+		return fore
+	var well := _holder.global_transform * (_support_local * 0.45)
+	var belt := well + Vector3.DOWN * 0.28
+	var at: Vector3 = ZeeWeaponPose.sample_keys(RELOAD_SUPPORT_KEYS, reload_fraction())[0]
+	var path := fore.lerp(well, clampf(at.x, 0.0, 1.0)).lerp(belt, clampf(at.y, 0.0, 1.0))
+	return fore.lerp(path, smoothstep(0.0, 1.0, _reload_blend))
 
 
 func _send_support(_on: bool) -> void:
@@ -606,4 +665,5 @@ func describe() -> Dictionary:
 		"attached": get_parent() != null,
 		"mount": String(mount),
 		"action": snappedf(_action, 0.01),
+		"reload": snappedf(reload_fraction(), 0.01),
 	}

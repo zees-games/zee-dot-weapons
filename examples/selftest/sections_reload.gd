@@ -94,7 +94,49 @@ func _reload_sequences() -> void:
 		ordered = ordered and float(seq.gun_keys[i][0]) > float(seq.gun_keys[i - 1][0])
 	_check("a sequence's keys start at 0, end at 1 and only go forward", ordered and float(seq.gun_keys[0][0]) == 0.0 and float(seq.gun_keys.back()[0]) == 1.0)
 	view.queue_free()
+	_watched_reload()
 	_end()
+
+
+## Somebody else's reload: the replicated flag dips the gun and walks the support hand to the well, the belt and back.
+func _watched_reload() -> void:
+	var person := _Person.new()
+	add_child(person)
+	var world := ZeeWorldModel.new()
+	person.add_child(world)
+	var _e := world.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
+	world.advance(0.05)
+	var rest: Vector3 = person.support
+	var held := world.get_node(^"Holder") as Node3D
+	var still := held.transform
+	world.on_reloading(true)
+	var far := 0.0
+	var tilt := 0.0
+	for i in 60:
+		world.advance(1.0 / 30.0)
+		far = maxf(far, person.support.distance_to(rest))
+		tilt = maxf(tilt, rad_to_deg(held.transform.basis.get_rotation_quaternion().angle_to(still.basis.get_rotation_quaternion())))
+	world.on_reloading(false)
+	for i in 20:
+		world.advance(1.0 / 30.0)
+	_check("a watched reload takes the support hand off the fore-end (%.2f m) and turns the gun (%.0f deg)" % [far, tilt], far > 0.15 and tilt > 20.0)
+	_check("and the hand and gun are back when it ends (%.3f m, fraction %.1f)" % [person.support.distance_to(rest), world.reload_fraction()],
+		person.support.distance_to(rest) < 0.01 and world.reload_fraction() < 0.0 and held.transform.basis.is_equal_approx(still.basis))
+	person.queue_free()
+
+
+## The two calls ZeeWorldModel finds its person by, and the support grip it is sent.
+class _Person extends Node3D:
+	var support := Vector3.INF
+
+	func swing(_which: StringName) -> void:
+		pass
+
+	func set_hold(_kind: StringName) -> void:
+		pass
+
+	func set_support_grip(at: Vector3) -> void:
+		support = at
 
 
 func _art_with(art: ZeeWeaponArt, reload: Dictionary) -> ZeeWeaponArt:
