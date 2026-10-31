@@ -906,6 +906,7 @@ func _apply_aim(f: float) -> void:
 		_pose.pivot = hip.origin
 		return
 
+		_pose.gun_strafe = ads_rules.strafe_for(_art.id)
 	var sight := _aim_target()
 	var turn := hip.basis.get_rotation_quaternion().slerp(
 		sight.basis.get_rotation_quaternion(), f

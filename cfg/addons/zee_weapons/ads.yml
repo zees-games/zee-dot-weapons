@@ -50,6 +50,11 @@ ads:
     wall_lean: 1.0
     wall_spread: 0.1
     wall_lean_rate: 10.0
+    # strafe sway per gun: tilt, yaw, aimed and response multipliers; -1 (the default) leaves the server's mp_vm_strafe_* value in charge
+    strafe_tilt: -1
+    strafe_yaw: -1
+    strafe_aimed: -1
+    strafe_response: -1
 # A weapon override lists only what it changes, by weapon id (the sidearms are drawn nearer the middle, so smaller):
   weapons:
     sniper:

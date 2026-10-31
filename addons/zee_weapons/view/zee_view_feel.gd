@@ -23,6 +23,9 @@ signal changed
 
 const CVAR_SWAY := "mp_vm_sway"
 const CVAR_TILT := "mp_vm_strafe_tilt"
+const CVAR_TILT_YAW := "mp_vm_strafe_yaw"
+const CVAR_TILT_AIMED := "mp_vm_strafe_aimed"
+const CVAR_TILT_SPEED := "mp_vm_strafe_response"
 const CVAR_BOB := "mp_vm_bob"
 const CVAR_LANDING := "mp_vm_landing"
 const CVAR_AIM_STEADY := "mp_vm_aim_steadiness"
@@ -36,6 +39,15 @@ var sway: float = 1.0
 
 ## The lean and trail when strafing: the weapon rolls and slides against the sideways motion.
 var strafe_tilt: float = 1.0
+
+## How far the muzzle also swings sideways against a strafe (a yaw about the grip), a multiplier: 0 off.
+var strafe_yaw: float = 1.0
+
+## The share of the strafe roll and yaw that survives full aim, 0 to 1: the sight stays near the crosshair.
+var strafe_aimed: float = 0.15
+
+## How fast the strafe sway follows a change of strafe, a multiplier on the pack's own: higher is stiffer.
+var strafe_response: float = 1.0
 
 ## The walk bob.
 var bob: float = 1.0
@@ -66,6 +78,12 @@ func cvar_specs() -> Array[Dictionary]:
 			"description": "View model look lag and inertia, a multiplier: 0 off, 1 default"},
 		{"name": CVAR_TILT, "value": str(strafe_tilt), "min": 0.0, "max": 3.0,
 			"description": "View model tilt and trail when strafing, a multiplier: 0 off, 1 default"},
+		{"name": CVAR_TILT_YAW, "value": str(strafe_yaw), "min": 0.0, "max": 3.0,
+			"description": "View model muzzle swing against a strafe, a multiplier: 0 off, 1 default"},
+		{"name": CVAR_TILT_AIMED, "value": str(strafe_aimed), "min": 0.0, "max": 1.0,
+			"description": "Share of the strafe roll and swing kept when fully aimed: 0 none, 1 as at the hip"},
+		{"name": CVAR_TILT_SPEED, "value": str(strafe_response), "min": 0.1, "max": 4.0,
+			"description": "How fast the strafe sway follows the move, a multiplier: lower lags more"},
 		{"name": CVAR_BOB, "value": str(bob), "min": 0.0, "max": 3.0,
 			"description": "View model walk bob, a multiplier: 0 off, 1 default"},
 		{"name": CVAR_LANDING, "value": str(landing), "min": 0.0, "max": 3.0,
@@ -139,6 +157,9 @@ func set_cvar(cvar_name: String, value: String) -> bool:
 		match cvar_name:
 			CVAR_SWAY: sway = number
 			CVAR_TILT: strafe_tilt = number
+			CVAR_TILT_YAW: strafe_yaw = number
+			CVAR_TILT_AIMED: strafe_aimed = number
+			CVAR_TILT_SPEED: strafe_response = number
 			CVAR_BOB: bob = number
 			CVAR_LANDING: landing = number
 			CVAR_AIM_STEADY: aim_steadiness = number
@@ -160,7 +181,8 @@ func _on_replicated_cvar(cvar_name: String, value: String) -> void:
 
 
 func describe() -> Dictionary:
-	return {"sway": sway, "strafe_tilt": strafe_tilt, "bob": bob, "landing": landing,
+	return {"sway": sway, "strafe_tilt": strafe_tilt, "strafe_yaw": strafe_yaw,
+		"strafe_aimed": strafe_aimed, "strafe_response": strafe_response, "bob": bob, "landing": landing,
 		"aim_steadiness": aim_steadiness, "kick": kick,
 		"wall_retract": wall_retract, "wall_tilt": wall_tilt, "reload_detail": reload_detail}
 

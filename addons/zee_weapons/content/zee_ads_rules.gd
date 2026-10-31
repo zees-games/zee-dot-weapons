@@ -42,6 +42,10 @@ const SPECS := {
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 	"sight_dot": {"default": 0.15, "min": 0.0, "max": 1.0},
 	"sight_cut": {"default": 2.0, "min": 0.0, "max": 15.0},
+	"strafe_tilt": {"default": -1.0, "min": -1.0, "max": 3.0},
+	"strafe_yaw": {"default": -1.0, "min": -1.0, "max": 3.0},
+	"strafe_aimed": {"default": -1.0, "min": -1.0, "max": 1.0},
+	"strafe_response": {"default": -1.0, "min": -1.0, "max": 4.0},
 	"wall_reach": {"default": 1.0, "min": 0.0, "max": 3.0},
 	"wall_margin": {"default": 0.03, "min": 0.0, "max": 0.3},
 	"wall_stiffness": {"default": 160.0, "min": 10.0, "max": 1000.0},
@@ -261,6 +265,16 @@ func wall_for(id: StringName) -> Dictionary:
 	var out := {}
 	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate"]:
 		out[key] = float(value_for(id, "wall_" + key))
+	return out
+
+
+## This gun's strafe sway: tilt, yaw, aimed and response multipliers that its profile sets; a key left at -1 is absent, so the server's `mp_vm_strafe_*` value applies.
+func strafe_for(id: StringName) -> Dictionary:
+	var out := {}
+	for key: String in ["tilt", "yaw", "aimed", "response"]:
+		var v := float(value_for(id, "strafe_" + key))
+		if v >= 0.0:
+			out[key] = v
 	return out
 
 

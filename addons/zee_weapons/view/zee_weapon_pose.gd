@@ -29,6 +29,9 @@ class Tunables extends RefCounted:
 	## Degrees the weapon leans against a full strafe.
 	var strafe_roll: float = 6.0
 
+	## Degrees the muzzle swings against a full strafe (a yaw about the grip).
+	var strafe_yaw: float = 3.0
+
 	## Metres the weapon trails behind a full strafe.
 	var strafe_slide: float = 0.035
 
@@ -332,6 +335,9 @@ var aim_kick_steadiness: float = 0.6
 ## What is left of the sway and bob at full aim, on top of the feel rules' steadiness (1 leaves them).
 var aim_sway_scale: float = 1.0
 
+## This gun's own strafe sway (keys tilt, yaw, aimed, response; from its ads profile). An absent key uses the server's rules.
+var gun_strafe: Dictionary = {}
+
 
 static func make(p_weight: float = 1.0) -> ZeeWeaponPose:
 	var pose := ZeeWeaponPose.new()
@@ -528,7 +534,7 @@ func offset() -> Transform3D:
 	var carried := maxf(0.1, weight) * maxf(0.0, feel)
 
 	# The trail behind a strafe: opposite the move, so a step right leaves the gun to the left.
-	var trail := -_strafe * tunables.strafe_slide * carried * rules.strafe_tilt
+	var trail := -_strafe * tunables.strafe_slide * carried * _strafe_rule(&"tilt", rules.strafe_tilt)
 	# [b]Sideways, aim holds nearly dead still.[/b] The sight is on the crosshair only while the
 	# gun is on the view axis, and a quarter of the look lag, the strafe trail and the bob's
 	# sideways swing (centimetres, at a half metre's range) slid the whole sight picture off the
@@ -547,8 +553,12 @@ func offset() -> Transform3D:
 	# Roll is steadied too: at the sight a rolling gun is the sight picture tipping, and it
 	# was the one motion aim left whole. Counter-clockwise is positive, so a strafe right (the
 	# top leaning left) is a positive roll.
-	var roll := _roll * rules.sway + _strafe * tunables.strafe_roll * carried * rules.strafe_tilt
-	var basis := Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(roll * steady_x)))
+	var roll := _roll * rules.sway + _strafe * tunables.strafe_roll * carried * _strafe_rule(&"tilt", rules.strafe_tilt)
+	# Roll and yaw of a strafe have their own aimed share (mp_vm_strafe_aimed) instead of steady_x.
+	var strafe_hold := lerpf(1.0, clampf(_strafe_rule(&"aimed", rules.strafe_aimed), 0.0, 1.0), _aim)
+	roll = _roll * rules.sway * steady_x \
+		+ _strafe * tunables.strafe_roll * carried * _strafe_rule(&"tilt", rules.strafe_tilt) * strafe_hold
+	var basis := Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(roll)))
 
 	# The authored half: the draw and the reload, both turned about the grip like the kick.
 	# A rotation about this transform's origin is a rotation about the camera, which swings
@@ -558,6 +568,8 @@ func offset() -> Transform3D:
 	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
 	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) \
 		+ tunables.sprint_rotation * _sprint
+	# A strafe right drags the muzzle left (positive yaw, about the grip).
+	acted.y += _strafe * tunables.strafe_yaw * carried * _strafe_rule(&"tilt", rules.strafe_tilt) * _strafe_rule(&"yaw", rules.strafe_yaw) * strafe_hold
 	acted.z += sin(_bob_distance * tunables.bob_per_metre * PI) * tunables.sprint_bob_roll * _sprint * _bob_amount
 	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3) \
 		+ tunables.sprint_offset * _sprint
@@ -614,13 +626,18 @@ func _advance_sway(step: float, look_delta: Vector2) -> void:
 	)
 
 
+## The gun's own strafe value when its profile sets one, else the server's.
+func _strafe_rule(key: StringName, fallback: float) -> float:
+	return float(gun_strafe.get(key, fallback))
+
+
 ## Strafing: the weapon trails the sideways motion (it lags to the side opposite the move) and
 ## leans against it, which is what a hand does when the body slides under it. Driven by the
 ## sideways ground speed in metres a second, signed to the right.
 func _advance_strafe(step: float, lateral: float) -> void:
 	var side := clampf(lateral if is_finite(lateral) else 0.0, -1.0e3, 1.0e3)
 	var target := clampf(side / maxf(0.1, tunables.strafe_reference), -1.0, 1.0)
-	_strafe = lerpf(_strafe, target, _smoothing(step, tunables.strafe_response))
+	_strafe = lerpf(_strafe, target, _smoothing(step, tunables.strafe_response * maxf(0.1, _strafe_rule(&"response", rules.strafe_response))))
 
 
 func _advance_bob(step: float, speed: float, on_floor: bool, crouched: bool) -> void:
