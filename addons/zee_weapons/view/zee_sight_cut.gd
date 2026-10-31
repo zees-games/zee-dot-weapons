@@ -11,7 +11,10 @@ const POST_CLEAR := 0.03
 
 const IronSight := preload("zee_iron_sight.gd")
 
+const CHANNEL := "zee.sightcut"
+
 static var _cache: Dictionary = {}
+static var _warned: Dictionary = {}
 
 
 ## The cut for an aim hold [param aim] (the holder's transform at full aim): `{eye, axis, tan, stop}` in the holder's space.
@@ -148,6 +151,11 @@ static func _to_space(mi: Node, space: Node3D) -> Transform3D:
 
 ## `{mesh, removed, near, far}`: [param mesh] with the region taken out of each triangle surface; the mesh itself when nothing is.
 static func _cut_mesh(mesh: Mesh, to_space: Transform3D, planes: Array, cut: Dictionary) -> Dictionary:
+	if mesh is PrimitiveMesh:
+		var baked := ArrayMesh.new()
+		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, (mesh as PrimitiveMesh).get_mesh_arrays())
+		baked.surface_set_material(0, (mesh as PrimitiveMesh).material)
+		mesh = baked
 	var result := ArrayMesh.new()
 	var removed := 0
 	var near := INF
@@ -167,8 +175,19 @@ static func _cut_mesh(mesh: Mesh, to_space: Transform3D, planes: Array, cut: Dic
 				var d := (p - eye).dot(axis)
 				near = minf(near, d)
 				far = maxf(far, d)
-			result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, cut_surface[0])
-		result.surface_set_material(s, mesh.surface_get_material(s))
+			var built: Array = cut_surface[0]
+			if (built[Mesh.ARRAY_VERTEX] as PackedVector3Array).is_empty():
+				# Wholly inside the region: nothing is left, and the engine refuses an empty surface. A zero-area
+				# triangle keeps the surface count, so material overrides by index stay aligned.
+				built = []
+				built.resize(Mesh.ARRAY_MAX)
+				built[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3.ZERO, Vector3.ZERO, Vector3.ZERO])
+				if not _warned.has(mesh.get_instance_id()):
+					_warned[mesh.get_instance_id()] = true
+					DotLog.warn(CHANNEL, "sight cut removed a whole surface", {"mesh": mesh.resource_name, "surface": s})
+			result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, built)
+		if result.get_surface_count() > s:
+			result.surface_set_material(s, mesh.surface_get_material(s))
 	if removed == 0:
 		return {"mesh": mesh, "removed": 0, "near": 0.0, "far": 0.0}
 	return {"mesh": result, "removed": removed, "near": near, "far": far}

@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 788
+const CHECKS := 789
 
 
 func _ready() -> void:
@@ -467,6 +467,20 @@ func _aim_cut() -> void:
 		and _hits(gun, Vector3(0.0, 0.115, 0.0), Vector3(0.0, 0.115, -0.2)))
 	_check("a cone of 0 degrees cuts nothing", (cut_script.cone(Transform3D.IDENTITY, 0.0) as Dictionary).is_empty())
 	gun.queue_free()
+	# A box wholly inside the cone leaves no triangle: the surface must survive as a placeholder, not an engine error.
+	var inner := Node3D.new()
+	var mi := MeshInstance3D.new()
+	var tiny := BoxMesh.new()
+	tiny.size = Vector3(0.004, 0.004, 0.004)
+	mi.mesh = tiny
+	mi.position = Vector3(0.0, 0.1, -0.1)
+	inner.add_child(mi)
+	add_child(inner)
+	var src_surfaces := tiny.get_surface_count()
+	cut_script.apply([inner], inner, cut_script.cone(Transform3D(Basis.IDENTITY, Vector3(0.0, -0.1, -0.2)), 5.0))
+	_check("a surface cut away whole keeps its slot (%d of %d surfaces)" % [mi.mesh.get_surface_count(), src_surfaces],
+		mi.mesh.get_surface_count() == src_surfaces)
+	inner.queue_free()
 
 
 func _hits(node: Node3D, from: Vector3, to: Vector3) -> bool:
