@@ -28,6 +28,3 @@ jobs:
         uses: modcommunity/dot-ci/.github/workflows/release.yml@v1
         permissions:
             contents: write
-        with:
-            # The site reads provides.json from the pack zip's root; without it the Workshop sees no Subscribe.
-            pack: true
