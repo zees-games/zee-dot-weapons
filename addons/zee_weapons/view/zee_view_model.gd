@@ -39,6 +39,11 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 ## How far into the aim-in a scoped weapon's arms are hidden: past it the raised gun is out of the arms' reach and the scope covers the view.
 @export_range(0.0, 1.0, 0.01) var scope_arms_hide: float = 0.6
 ## A game's setting (a cvar) that beats the weapon's art and [member scope_arms_hide]; below 0 is off.
+const ChargeFx := preload("zee_charge_fx.gd")
+const BeltFeed := preload("zee_belt_feed.gd")
+var _belt: Node3D = null
+var _charge_fx: Node3D = null
+
 var scope_arms_hide_override: float = -1.0
 ## The nearest the hands frame brings the grip to the eye, metres (0 = no limit): a weapon drawn close, a pistol, would
 ## otherwise put a life-size hand over the whole view.
@@ -287,6 +292,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	_dress()
 	_muzzle = _measure_muzzle(art)
+	_build_belt(art)
 	_fit_sight(art)
 
 	if art.has_magazine():
@@ -500,6 +506,30 @@ func muzzle_transform() -> Transform3D:
 	return _weapon.global_transform * Transform3D(Basis.IDENTITY, _muzzle)
 
 
+## The multiple of the default speed this weapon's cases leave at ([member ZeeWeaponArt.eject_speed]).
+func eject_speed() -> float:
+	return _art.eject_speed if _art != null else 1.0
+
+
+## The moving belt of a belt-fed gun, or null.
+func belt_feed() -> Node3D:
+	return _belt
+
+
+func _build_belt(art: ZeeWeaponArt) -> void:
+	_belt = null
+	if not art.belt_feed or _weapon == null:
+		return
+	var box := HandReach.bounds_in(_weapon, _weapon)
+	if box.size == Vector3.ZERO:
+		return
+	var tray := Vector3(box.position.x * 0.8, box.position.y + box.size.y * 0.62, box.position.z + box.size.z * 0.5) + art.belt_offset
+	_belt = BeltFeed.new()
+	_belt.name = "BeltFeed"
+	_weapon.add_child(_belt)
+	_belt.build(tray + Vector3(-0.07, -0.10, 0.0), tray)
+
+
 ## True when the weapon in hand throws a spent case ([member ZeeWeaponArt.ejects]).
 func ejects() -> bool:
 	return _art != null and _art.ejects and _weapon != null
@@ -515,8 +545,8 @@ func eject_transform() -> Transform3D:
 	if box.size == Vector3.ZERO:
 		return _weapon.global_transform
 
-	var local := Vector3(
-		box.end.x * 0.9, box.position.y + box.size.y * 0.72, box.position.z + box.size.z * 0.55)
+	var f := _art.eject_port if _art != null and _art.eject_port != Vector3.ZERO else Vector3(0.9, 0.72, 0.55)
+	var local := Vector3(box.end.x * f.x, box.position.y + box.size.y * f.y, box.position.z + box.size.z * f.z)
 	var world := _weapon.global_transform
 	return Transform3D(world.basis.orthonormalized(), world * local)
 
@@ -539,6 +569,8 @@ func on_used(outcome: DotWeaponOutcome) -> void:
 
 	_pose.fire_interval = fire_interval
 	_pose.punch(outcome.recoil, outcome.recoil_signed)
+	if _belt != null and outcome.kind == DotWeaponOutcome.KIND_SHOT:
+		_belt.step()
 	match outcome.kind:
 		DotWeaponOutcome.KIND_SWING:
 			_pose.swing()
@@ -656,6 +688,24 @@ func _animate_sequence(f: float) -> void:
 ## A charged weapon's draw, 0 to 1.
 func on_charge(fraction: float) -> void:
 	_pose.set_charge(fraction)
+	if fraction > 0.0 and _charge_fx == null and _built:
+		_charge_fx = ChargeFx.new()
+		_charge_fx.name = "ChargeFx"
+		_charge_fx.follow = muzzle_transform
+		add_child(_charge_fx)
+	if _charge_fx != null:
+		_charge_fx.set_charge(fraction)
+
+
+## The weapon fired this frame, for the charge ball to tell a shot from a fizzle.
+func note_fired() -> void:
+	if _charge_fx != null:
+		_charge_fx.note_fired()
+
+
+## The charge ball, or null before the weapon has been charged. For a suite.
+func charge_fx() -> Node3D:
+	return _charge_fx
 
 
 ## A landing, with the downward speed in metres a second.
@@ -670,6 +720,8 @@ func on_reset() -> void:
 	_wall_excluded.clear()
 	_look_seen = false
 	_aim_fraction = 0.0
+	if _charge_fx != null:
+		_charge_fx.reset()
 
 
 # --- The frame --------------------------------------------------------------
@@ -684,6 +736,9 @@ func _process(delta: float) -> void:
 func advance(delta: float) -> void:
 	if Engine.is_editor_hint() or not _built:
 		return
+
+	if _belt != null:
+		_belt.advance(delta)
 
 	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_speed(delta))
 	_sprint = move_toward(_sprint, 1.0 if _sprinting and sprint_pose else 0.0, delta / SPRINT_SECONDS)
@@ -885,6 +940,7 @@ func _advance_aim(delta: float) -> void:
 	if ads_rules != null and _art != null:
 		time = ads_rules.aim_time_for(_art.id, time)
 		_pose.aim_sway_scale = ads_rules.sway_for(_art.id)
+		_pose.gun_strafe = ads_rules.strafe_for(_art.id)
 	if not can_aim():
 		_aim_held = false
 	_aim_fraction = move_toward(_aim_fraction, target, delta / maxf(time, 0.01))
@@ -906,7 +962,6 @@ func _apply_aim(f: float) -> void:
 		_pose.pivot = hip.origin
 		return
 
-		_pose.gun_strafe = ads_rules.strafe_for(_art.id)
 	var sight := _aim_target()
 	var turn := hip.basis.get_rotation_quaternion().slerp(
 		sight.basis.get_rotation_quaternion(), f
@@ -1203,6 +1258,7 @@ func _clear_models() -> void:
 		node.queue_free()
 
 	_weapon = null
+	_belt = null
 	_magazine = null
 	_attachments.clear()
 

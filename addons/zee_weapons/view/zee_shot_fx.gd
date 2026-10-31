@@ -94,6 +94,10 @@ const CASING_GAP_MSEC := 90
 ## Draw dot-fx's `DotMuzzleFlash` (sized by the profile's `extra.muzzle_flash`, else the weapon class) when dot-fx is linked; off, or without dot-fx, the procedural flash below is drawn.
 @export var binbun_flash: bool = true
 
+## The charged weapon's draw when the shot left, for the beam. The rig sets it before play_use.
+const CHARGE_READY := 0.98
+var rail_charge := 0.0
+
 ## Where a weapon's `extra.muzzle_flash` is read from; the rig sets it. Without it the class decides.
 var catalogue: DotWeaponCatalogue = null
 
@@ -238,6 +242,8 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 	if not beam:
 		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, kind), id, true)
 
+	var rail := rail_charge >= CHARGE_READY \
+		and ZeeWeaponSound.class_for(id, kind) == ZeeWeaponSound.CHARGE
 	var drawn := 0
 	for shot: DotShot in outcome.shots:
 		var directions: Array[Vector3] = shot.pellets
@@ -248,12 +254,14 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 			if drawn >= MAX_TRACERS_PER_USE:
 				break
 			drawn += 1
-			_trace(muzzle.origin, shot.origin, direction, shot.max_range, beam)
+			_trace(muzzle.origin, shot.origin, direction, shot.max_range, beam, rail)
 
 
 ## A use somebody else made, known only by its kind: a watcher's view, from the world
 ## model's muzzle along its barrel.
-func play_remote(kind: int, muzzle: Transform3D, direction: Vector3, id: StringName) -> void:
+func play_remote(
+	kind: int, muzzle: Transform3D, direction: Vector3, id: StringName, charge: float = 0.0
+) -> void:
 	if not is_inside_tree():
 		return
 
@@ -273,7 +281,9 @@ func play_remote(kind: int, muzzle: Transform3D, direction: Vector3, id: StringN
 	if not beam:
 		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)), id, false)
 
-	_trace(muzzle.origin, muzzle.origin, direction, miss_distance, beam)
+	var rail := charge >= CHARGE_READY \
+		and ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)) == ZeeWeaponSound.CHARGE
+	_trace(muzzle.origin, muzzle.origin, direction, miss_distance, beam, rail)
 
 
 ## How many effects are alive. For a suite, and for [method describe].
@@ -325,7 +335,7 @@ func shell_count() -> int:
 ## hand (a velocity, gravity, a tumble): a rigid body per case is a body per shot on a
 ## machine that, on the web, has no threads to spend on it. The pool is [member max_shells]
 ## nodes made on first use and reused oldest first, so a held minigun cannot grow the scene.
-func play_eject(port: Transform3D, id: StringName) -> void:
+func play_eject(port: Transform3D, id: StringName, speed_scale: float = 1.0) -> void:
 	if not visuals or not eject_shells or max_shells <= 0 or not is_inside_tree():
 		return
 
@@ -357,7 +367,7 @@ func play_eject(port: Transform3D, id: StringName) -> void:
 	var out := port.basis.x.normalized()
 	var up := port.basis.y.normalized()
 	var back := port.basis.z.normalized()
-	var speed := randf_range(1.0, 1.5)
+	var speed := randf_range(1.0, 1.5) * speed_scale
 	_shells.append({
 		"node": node,
 		"pos": port.origin,
@@ -554,7 +564,8 @@ func _advance_marks(delta: float) -> void:
 # --- Building effects -------------------------------------------------------
 
 func _trace(
-	muzzle: Vector3, eye: Vector3, direction: Vector3, reach: float, beam: bool
+	muzzle: Vector3, eye: Vector3, direction: Vector3, reach: float, beam: bool,
+	rail: bool = false
 ) -> void:
 	var dir := direction.normalized()
 	if not dir.is_finite() or dir.is_zero_approx():
@@ -578,7 +589,9 @@ func _trace(
 			hit = true
 			collider = found.get("collider")
 
-	if beam:
+	if rail:
+		_rail_beam(muzzle, end)
+	elif beam:
 		_beam(muzzle, end)
 	else:
 		_tracer(muzzle, end)
@@ -613,6 +626,22 @@ func _beam(from: Vector3, to: Vector3) -> void:
 	# Lives about as long as the gap between two of the beam's uses, so a held beam reads
 	# as continuous without one use's line outliving where it was aimed.
 	_add(node, {"kind": &"beam", "life": 0.07})
+
+
+## A fully charged shot: a wide blue glow round a white core, both fading over a third of a
+## second, so the line stays on screen long enough to read as a beam and not a tracer.
+func _rail_beam(from: Vector3, to: Vector3) -> void:
+	var total := from.distance_to(to)
+	if total < 0.05:
+		return
+	for pass_i in 2:
+		var node := _mesh(_streak_mesh(), _beam_mat() if pass_i == 0 else _tracer_mat())
+		_place_along(node, (from + to) * 0.5, to - from, total, 0.16 if pass_i == 0 else 0.04)
+		_add(node, {"kind": &"beam", "life": 0.4 if pass_i == 0 else 0.26})
+	var ring := _mesh(_quad_mesh(), _flash_mat())
+	ring.global_position = from
+	ring.scale = Vector3.ONE * 0.9
+	_add(ring, {"kind": &"flash", "life": 0.18, "size": 0.9})
 
 
 func _flash(muzzle: Transform3D, size: float, weapon_class: StringName = ZeeWeaponSound.RIFLE,

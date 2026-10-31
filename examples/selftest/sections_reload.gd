@@ -93,6 +93,18 @@ func _reload_sequences() -> void:
 	for i in range(1, seq.gun_keys.size()):
 		ordered = ordered and float(seq.gun_keys[i][0]) > float(seq.gun_keys[i - 1][0])
 	_check("a sequence's keys start at 0, end at 1 and only go forward", ordered and float(seq.gun_keys[0][0]) == 0.0 and float(seq.gun_keys.back()[0]) == 1.0)
+	# A revolver's speedloader leaves with the hand: dropped at the cylinder it read as a second cylinder.
+	var rev_art := ZeeWeaponArtTable.get_art(ZeeWeaponIds.REVOLVER)
+	var rev_seq := ReloadSequence.new()
+	rev_seq.compose(rev_art, ReloadSequence.anchors_for(Vector3(0.05, -0.1, -0.3), Vector3(0.05, -0.08, -0.5), Vector3(0, 0, -0.8), null, {}, Transform3D.IDENTITY), 6, 0)
+	var loaders := 0
+	var all_held := true
+	for prop: Dictionary in rev_seq.props:
+		if prop.part == &"speedloader":
+			loaders += 1
+			for seg: Array in prop.segments:
+				all_held = all_held and seg[2] == "hand"
+	_check("the revolver's speedloader stays in the hand to the end of its use (%d loaders)" % loaders, loaders == 1 and all_held)
 	view.queue_free()
 	_watched_reload()
 	_end()

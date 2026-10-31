@@ -258,6 +258,16 @@ extends Resource
 ## leave nothing behind. Which class of case is the weapon's sound class's ([constant ZeeShotFx.FLASH]).
 @export var ejects: bool = false
 
+## Draw the belt moving from the box into the feed tray, one round per shot ([ZeeBeltFeed]). Belt-fed guns.
+@export var belt_feed: bool = false
+
+## Where the belt's box end sits, as an offset in the model's space on top of the left side of the receiver; the tray end is the receiver's.
+@export var belt_offset: Vector3 = Vector3.ZERO
+
+## Where the ejection port sits as fractions of the model's bounds (x out of the right, y up, z along the bore, 0 at the stock), and the case's speed as a multiple. A zero port is the default, `(0.9, 0.72, 0.55)`.
+@export var eject_port: Vector3 = Vector3.ZERO
+@export_range(0.0, 3.0, 0.05) var eject_speed: float = 1.0
+
 @export_group("Attachments")
 
 ## Extra meshes parented to the weapon: a scope, a silencer, a drum.
@@ -305,13 +315,15 @@ func with_overrides(row: Variant) -> ZeeWeaponArt:
 				out.hands = int(value)
 			"world_scale":
 				out.world_scale = float(value)
-			"fore_along", "fore_up", "grip_along", "grip_up", "muzzle_distance", "hand_scale", "forearm_scale", "scope_arms_hide", "max_lean":
+			"fore_along", "fore_up", "grip_along", "grip_up", "muzzle_distance", "hand_scale", "forearm_scale", "scope_arms_hide", "max_lean", "eject_speed":
 				out.set(key, float(value))
-			"support_grip", "grip_socket", "muzzle_socket", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation":
+			"support_grip", "grip_socket", "muzzle_socket", "sprint_offset", "sprint_rotation", "sprint_world_offset", "sprint_world_rotation", "belt_offset", "eject_port":
 				if value is Array and (value as Array).size() == 3:
 					out.set(key, Vector3(float(value[0]), float(value[1]), float(value[2])))
 				elif value is Vector3:
 					out.set(key, value)
+			"belt_feed":
+				out.belt_feed = bool(value)
 			"reload_class":
 				var table := ZeeWeaponArtTable.named_reload_keys(String(value))
 				if not table.is_empty():

@@ -155,7 +155,10 @@ sheet() {
     # --moves (via EXTRA) is fourteen frames, five rows; the default sheet is eighteen, six.
     local last=17 rows=6
     case "${EXTRA:-}" in *--moves*) last=13; rows=5 ;; esac
-    if [ ! -s "$tmp/f_$last.png" ]; then
+    # --reloads / --charges write their own frame count: the last frame on disk is the last.
+    case "${EXTRA:-}" in *--reloads*|*--charges*)
+        local n; n=$(ls "$tmp"/f_*.png 2>/dev/null | wc -l); last=$((n - 1)); rows=$(( (n + 2) / 3 )) ;; esac
+    if [ "$last" -lt 0 ] || [ ! -s "$tmp/f_$(printf %02d $last).png" ]; then
         echo "sheet failed for $weapon:" >&2
         tail -20 "$tmp/log" >&2
         rm -rf "$tmp"

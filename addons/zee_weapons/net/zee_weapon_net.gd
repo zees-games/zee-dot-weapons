@@ -45,6 +45,10 @@ const FIRE_SEQ_WRAP := 1 << FIRE_SEQ_BITS
 ## the right animation and the right sound.
 const FIRE_KIND_BITS := 3
 
+## Bits for a charged weapon's draw, so a watcher sees the ball grow.
+const CHARGE_BITS := 4
+const CHARGE_MAX := (1 << CHARGE_BITS) - 1
+
 const KIND_NONE := 0
 const KIND_SHOT := 1
 const KIND_SWING := 2
@@ -87,6 +91,18 @@ static func specs() -> Array[Dictionary]:
 			"interpolated": false,
 		},
 	]
+
+
+## Opt-in: the charged weapon's draw. A game that declares `net_charge` and adds these to
+## its specs shows watchers the charge ball; one that does not loses nothing.
+static func charge_specs() -> Array[Dictionary]:
+	return [{
+		"property": &"net_charge",
+		"type": "UINT",
+		"bits": CHARGE_BITS,
+		"owner_only": false,
+		"interpolated": false,
+	}]
 
 
 ## Every spec a carrier with weapons needs: dot-weapon's, then these.
@@ -133,6 +149,7 @@ static func pull(rig: Object, target: Object) -> void:
 
 	target.set(&"net_fire_seq", int(rig.get("fire_seq")) % FIRE_SEQ_WRAP)
 	target.set(&"net_fire_kind", int(rig.get("fire_kind")))
+	target.set(&"net_charge", roundi(clampf(float(rig.get("charge_shown")), 0.0, 1.0) * CHARGE_MAX))
 
 
 # --- Receiving --------------------------------------------------------------
@@ -172,6 +189,10 @@ static func apply(
 	if world_model != null:
 		world_model.on_switching(bool(source.get(&"net_switching")))
 		world_model.on_reloading(source.get(&"net_reloading") == true)
+
+		if &"net_charge" in source:
+			# Before on_fired, so the world model still knows the draw the shot released.
+			world_model.on_charge(float(int(source.get(&"net_charge"))) / CHARGE_MAX)
 
 		if &"net_fitted" in source:
 			world_model.on_fitted(int(source.get(&"net_fitted")))

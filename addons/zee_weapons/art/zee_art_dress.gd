@@ -73,6 +73,12 @@ static func _sockets(art: ZeeWeaponArt, row: Dictionary) -> void:
 		elif v is Vector3:
 			art.set(key, v)
 
-	for key: String in ["fore_along", "fore_up", "grip_along", "grip_up", "hand_scale", "forearm_scale", "scope_arms_hide", "max_lean"]:
+	for key: String in ["belt_offset", "eject_port"]:
+		var bv: Variant = row.get(key)
+		if bv is Array and (bv as Array).size() == 3:
+			art.set(key, Vector3(float(bv[0]), float(bv[1]), float(bv[2])))
+	for key: String in ["fore_along", "fore_up", "grip_along", "grip_up", "hand_scale", "forearm_scale", "scope_arms_hide", "max_lean", "eject_speed"]:
 		if row.has(key):
 			art.set(key, float(row[key]))
+	if row.has("belt_feed"):
+		art.belt_feed = bool(row["belt_feed"])

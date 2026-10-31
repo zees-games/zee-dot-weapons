@@ -199,7 +199,8 @@ func _revolver(eject: int, missing: int) -> void:
 		for i in missing:
 			props.append({"part": &"round", "segments": [[_mid(StringName("fetch_%d" % i)), _t1(StringName("load_%d" % i)), "hand", Vector3.ZERO, 0]]})
 	else:
-		props.append({"part": &"speedloader", "segments": [[_mid(&"fetch"), _t1(&"twist"), "hand", Vector3.ZERO, 0], [_t1(&"twist"), _t1(&"twist") + 0.07, "fall", _anchors[&"cylinder"], 0]]})
+		# The loader leaves with the hand at the twist: dropped at the cylinder it read as a second cylinder beside the gun's own.
+		props.append({"part": &"speedloader", "segments": [[_mid(&"fetch"), _t1(&"twist"), "hand", Vector3.ZERO, 0]]})
 
 
 func _launcher(eject: int, count: int) -> void:

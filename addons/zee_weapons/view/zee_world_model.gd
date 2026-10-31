@@ -140,6 +140,10 @@ var _fit_code: int = -1
 var attachments: DotWeaponAttachments = null
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
+const ChargeFx := preload("zee_charge_fx.gd")
+var _charge_fx: Node3D = null
+var _last_charge := 0.0
+
 var _fx: ZeeShotFx = null
 
 ## Recoil offset in metres and its decay, so a watcher sees the gun move when it fires.
@@ -299,6 +303,24 @@ func muzzle_transform() -> Transform3D:
 
 # --- Being told what happened -----------------------------------------------
 
+## A charged weapon's draw, 0 to 1, from the snapshot. Builds the ball on the first charge.
+func on_charge(fraction: float) -> void:
+	if fraction > 0.0 and _charge_fx == null and is_inside_tree() and effects:
+		_charge_fx = ChargeFx.new()
+		_charge_fx.name = "ChargeFx"
+		_charge_fx.follow = muzzle_transform
+		_charge_fx.with_light = false
+		add_child(_charge_fx)
+	if _charge_fx != null:
+		_charge_fx.set_charge(fraction)
+	_last_charge = fraction
+
+
+## The charge ball, or null. For a suite.
+func charge_fx() -> Node3D:
+	return _charge_fx
+
+
 ## The weapon fired. [param recoil] is the pitch and yaw a behaviour asked for, and
 ## [param kind] a [ZeeWeaponNet] kind number.
 ##
@@ -323,7 +345,9 @@ func on_fired(
 			_kick = minf(_kick + recoil.x * 0.008 * RECOIL_SHARE, 0.08)
 
 	if with_effects and effects and is_inside_tree() and not _carrier_draws_its_own():
-		_shot_fx().play_remote(kind, muzzle_transform(), muzzle_direction(), _id)
+		if _charge_fx != null:
+			_charge_fx.note_fired()
+		_shot_fx().play_remote(kind, muzzle_transform(), muzzle_direction(), _id, _last_charge)
 
 
 ## Plays [constant SWING_KEYS] from the top: what [method on_fired] does with a swing. A swing

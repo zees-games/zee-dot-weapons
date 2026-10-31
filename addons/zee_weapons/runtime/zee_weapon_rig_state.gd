@@ -84,6 +84,9 @@ var arsenal: DotWeaponArsenal = null
 ## Uses so far, for the replication counter. Wraps in [ZeeWeaponNet], not here.
 var fire_seq: int = 0
 
+## The charged weapon's draw as last shown, 0 to 1. Replicated as net_charge.
+var charge_shown: float = 0.0
+
 ## What the last use was, as a [ZeeWeaponNet] kind number.
 var fire_kind: int = ZeeWeaponNet.KIND_NONE
 

@@ -565,3 +565,88 @@ static func _wav_peak(wav: AudioStreamWAV) -> float:
 	for i in range(0, wav.data.size() - 1, 2):
 		peak = maxi(peak, absi(wav.data.decode_s16(i)))
 	return float(peak) / 32767.0
+
+
+## The railgun's charge ball: grows with the draw, is ready only at the top, fizzles on an early release,
+## reaches a watcher through the snapshot, and the beam is drawn only from a full charge.
+func _belt_feed() -> void:
+	_begin("belt feed and eject port")
+	var row := ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE).with_overrides({"belt_feed": true, "eject_speed": 2.0, "eject_port": [0.3, 0.6, 0.4]})
+	_check("art rows carry the belt flag, eject speed and port", row.belt_feed and is_equal_approx(row.eject_speed, 2.0) and row.eject_port.is_equal_approx(Vector3(0.3, 0.6, 0.4)))
+	var view := ZeeViewModel.new()
+	add_child(view)
+	var _e := view.equip(row)
+	view.advance(0.05)
+	_check("a belt-fed gun builds a belt", view.belt_feed() != null)
+	_check("its eject speed is the art's", is_equal_approx(view.eject_speed(), 2.0))
+	if view.belt_feed() != null:
+		var shot := _fake_shot()
+		for i in 3:
+			view.on_used(shot)
+		for i in 30:
+			view.advance(0.02)
+		_check("the belt advances a round a shot (%.1f)" % view.belt_feed().travelled(), is_equal_approx(view.belt_feed().travelled(), 3.0))
+	view.queue_free()
+	var plain := ZeeViewModel.new()
+	add_child(plain)
+	var _p := plain.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
+	_check("a plain gun has no belt", plain.belt_feed() == null)
+	plain.queue_free()
+	_end()
+
+
+func _charge_ball() -> void:
+	_begin("charge ball")
+	var view := ZeeViewModel.new()
+	add_child(view)
+	var _e := view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.CHARGE_RIFLE))
+	view.advance(0.05)
+	view.on_charge(0.0)
+	_check("no ball before the first charge", view.charge_fx() == null)
+	var sizes: Array[float] = []
+	for f in [0.2, 0.5, 0.9]:
+		view.on_charge(f)
+		view.charge_fx().advance(0.016)
+		sizes.append(view.charge_fx().shown())
+	_check("the ball grows with the draw (%s)" % [sizes], sizes[0] < sizes[1] and sizes[1] < sizes[2])
+	_check("it is not ready at 90%", not view.charge_fx().is_ready())
+	view.on_charge(1.0)
+	_check("it is ready at 100%", view.charge_fx().is_ready())
+	view.on_charge(0.0)
+	_check("an unfired release fizzles", view.charge_fx().is_fizzling())
+	for i in 30:
+		view.charge_fx().advance(0.016)
+	_check("and the fizzle ends", not view.charge_fx().visible)
+	view.on_charge(1.0)
+	view.note_fired()
+	view.on_charge(0.0)
+	_check("a fired release is a shot, not a fizzle", not view.charge_fx().is_fizzling())
+
+	var fx := ZeeShotFx.new()
+	add_child(fx)
+	var before := fx.live_count()
+	fx._rail_beam(Vector3.ZERO, Vector3(0, 0, -20))
+	_check("a full-charge beam adds glow, core and ring (%d)" % (fx.live_count() - before), fx.live_count() - before == 3)
+	for i in 40:
+		fx.advance(0.016)
+	_check("and it fades out within a second", fx.live_count() == 0)
+
+	var held := _ChargeSource.new()
+	var world := ZeeWorldModel.new()
+	add_child(world)
+	var _w := world.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.CHARGE_RIFLE))
+	var got := ZeeWeaponNet.apply(held, world, 0)
+	_check("a watcher's copy shows the ball from the snapshot", world.charge_fx() != null and absf(world._last_charge - 8.0 / ZeeWeaponNet.CHARGE_MAX) < 0.01)
+	_check("the charge fits its field (%d bits)" % ZeeWeaponNet.CHARGE_BITS, ZeeWeaponNet.charge_specs()[0]["bits"] == ZeeWeaponNet.CHARGE_BITS and got != null)
+	view.queue_free()
+	fx.queue_free()
+	world.queue_free()
+	_end()
+
+
+class _ChargeSource:
+	var net_fire_seq := 0
+	var net_fire_kind := 0
+	var net_switching := false
+	var net_reloading := false
+	var net_charge := 8

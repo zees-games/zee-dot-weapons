@@ -503,6 +503,17 @@ func _run_sheet(prefix: String) -> void:
 		for fraction in _argument("--reloads").split_floats(","):
 			frames.append(["reload %d%%" % roundi(fraction * 100.0), "reload:%f" % fraction])
 
+	# `--charges` renders the charge ball at 10/30/60/90/100% (the swirl's phase differs by time), a
+	# fizzle, and the full-charge beam at 0/6/14/24 steps after the release.
+	if OS.get_cmdline_user_args().has("--charges"):
+		frames = []
+		for f: float in [0.1, 0.3, 0.6, 0.9, 1.0]:
+			frames.append(["charge %d%%" % roundi(f * 100.0), "charge:%f" % f])
+		frames.append(["fizzle +3", "fizzle:3"])
+		frames.append(["fizzle +9", "fizzle:9"])
+		for n2: int in [0, 6, 14, 24]:
+			frames.append(["beam +%d" % n2, "rail:%d" % n2])
+
 	# `--aimin 2,4,6` renders the sights coming up after that many 60 fps steps: the quick scope's transition.
 	if _argument("--aimin") != "":
 		frames = []
@@ -578,6 +589,22 @@ func _run_sheet(prefix: String) -> void:
 				_sheet_steps(40)
 				_view.on_landed(9.0)
 				_sheet_steps(3)
+			"charge":
+				_view.on_charge(arg)
+				_sheet_steps(18)
+			"fizzle":
+				_view.on_charge(0.6)
+				_sheet_steps(20)
+				_view.on_charge(0.0)
+				_sheet_steps(int(arg))
+			"rail":
+				_view.on_charge(1.0)
+				_sheet_steps(30)
+				var mz := _view.muzzle_transform()
+				_view.note_fired()
+				_view.on_charge(0.0)
+				_rig.shot_fx()._rail_beam(mz.origin, mz.origin + (-_controller.eye_transform().basis.z) * 18.0)
+				_sheet_steps(int(arg))
 			"deploy":
 				_view.on_deploy(arg)
 				_sheet_steps(2)
@@ -753,6 +780,8 @@ func _sheet_steps(count: int) -> void:
 		_view.advance(SHEET_STEP)
 		if _rig.shot_fx() != null:
 			_rig.shot_fx().advance(SHEET_STEP)
+		if _view.charge_fx() != null:
+			_view.charge_fx().advance(SHEET_STEP)
 	# The HUD's half of aiming, as _process does it: without it a scoped weapon's aimed frame
 	# was an empty range, the gun hidden and no scope drawn.
 	_scope.follow(_view)

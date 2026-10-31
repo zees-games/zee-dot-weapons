@@ -438,7 +438,8 @@ func _update_presentation(tick: int) -> void:
 	if _view != null:
 		_view.on_deploy(_deploy_fraction(tick))
 		_view.on_reload(_reload_fraction(tick))
-		_view.on_charge(_charge_fraction(tick, def))
+		charge_shown = _charge_fraction(tick, def)
+		_view.on_charge(charge_shown)
 
 	if _world != null:
 		_world.on_switching(arsenal.is_switching())
@@ -728,9 +729,11 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 			var def := arsenal.current_def()
 			var weapon_id: StringName = def.id if def != null else &""
 			_fx.first_person_flash_scale = _view.flash_scale()
+			_fx.rail_charge = charge_shown
+			_view.note_fired()
 			_fx.play_use(outcome, _view.muzzle_transform(), weapon_id)
 			if outcome.kind == DotWeaponOutcome.KIND_SHOT and _view.has_method(&"ejects") and _view.ejects():
-				_fx.play_eject(_view.eject_transform(), weapon_id)
+				_fx.play_eject(_view.eject_transform(), weapon_id, _view.eject_speed() if _view.has_method(&"eject_speed") else 1.0)
 
 		if _world != null:
 			# The world model draws the shot itself only when nothing here did.
