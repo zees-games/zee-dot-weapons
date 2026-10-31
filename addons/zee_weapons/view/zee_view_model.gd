@@ -740,7 +740,8 @@ func advance(delta: float) -> void:
 	if _belt != null:
 		_belt.advance(delta)
 
-	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_speed(delta))
+	_strafe_now = _strafe_speed(delta)
+	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_now)
 	_sprint = move_toward(_sprint, 1.0 if _sprinting and sprint_pose else 0.0, delta / SPRINT_SECONDS)
 	_pose.set_sprint(_ease(_sprint))
 	_advance_aim(delta)
@@ -758,6 +759,9 @@ func advance(delta: float) -> void:
 		_arms.visible = not (scoped or arms_hidden_by_scope())
 
 
+var _strafe_now: float = 0.0
+
+
 ## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
 func _advance_wall(delta: float) -> void:
 	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()
@@ -772,13 +776,16 @@ func _advance_wall(delta: float) -> void:
 			var scale_now: float = ads_rules.view_scale_for(_art.id) if ads_rules != null and _art != null else 2.0
 			var reach := ZeeWallSlam.reach_of(dist, scale_now, w["reach"])
 			var hit := ZeeWallSlam.probe(self, reach, wall_mask, wall_ignore_characters, _wall_exclude(), to_muzzle / dist,
-				w["margin"], w["max"], w["floor_look"], w["spread"] / maxf(scale_now, 0.1))
+				w["margin"], w["max"], w["floor_look"], w["spread"] / maxf(scale_now, 0.1), w["cast"])
 			target = hit["depth"]
-			_wall.aim_at(hit["normal"], _speed)
+			if target > 0.0:
+				# Walking into the wall pushes the spring's rest point deeper: force decides how far the gun gives.
+				target = minf(target + clampf(_speed * 0.012, 0.0, 0.1) * w["impulse"], w["max"])
+			_wall.aim_at(hit["normal"], _speed, _strafe_now)
 			_wall.set_lean(hit["sides"], _screen_offset(to_muzzle, cam), w["lean"])
 	_wall.step(target, delta, w["stiffness"], w["damping"], w["lean_rate"])
 	if _wall.amount > 0.0:
-		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction()) * _animated.transform
+		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction(), w["impulse"]) * _animated.transform
 
 
 ## Where the muzzle sits on the screen relative to the crosshair, as a view-space slope (x right, y up).
@@ -793,7 +800,7 @@ func _wall_numbers() -> Dictionary:
 	if ads_rules != null and _art != null:
 		return ads_rules.wall_for(_art.id)
 	var out := {}
-	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate"]:
+	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate", "cast", "impulse"]:
 		out[key] = float(ZeeAdsRules.SPECS["wall_" + key]["default"])
 	return out
 

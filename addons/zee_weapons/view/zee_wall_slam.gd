@@ -10,6 +10,8 @@ const TILT_DEG_PER_M := 120.0
 ## Approach speed (m/s) at which the response is all push-back and no nudge.
 const FAST_SPEED := 5.0
 
+## Strafe speed (m/s, view space, right positive) of the last frame: a sideways approach shoves the gun round the wall.
+var lateral: float = 0.0
 ## Smoothed depth in metres (0 in open air).
 var amount: float = 0.0
 var velocity: float = 0.0
@@ -74,7 +76,7 @@ func set_lean(sides: Dictionary, gun: Vector2, gain: float = 1.0) -> void:
 ## Probes from [param host]'s camera toward the muzzle and forward, [param reach] long. Floors and ceilings are skipped
 ## unless the view looks down (or up) past [param floor_look] degrees. Returns `{depth, normal}` (normal in view space).
 static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool, exclude: Array[RID],
-		muzzle_dir: Vector3, margin: float, cap: float, floor_look: float, spread: float = 0.0) -> Dictionary:
+		muzzle_dir: Vector3, margin: float, cap: float, floor_look: float, spread: float = 0.0, cast_radius: float = 0.0) -> Dictionary:
 	var out := {"depth": 0.0, "normal": Vector3.ZERO, "sides": {"up": 0.0, "down": 0.0, "left": 0.0, "right": 0.0}}
 	var space := host.get_world_3d().direct_space_state if host.get_world_3d() != null else null
 	var camera := host.get_parent() as Node3D
@@ -106,6 +108,15 @@ static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool
 				best = d
 				best_normal = n
 			break
+	if cast_radius > 0.001:
+		var swept := _sweep(space, from, muzzle_dir, reach + margin, cast_radius, mask, exclude, ignore_characters)
+		if swept["distance"] < best:
+			best = swept["distance"]
+			var sn: Vector3 = swept["normal"]
+			if sn != Vector3.ZERO and not ((sn.y > 0.7 and pitch_down < floor_look) or (sn.y < -0.7 and -pitch_down < floor_look)):
+				best_normal = sn
+			elif best_normal == Vector3.ZERO:
+				best = INF
 	out["depth"] = obstruction(reach, best, margin, cap)
 	if spread > 0.0:
 		var cb := cam.global_basis
@@ -134,8 +145,47 @@ static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool
 	return out
 
 
+## A sphere of [param radius] swept from [param from] along [param dir]: `{distance, normal}` to the surface it stops against
+## (INF and zero for none). The gun has thickness, so a wall its tip would miss by a hair still catches its body.
+static func _sweep(space: PhysicsDirectSpaceState3D, from: Vector3, dir: Vector3, length: float, radius: float, mask: int,
+		exclude: Array[RID], ignore_characters: bool) -> Dictionary:
+	var out := {"distance": INF, "normal": Vector3.ZERO}
+	var sphere := SphereShape3D.new()
+	sphere.radius = radius
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = sphere
+	q.transform = Transform3D(Basis.IDENTITY, from)
+	q.motion = dir * maxf(length - radius, 0.0)
+	q.collision_mask = mask
+	q.collide_with_areas = false
+	q.exclude = exclude.duplicate()
+	for _hop in range(4):
+		var fractions := space.cast_motion(q)
+		if fractions.size() < 2 or fractions[0] >= 1.0:
+			return out
+		var at := from + q.motion * fractions[1]
+		var probe_q := PhysicsShapeQueryParameters3D.new()
+		probe_q.shape = sphere
+		probe_q.transform = Transform3D(Basis.IDENTITY, at)
+		probe_q.collision_mask = mask
+		probe_q.collide_with_areas = false
+		probe_q.exclude = q.exclude
+		var rest := space.get_rest_info(probe_q)
+		if ignore_characters and not rest.is_empty():
+			var body := instance_from_id(int(rest.get("collider_id", 0)))
+			if body is CharacterBody3D:
+				q.exclude.append(rest["rid"])
+				continue
+		out["distance"] = (q.motion * fractions[0]).length() + radius
+		if not rest.is_empty():
+			out["normal"] = rest["normal"]
+		return out
+	return out
+
+
 ## Fills [member facing] and the response from the probe's normal, the approach [param speed] and the look direction.
-func aim_at(normal: Vector3, speed: float) -> void:
+func aim_at(normal: Vector3, speed: float, strafe: float = 0.0) -> void:
+	lateral = strafe
 	normal_local = normal
 	facing = clampf(normal.z, 0.0, 1.0) if normal != Vector3.ZERO else 1.0
 	closing = speed * facing
@@ -143,7 +193,7 @@ func aim_at(normal: Vector3, speed: float) -> void:
 
 ## The pose offset: back by the depth (more when approaching fast), nudged up and sideways when slow or angled, pitched up.
 ## [param guard] (0 to 1) fades everything out while aiming down sights so the gun stays on the sight line.
-func offset(retract_scale: float, tilt_scale: float, push: float = 1.0, nudge: float = 0.6, guard: float = 0.0) -> Transform3D:
+func offset(retract_scale: float, tilt_scale: float, push: float = 1.0, nudge: float = 0.6, guard: float = 0.0, impulse: float = 1.0) -> Transform3D:
 	var keep := 1.0 - clampf(guard, 0.0, 1.0)
 	var fast := clampf(closing / FAST_SPEED, 0.0, 1.0)
 	var depth := amount * maxf(retract_scale, 0.0) * keep
@@ -152,9 +202,10 @@ func offset(retract_scale: float, tilt_scale: float, push: float = 1.0, nudge: f
 	var tip := 1.0 + (lean.y - 1.0) * gain
 	var turn := lean.x * gain
 	var up := depth * nudge * (1.0 - fast) * 0.5 * tip
-	var side := -signf(normal_local.x) * depth * nudge * (1.0 - facing) * 0.8 - turn * depth * nudge * 0.5
+	var shove := clampf(lateral / FAST_SPEED, -1.0, 1.0) * clampf(impulse, 0.0, 4.0)
+	var side := -signf(normal_local.x) * depth * nudge * (1.0 - facing) * 0.8 - turn * depth * nudge * 0.5 - shove * depth * 0.3
 	var pitch := clampf(deg_to_rad(depth * TILT_DEG_PER_M * maxf(tilt_scale, 0.0) * lerpf(1.0, 0.5, fast) * tip), -deg_to_rad(MAX_TILT_DEG), deg_to_rad(MAX_TILT_DEG))
-	var yaw := clampf(deg_to_rad(depth * TILT_DEG_PER_M * maxf(tilt_scale, 0.0) * 0.5 * turn), -deg_to_rad(MAX_TILT_DEG), deg_to_rad(MAX_TILT_DEG))
+	var yaw := clampf(deg_to_rad(depth * TILT_DEG_PER_M * maxf(tilt_scale, 0.0) * 0.5 * (turn + shove * 0.6)), -deg_to_rad(MAX_TILT_DEG), deg_to_rad(MAX_TILT_DEG))
 	return Transform3D(Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch), Vector3(side, up, back))
 
 
@@ -163,6 +214,7 @@ func reset() -> void:
 	velocity = 0.0
 	facing = 1.0
 	closing = 0.0
+	lateral = 0.0
 	lean = Vector2(0.0, 1.0)
 	_lean_target = lean
 	_lean_gain = 1.0
