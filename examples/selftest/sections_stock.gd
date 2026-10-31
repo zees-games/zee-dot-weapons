@@ -179,6 +179,19 @@ func _stock_sounds() -> void:
 	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY + 0.1).timeout
 	_check("indoors the _far tail follows the report", heard.size() == before + 3 and _stock_path(heard[-1], "rifle_far"))
 	fx.roof = null
+	ZeeWeaponSound.set_class(&"zz_probe", ZeeWeaponSound.SNIPER)
+	_check("a pack's class outranks the built-in table", ZeeWeaponSound.class_for(&"zz_probe", &"") == ZeeWeaponSound.SNIPER)
+	ZeeWeaponSound.set_class(&"zz_probe", &"")
+	_check("an empty class takes the entry back out", ZeeWeaponSound.class_for(&"zz_probe", &"") == ZeeWeaponSound.RIFLE)
+	var own := ZeeWeaponSound.bake(ZeeWeaponSound.RECIPES[ZeeWeaponSound.RIFLE])
+	ZeeWeaponSound.set_stage_stream(&"zz_probe", ZeeWeaponSound.DRY, own)
+	ZeeWeaponSound.set_stage_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN, own)
+	_check("a weapon's own dry and reload sounds win over its class",
+		ZeeWeaponSound.dry_stream(&"zz_probe") == own and ZeeWeaponSound.reload_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN) == own)
+	ZeeWeaponSound.set_stage_stream(&"zz_probe", ZeeWeaponSound.DRY, null)
+	ZeeWeaponSound.set_stage_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN, null)
+	_check("and taken out they fall back to the stock",
+		ZeeWeaponSound.dry_stream(&"zz_probe") != own and ZeeWeaponSound.reload_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN) != own)
 	fx.sounds = false
 	fx.play_equip(Vector3.ZERO)
 	_check("and with sounds off nothing plays", heard.size() == before + 3)

@@ -834,20 +834,20 @@ func play_mode_click(at: Vector3, weapon_id: StringName) -> void:
 
 
 ## The hammer falling on nothing. Throttled, because a held trigger asks every tick.
-func play_dry(at: Vector3) -> void:
+func play_dry(at: Vector3, weapon_id: StringName = &"") -> void:
 	var now := Time.get_ticks_msec()
 	if not sounds or not is_inside_tree() or now - _last_dry_msec < DRY_GAP_MSEC:
 		return
 	_last_dry_msec = now
-	_play(ZeeWeaponSound.stream(ZeeWeaponSound.DRY), at, -4.0)
+	_play(ZeeWeaponSound.dry_stream(weapon_id), at, -4.0)
 
 
 ## A weapon coming up in the hands; a grenade ([param thrown]) is heard as its pin coming out.
-func play_equip(at: Vector3, thrown: bool = false) -> void:
+func play_equip(at: Vector3, thrown: bool = false, weapon_id: StringName = &"") -> void:
 	if not is_inside_tree():
 		return
 	var pin := DotWeaponSound.pick(&"pin_pull", randi()) if thrown else null
-	_play(pin if pin != null else ZeeWeaponSound.stream(ZeeWeaponSound.EQUIP), at, -6.0)
+	_play(pin if pin != null else ZeeWeaponSound.equip_stream(weapon_id), at, -6.0)
 
 
 ## One shell going into a tube magazine: a per-round reload plays this once per round.

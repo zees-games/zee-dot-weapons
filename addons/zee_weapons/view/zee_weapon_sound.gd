@@ -248,8 +248,18 @@ static var _classes: Dictionary = {}
 
 ## Says which class [param id] sounds like: how a second pack's weapons get a report of
 ## their own instead of the fallback's.
+## An empty class takes the entry back out, and an entry here outranks the built-in table.
 static func set_class(id: StringName, sound_class: StringName) -> void:
-	_classes[id] = sound_class
+	if sound_class == &"":
+		_classes.erase(id)
+	else:
+		_classes[id] = sound_class
+
+
+## Gives weapon [param id] its own [param stage] sound ([constant RELOAD_OUT], [constant RELOAD_IN],
+## [constant DRY] or [constant EQUIP]); null takes it back out. Static, clear it with the game.
+static func set_stage_stream(id: StringName, stage: StringName, audio: AudioStream) -> void:
+	set_stream(StringName("%s/%s" % [id, stage]), audio)
 
 
 ## A report heard from far away (another recording with more air), or null when the class has
@@ -281,11 +291,11 @@ static func class_for(id: StringName, kind: StringName) -> StringName:
 		DotWeaponOutcome.KIND_BEAM:
 			return BEAM
 
-	if WEAPONS.has(id):
-		return WEAPONS[id]
-
 	if _classes.has(id):
 		return _classes[id]
+
+	if WEAPONS.has(id):
+		return WEAPONS[id]
 
 	return LAUNCHER if kind == DotWeaponOutcome.KIND_SPAWN else RIFLE
 
@@ -314,10 +324,34 @@ static func stream_for(id: StringName, kind: StringName) -> AudioStream:
 ## The reload [param stage] ([constant RELOAD_OUT] or [constant RELOAD_IN]) of [param id]'s gun: its class's own recording
 ## when the stock has one, else the generic [method stream].
 static func reload_stream(id: StringName, stage: StringName) -> AudioStream:
+	var own := StringName("%s/%s" % [id, stage])
+	if _overrides.has(own):
+		return _overrides[own]
 	if _overrides.has(stage):
 		return _overrides[stage]
 	var real := DotWeaponSound.pick_reload(class_for(id, &""), &"out" if stage == RELOAD_OUT else &"in", randi())
 	return real if real != null else stream(stage)
+
+
+## The dry-fire click of [param id]'s gun: its own, else its class's feel ([method DotWeaponSound.pick_feel]), else the generic one.
+static func dry_stream(id: StringName) -> AudioStream:
+	return _feel(id, DRY)
+
+
+## The sound of [param id]'s gun coming up in the hands, chosen like [method dry_stream].
+static func equip_stream(id: StringName) -> AudioStream:
+	return _feel(id, EQUIP)
+
+
+static func _feel(id: StringName, stage: StringName) -> AudioStream:
+	var own := StringName("%s/%s" % [id, stage])
+	if _overrides.has(own):
+		return _overrides[own]
+	if id != &"" and not _overrides.has(stage):
+		var real := DotWeaponSound.pick_feel(class_for(id, &""), stage, randi())
+		if real != null:
+			return real
+	return stream(stage)
 
 
 ## One class's stream: an override, else a stock recording (a different variant each call), else the bake.

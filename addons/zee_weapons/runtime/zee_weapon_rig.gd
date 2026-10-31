@@ -429,7 +429,7 @@ func _update_presentation(tick: int) -> void:
 		_shown_fit = ""
 		equipped.emit(id)
 		if _fx != null and _fx_origin_known and id != &"":
-			_fx.play_equip(_listen_at(), def != null and ZeeWeaponIds.TAG_THROWN in def.tags)
+			_fx.play_equip(_listen_at(), def != null and ZeeWeaponIds.TAG_THROWN in def.tags, id)
 
 	_show_fitting()
 	_fx_origin_known = true
@@ -646,10 +646,11 @@ func _on_fire_mode_changed(slot: int, _mode: int) -> void:
 		_fx.play_mode_click(_listen_at(), carried.def.id)
 
 
-func _on_dry_used(_slot: int) -> void:
+func _on_dry_used(slot: int) -> void:
 	if _replaying or role == Role.SERVER or _fx == null:
 		return
-	_fx.play_dry(_listen_at())
+	var carried := arsenal.slot_at(slot)
+	_fx.play_dry(_listen_at(), carried.def.id if carried != null else &"")
 
 
 ## One shell sound for every round a per-round reload has added since the last tick.
