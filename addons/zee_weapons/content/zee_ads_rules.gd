@@ -50,6 +50,9 @@ const SPECS := {
 	"wall_nudge": {"default": 0.6, "min": 0.0, "max": 4.0},
 	"wall_max": {"default": 0.34, "min": 0.0, "max": 1.0},
 	"wall_floor_look": {"default": 40.0, "min": 0.0, "max": 90.0},
+	"wall_lean": {"default": 1.0, "min": 0.0, "max": 3.0},
+	"wall_spread": {"default": 0.1, "min": 0.0, "max": 0.5},
+	"wall_lean_rate": {"default": 10.0, "min": 1.0, "max": 60.0},
 	"red_dot": {"default": false},
 	"red_dot_window": {"default": 4.0, "min": 0.5, "max": 20.0},
 	"red_dot_size": {"default": 0.25, "min": 0.02, "max": 1.0},
@@ -253,10 +256,10 @@ func red_dot_for(id: StringName) -> Dictionary:
 
 
 ## The wall response's numbers for [param id]: reach (share of the gun's real length), margin (m), stiffness, damping,
-## push (back, with approach speed), nudge (up and sideways, slow), max (m) and floor_look (degrees down before the floor counts).
+## push (back, with approach speed), nudge (up and sideways, slow), max (m), floor_look (degrees down before the floor counts), lean (strength of the tilt toward or away from where the gun meets the wall), spread (m, how far above, below and beside the muzzle the lean probes sample) and lean_rate (1/s, how fast the lean eases).
 func wall_for(id: StringName) -> Dictionary:
 	var out := {}
-	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look"]:
+	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate"]:
 		out[key] = float(value_for(id, "wall_" + key))
 	return out
 

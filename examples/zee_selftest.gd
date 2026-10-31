@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 751
+const CHECKS := 760
 
 
 func _ready() -> void:
@@ -61,6 +61,7 @@ func _ready() -> void:
 	_input_bindings()
 	await _stock_sounds()
 	await _wall_slam()
+	await _wall_lean()
 	await _wall_arms()
 	_effects_pack_light()
 	_view_screen()
@@ -641,6 +642,80 @@ func _wall_slam() -> void:
 		fast.origin.z > slow.origin.z and absf(fast.origin.x) < 0.001 and fast.origin.y < 0.001)
 	var aimed := slam.offset(1.0, 1.0, 1.0, 0.6, 1.0)
 	_check("fully aimed the gun is not moved off the sight line", aimed.origin.is_zero_approx() and aimed.basis.is_equal_approx(Basis.IDENTITY))
+	camera.queue_free()
+	wall.queue_free()
+	_end()
+
+
+## The gun leans away from where it meets the wall and eases in with depth.
+func _wall_lean() -> void:
+	_begin("the view model leans by where it meets the wall")
+	var camera := Camera3D.new()
+	add_child(camera)
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	camera.add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"rifle"))
+	for i in range(150):
+		view.advance(1.0 / 60.0)
+	var mz := camera.global_transform.affine_inverse() * view.muzzle_transform().origin
+	var rest := -(camera.global_transform.affine_inverse() * view.muzzle_transform().origin).z
+	var reach := rest / 2.0
+	var wall := StaticBody3D.new()
+	var box := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	box.shape = shape
+	wall.add_child(box)
+	add_child(wall)
+	var settle := func(size: Vector3, centre: Vector3) -> void:
+		shape.size = size
+		wall.position = centre
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		for i in range(90):
+			view.advance(1.0 / 60.0)
+	# Graded: five distances, each deeper than the last, and the tilt follows without a jump.
+	var depths := []
+	var tips := []
+	for d in [0.9, 0.75, 0.6, 0.45, 0.3]:
+		var surface: float = reach * d
+		await settle.call(Vector3(20, 20, 1), Vector3(0, 0, -(surface + 0.5)))
+		depths.append(view.wall_amount())
+		tips.append(view.muzzle_transform().basis * Vector3.FORWARD)
+	var graded := true
+	for i in range(1, depths.size()):
+		graded = graded and depths[i] >= depths[i - 1] - 0.001
+	_check("a closer wall pushes deeper in steps (%s)" % str(depths.map(func(x: float) -> String: return "%.3f" % x)), graded and depths[4] > depths[1] + 0.03)
+	_check("the first bump is slight (%.3f vs %.3f)" % [depths[0], depths[4]], depths[0] < depths[4] * 0.5)
+	_check("a head-on wall tips the barrel up, more when closer (%.3f -> %.3f)" % [tips[1].y, tips[4].y], tips[4].y > tips[1].y)
+	# Direction: the wall meets only part of the gun.
+	var deep: float = reach * 0.45 + 0.5
+	await settle.call(Vector3(20, 20, 1), Vector3(0, 0, -deep))
+	var full := view.wall_lean()
+	var edge_y: float = mz.y / -mz.z * (deep - 0.5)
+	var edge_x: float = mz.x / -mz.z * (deep - 0.5)
+	await settle.call(Vector3(20, 10, 1), Vector3(0, edge_y - 5.0, -deep))
+	var low := view.wall_lean()
+	await settle.call(Vector3(20, 10, 1), Vector3(0, edge_y + 5.0, -deep))
+	var high := view.wall_lean()
+	_check("a wall meeting only the lower part tips up more than the whole (%.2f vs %.2f)" % [low.y, full.y], low.y > full.y + 0.1)
+	_check("a wall meeting only the upper part dips the barrel (%.2f)" % high.y, high.y < full.y - 0.3 and high.y < low.y)
+	await settle.call(Vector3(10, 20, 1), Vector3(edge_x + 5.0, 0, -deep))
+	var on_right := view.wall_lean()
+	await settle.call(Vector3(10, 20, 1), Vector3(edge_x - 5.0, 0, -deep))
+	var on_left := view.wall_lean()
+	_check("a wall on the right turns the barrel left, on the left right (%.2f / %.2f)" % [on_right.x, on_left.x], on_right.x > on_left.x + 0.4 and on_right.x > 0.0 and on_left.x < 0.0)
+	var slam := ZeeWallSlam.new()
+	slam.amount = 0.2
+	slam.set_lean({"up": 0.3, "down": 0.0, "left": 0.0, "right": 0.2}, Vector2(0.1, -0.1))
+	for i in range(60):
+		slam.step(0.2, 1.0 / 60.0)
+	var aimed := slam.offset(1.0, 1.0, 1.0, 0.6, 1.0)
+	_check("fully aimed the lean moves nothing", aimed.origin.is_zero_approx() and aimed.basis.is_equal_approx(Basis.IDENTITY))
+	var hip := slam.offset(1.0, 1.0)
+	_check("a lean toward up-left on the right shows as a dip and a left turn (%s)" % str(slam.lean), slam.lean.y < 0.0 and slam.lean.x > 0.0 and hip.basis != Basis.IDENTITY)
+	slam.set_lean({"up": 0.3, "down": 0.0, "left": 0.0, "right": 0.2}, Vector2(0.1, -0.1), 0.0)
+	_check("lean 0 keeps the plain tilt up", slam.offset(1.0, 1.0).basis.get_euler().x > 0.0)
 	camera.queue_free()
 	wall.queue_free()
 	_end()

@@ -717,12 +717,20 @@ func _advance_wall(delta: float) -> void:
 			var scale_now: float = ads_rules.view_scale_for(_art.id) if ads_rules != null and _art != null else 2.0
 			var reach := ZeeWallSlam.reach_of(dist, scale_now, w["reach"])
 			var hit := ZeeWallSlam.probe(self, reach, wall_mask, wall_ignore_characters, _wall_exclude(), to_muzzle / dist,
-				w["margin"], w["max"], w["floor_look"])
+				w["margin"], w["max"], w["floor_look"], w["spread"] / maxf(scale_now, 0.1))
 			target = hit["depth"]
 			_wall.aim_at(hit["normal"], _speed)
-	_wall.step(target, delta, w["stiffness"], w["damping"])
+			_wall.set_lean(hit["sides"], _screen_offset(to_muzzle, cam), w["lean"])
+	_wall.step(target, delta, w["stiffness"], w["damping"], w["lean_rate"])
 	if _wall.amount > 0.0:
 		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction()) * _animated.transform
+
+
+## Where the muzzle sits on the screen relative to the crosshair, as a view-space slope (x right, y up).
+func _screen_offset(to_muzzle: Vector3, cam: Node3D) -> Vector2:
+	var local := cam.global_basis.inverse() * to_muzzle
+	var depth := maxf(-local.z, 0.05)
+	return Vector2(local.x, local.y) / depth
 
 
 ## The wall response's numbers for the held weapon (the profile's, or the defaults).
@@ -730,7 +738,7 @@ func _wall_numbers() -> Dictionary:
 	if ads_rules != null and _art != null:
 		return ads_rules.wall_for(_art.id)
 	var out := {}
-	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look"]:
+	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate"]:
 		out[key] = float(ZeeAdsRules.SPECS["wall_" + key]["default"])
 	return out
 
@@ -749,6 +757,11 @@ func _wall_exclude() -> Array[RID]:
 ## The retract and pitch the wall asks of the weapon now, for a suite and a tool.
 func wall_amount() -> float:
 	return _wall.amount
+
+
+## The wall's eased lean for a suite and a tool: x positive turns the barrel left, y positive tips it up.
+func wall_lean() -> Vector2:
+	return _wall.lean
 
 
 ## The scale that draws the hands at [member hands_fov]. See there.

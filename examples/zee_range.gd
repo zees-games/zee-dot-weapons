@@ -492,6 +492,12 @@ func _run_sheet(prefix: String) -> void:
 	var frames: Array = SHEET_FRAMES
 	if OS.get_cmdline_user_args().has("--moves"):
 		frames = MOVE_FRAMES
+	# `--wallsheet`: five wall distances in four directions (head-on, wall only below, only above, only on the right).
+	if OS.get_cmdline_user_args().has("--wallsheet"):
+		frames = []
+		for kind: String in ["full", "below", "above", "right"]:
+			for d: float in [0.9, 0.7, 0.55, 0.4, 0.28]:
+				frames.append(["wall %s %.0f%%" % [kind, d * 100.0], "wall:%f:%s" % [d, kind]])
 	if _argument("--reloads") != "":
 		frames = []
 		for fraction in _argument("--reloads").split_floats(","):
@@ -580,6 +586,9 @@ func _run_sheet(prefix: String) -> void:
 				# it does in the open, because the world's shadow map is not its business.
 				roof = _sheet_roof()
 				_sheet_steps(30)
+			"wall":
+				_sheet_steps(60)
+				await _sheet_wall(arg, parts[2])
 			"aimfire":
 				_view.aim(true)
 				_sheet_steps(40)
@@ -597,9 +606,52 @@ func _run_sheet(prefix: String) -> void:
 		if roof != null:
 			roof.queue_free()
 			roof = null
+		if _sheet_wall_body != null:
+			_sheet_wall_body.queue_free()
+			_sheet_wall_body = null
 
 	print("sheet: %d frames at %s_NN.png" % [frames.size(), prefix])
 	get_tree().quit()
+
+
+var _sheet_wall_body: StaticBody3D = null
+
+
+## A wall [param share] of the gun's real reach in front of the eye, covering all of the view or only a side of the muzzle's line.
+func _sheet_wall(share: float, kind: String) -> void:
+	var cam := _view.get_parent() as Node3D
+	var to_muzzle := cam.global_transform.affine_inverse() * _view.muzzle_transform().origin
+	var reach := ZeeWallSlam.reach_of(to_muzzle.length(), ZeeAdsRules.new().view_scale_for(&"rifle"), 1.0)
+	var dist := reach * share
+	var edge := Vector2(to_muzzle.x, to_muzzle.y) / maxf(-to_muzzle.z, 0.05) * dist
+	var size := Vector3(40.0, 40.0, 1.0)
+	var at := Vector3(0.0, 0.0, -(dist + 0.5))
+	match kind:
+		"below":
+			at.y = edge.y - 20.0
+		"above":
+			at.y = edge.y + 20.0
+		"right":
+			at.x = edge.x + 20.0
+	_sheet_wall_body = StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	_sheet_wall_body.add_child(shape)
+	var mesh := MeshInstance3D.new()
+	var quad := BoxMesh.new()
+	quad.size = size
+	mesh.mesh = quad
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.55, 0.5, 0.42)
+	mesh.material_override = mat
+	_sheet_wall_body.add_child(mesh)
+	cam.add_child(_sheet_wall_body)
+	_sheet_wall_body.position = at
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_sheet_steps(90)
 
 
 func _sheet_setup() -> void:
