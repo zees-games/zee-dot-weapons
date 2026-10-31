@@ -25,8 +25,11 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 	if not (art.iron_sight or art.sight_own) or not art.aim_enabled or art.aim_scoped or weapon == null:
 		return {}
 	var basis := art.orientation().scaled(Vector3.ONE * art.view_scale)
-	var line := {}
-	if art.sight_own:
+	# Marks a modeller placed win over anything read off the mesh.
+	var line := IronSight.from_marks(weapon, holder, art.model_forward)
+	if not line.is_empty():
+		line.merge(dressed_line, true)
+	elif art.sight_own:
 		# The rear point stays where the written hold had it, so the eye keeps its distance from the gun.
 		var written := basis.inverse() * (Vector3(0.0, 0.0, -art.aim_eye_relief) - art.aim_offset)
 		line = OwnSight.measure(weapon, holder, art.model_forward, written.dot(art.model_forward.normalized()), art.model_path)
@@ -34,12 +37,8 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 	if line.is_empty():
 		if not art.iron_sight:
 			return {}
-		line = IronSight.from_marks(weapon, holder, art.model_forward)
-		if not line.is_empty():
-			line.merge(dressed_line, true)
-		else:
-			line = IronSight.measure(weapon, holder, art.model_forward)
-			built = true
+		line = IronSight.measure(weapon, holder, art.model_forward)
+		built = true
 	if line.is_empty():
 		return {}
 	# The eye stands back far enough to keep the gun's back end past the near plane (a clip plane slices).
