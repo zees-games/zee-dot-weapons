@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 789
+const CHECKS := 792
 
 
 func _ready() -> void:
@@ -481,6 +481,29 @@ func _aim_cut() -> void:
 	_check("a surface cut away whole keeps its slot (%d of %d surfaces)" % [mi.mesh.get_surface_count(), src_surfaces],
 		mi.mesh.get_surface_count() == src_surfaces)
 	inner.queue_free()
+	# A part with a zero-scale or collinear basis has no inverse: the stop is found from the other parts, with no engine error.
+	var flat := _box_gun([[Vector3(0.0, 0.1, -0.1), Vector3(0.04, 0.04, 0.06)], [Vector3(0.0, 0.1, -0.3), Vector3(0.006, 0.006, 0.006)]])
+	var squashed := MeshInstance3D.new()
+	squashed.mesh = (flat.get_child(0) as MeshInstance3D).mesh
+	squashed.scale = Vector3(1.0, 1.0, 0.0)
+	flat.add_child(squashed)
+	var collinear := MeshInstance3D.new()
+	collinear.mesh = squashed.mesh
+	collinear.transform = Transform3D(Basis(Vector3(1, 0, 0), Vector3(2, 0, 0), Vector3(0, 0, 1)), Vector3.ZERO)
+	flat.add_child(collinear)
+	add_child(flat)
+	var open_cone: Dictionary = cut_script.cone(Transform3D(Basis.IDENTITY, Vector3(0.0, -0.1, -0.2)), 2.0)
+	var stopped: Dictionary = cut_script.short_of_front(open_cone, flat, flat)
+	_check("a part with a zero-determinant basis is skipped, the post still stops the cut (%s)" % str(stopped.get("stop")),
+		is_finite(float(stopped.stop)) and not cut_script._invertible(squashed.transform.basis) and not cut_script._invertible(collinear.transform.basis))
+	_check("an ordinary basis is invertible", cut_script._invertible(Basis.IDENTITY.scaled(Vector3(0.75, 0.75, 0.75))))
+	flat.queue_free()
+	# A front post whose top edge is the sight line is hit by no ray, but stands in the cone: the cut must still stop short of it.
+	var graze := _box_gun([[Vector3(0.0, 0.09, -0.3), Vector3(0.006, 0.02, 0.006)]])
+	add_child(graze)
+	var grazed: Dictionary = cut_script.short_of_front(cut_script.cone(Transform3D(Basis.IDENTITY, Vector3(0.0, -0.1, -0.2)), 2.0), graze, graze)
+	_check("a post grazed by the sight line still stops the cut (%s)" % str(grazed.get("stop")), is_finite(float(grazed.stop)) and float(grazed.stop) < 0.5)
+	graze.queue_free()
 
 
 func _hits(node: Node3D, from: Vector3, to: Vector3) -> bool:

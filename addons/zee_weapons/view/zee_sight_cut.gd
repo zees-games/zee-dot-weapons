@@ -88,6 +88,9 @@ static func short_of_front(cut: Dictionary, node: Node, space: Node3D, from: flo
 		if mi == null or mi.mesh == null:
 			continue
 		var to_space := _to_space(mi, space)
+		if not _invertible(to_space.basis):
+			_warn_once(mi.mesh, "sight cut skipped a mesh with a flat transform", {"node": mi.name})
+			continue
 		var span := _span(mi.mesh, to_space.basis.transposed() * axis)
 		if span.is_empty():
 			continue
@@ -96,6 +99,7 @@ static func short_of_front(cut: Dictionary, node: Node, space: Node3D, from: flo
 		hi = maxf(hi, float(span[1]) + shift)
 		parts.append([mi.mesh, to_space])
 	var front := lo + (hi - lo) * from
+	var planes := _planes(cut)
 	var nearest := INF
 	var start := eye + axis * maxf(front, 0.0)
 	var end := eye + axis * (hi + 1.0)
@@ -106,11 +110,35 @@ static func short_of_front(cut: Dictionary, node: Node, space: Node3D, from: flo
 		var hit: Dictionary = tm.intersect_segment(back * start, back * end) if tm != null else {}
 		if not hit.is_empty():
 			nearest = minf(nearest, ((to_space * (hit.position as Vector3)) - eye).dot(axis))
+		# A sight line that grazes the post's top edge hits no triangle, yet the post stands inside the cone and would be cut away whole.
+		nearest = minf(nearest, _nearest_inside(part[0] as Mesh, to_space, planes, eye, axis, maxf(front, 0.0)))
 	if is_finite(nearest):
 		var out := cut.duplicate()
 		out.stop = nearest * (1.0 - POST_CLEAR)
 		return out
 	return cut
+
+
+## Axial depth of the nearest triangle vertex of [param mesh] inside the region (planes from [method _planes]) at or past [param from], else INF; cached per mesh and cut.
+static func _nearest_inside(mesh: Mesh, to_space: Transform3D, planes: Array, eye: Vector3, axis: Vector3, from: float) -> float:
+	var key := "in|%d|%s|%s|%s|%s|%s" % [mesh.get_instance_id(), to_space, eye, axis, planes.size(), from]
+	if _spans.has(key):
+		return _spans[key]
+	var best := INF
+	for v: Vector3 in mesh.get_faces():
+		var p := to_space * v
+		var d := (p - eye).dot(axis)
+		if d < from or d >= best:
+			continue
+		var inside := true
+		for plane: Array in planes:
+			if (plane[0] as Vector3).dot(p) - float(plane[1]) > 0.0:
+				inside = false
+				break
+		if inside:
+			best = d
+	_spans[key] = best
+	return best
 
 
 ## A mesh's collision-style triangle tree, built natively once: [method short_of_front] asks it one segment instead of walking every triangle in script.
@@ -177,6 +205,18 @@ static func _planes(cut: Dictionary) -> Array:
 	if is_finite(float(cut.stop)):
 		planes.append([axis, axis.dot(eye) + float(cut.stop)])
 	return planes
+
+
+## False for a zero-scale or collinear basis: its inverse is undefined and the engine logs an error for it.
+static func _invertible(basis: Basis) -> bool:
+	return absf(basis.determinant()) > 1e-12
+
+
+static func _warn_once(mesh: Mesh, message: String, fields: Dictionary) -> void:
+	var key := "%d|%s" % [mesh.get_instance_id(), message]
+	if not _warned.has(key):
+		_warned[key] = true
+		DotLog.warn(CHANNEL, message, fields)
 
 
 static func _to_space(mi: Node, space: Node3D) -> Transform3D:
