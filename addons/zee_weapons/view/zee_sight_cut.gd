@@ -14,6 +14,8 @@ const IronSight := preload("zee_iron_sight.gd")
 const CHANNEL := "zee.sightcut"
 
 static var _cache: Dictionary = {}
+static var _tree: Dictionary = {}
+static var _spans: Dictionary = {}
 static var _warned: Dictionary = {}
 
 
@@ -75,24 +77,62 @@ static func short_of_front(cut: Dictionary, node: Node, space: Node3D, from: flo
 		return cut
 	var eye: Vector3 = cut.eye
 	var axis: Vector3 = cut.axis
-	var triangles := IronSight.triangles_of(node, space)
+	var parts: Array = []
 	var lo := INF
 	var hi := -INF
-	for tri: Dictionary in triangles:
-		for p: Vector3 in [tri.a, tri.b, tri.c]:
-			lo = minf(lo, (p - eye).dot(axis))
-			hi = maxf(hi, (p - eye).dot(axis))
+	var stack: Array[Node] = [node]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		var mi := n as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var to_space := _to_space(mi, space)
+		var span := _span(mi.mesh, to_space.basis.transposed() * axis)
+		if span.is_empty():
+			continue
+		var shift := (to_space.origin - eye).dot(axis)
+		lo = minf(lo, float(span[0]) + shift)
+		hi = maxf(hi, float(span[1]) + shift)
+		parts.append([mi.mesh, to_space])
 	var front := lo + (hi - lo) * from
 	var nearest := INF
-	for tri: Dictionary in triangles:
-		var hit: Variant = Geometry3D.segment_intersects_triangle(eye + axis * maxf(front, 0.0), eye + axis * (hi + 1.0), tri.a, tri.b, tri.c)
-		if hit != null:
-			nearest = minf(nearest, ((hit as Vector3) - eye).dot(axis))
+	var start := eye + axis * maxf(front, 0.0)
+	var end := eye + axis * (hi + 1.0)
+	for part: Array in parts:
+		var to_space: Transform3D = part[1]
+		var back := to_space.affine_inverse()
+		var tm := _triangle_mesh(part[0] as Mesh)
+		var hit: Dictionary = tm.intersect_segment(back * start, back * end) if tm != null else {}
+		if not hit.is_empty():
+			nearest = minf(nearest, ((to_space * (hit.position as Vector3)) - eye).dot(axis))
 	if is_finite(nearest):
 		var out := cut.duplicate()
 		out.stop = nearest * (1.0 - POST_CLEAR)
 		return out
 	return cut
+
+
+## A mesh's collision-style triangle tree, built natively once: [method short_of_front] asks it one segment instead of walking every triangle in script.
+static func _triangle_mesh(mesh: Mesh) -> TriangleMesh:
+	var id := mesh.get_instance_id()
+	if not _tree.has(id):
+		_tree[id] = mesh.generate_triangle_mesh()
+	return _tree[id]
+
+
+## [min, max] of the dot of [param dir] with the mesh's triangle vertices, or [] with none; cached because every equip asks the same.
+static func _span(mesh: Mesh, dir: Vector3) -> Array:
+	var key := "%d|%s" % [mesh.get_instance_id(), dir]
+	if not _spans.has(key):
+		var lo := INF
+		var hi := -INF
+		for v: Vector3 in mesh.get_faces():
+			var d := v.dot(dir)
+			lo = minf(lo, d)
+			hi = maxf(hi, d)
+		_spans[key] = [] if lo > hi else [lo, hi]
+	return _spans[key]
 
 
 ## Rays from [param cut]'s eye inside its cone ([param share] of its radius, [param rings] rings of [param per_ring]) that hit a triangle

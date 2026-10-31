@@ -18,6 +18,8 @@ const LENS_COLOR := Color(0.55, 0.85, 1.0, 0.035)
 const RIM_COLOR := Color(0.06, 0.06, 0.07)
 const RIM_SHARE := 0.07
 
+static var _parts: Dictionary = {}
+
 
 ## `{line, aim, sight}` for [param art] on [param weapon] under [param holder] (`sight` a node to add under the holder, or
 ## null), or `{}` when the weapon aims at its written hold. [param near] is the camera's near plane plus its margin.
@@ -123,44 +125,72 @@ static func _red_dot(cone: Dictionary, depth: float, red: Dictionary) -> Node3D:
 	root.set_meta(&"window", window)
 	var lens := MeshInstance3D.new()
 	lens.name = "Lens"
-	var disc := CylinderMesh.new()
-	disc.top_radius = window
-	disc.bottom_radius = window
-	disc.height = window * 0.01
-	disc.radial_segments = 32
-	disc.rings = 1
-	disc.cap_bottom = false
-	lens.mesh = disc
-	lens.material_override = _flat(LENS_COLOR, true)
+	lens.mesh = _part("lens")
+	lens.scale = Vector3.ONE * window
+	lens.material_override = _part("lens_material")
 	root.add_child(lens)
 	var rim := MeshInstance3D.new()
 	rim.name = "Rim"
-	var ring := TorusMesh.new()
-	ring.inner_radius = window
-	ring.outer_radius = window * (1.0 + RIM_SHARE)
-	ring.rings = 48
-	ring.ring_segments = 6
-	rim.mesh = ring
-	rim.material_override = _flat(RIM_COLOR, false)
+	rim.mesh = _part("rim")
+	rim.scale = Vector3.ONE * window
+	rim.material_override = _part("rim_material")
 	root.add_child(rim)
 	var dot := MeshInstance3D.new()
 	dot.name = RETICLE_NAME
-	var sphere := SphereMesh.new()
-	sphere.radius = depth * tan(deg_to_rad(float(red.size)))
-	sphere.height = sphere.radius * 2.0
-	sphere.radial_segments = 12
-	sphere.rings = 6
-	dot.mesh = sphere
-	var glow := StandardMaterial3D.new()
-	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	glow.albedo_color = (red.color as Color) * maxf(1.0, float(red.brightness) * 0.25)
-	glow.albedo_color.a = 1.0
-	glow.no_depth_test = true
-	glow.render_priority = Material.RENDER_PRIORITY_MAX
-	dot.material_override = glow
+	dot.mesh = _part("dot")
+	dot.scale = Vector3.ONE * (depth * tan(deg_to_rad(float(red.size))))
+	var glow_color: Color = (red.color as Color) * maxf(1.0, float(red.brightness) * 0.25)
+	glow_color.a = 1.0
+	dot.material_override = _glow(glow_color)
 	dot.set_meta(&"glow", float(red.brightness))
 	root.add_child(dot)
 	return root
+
+
+## A unit-size part of the red dot (scaled per gun), built once: building the cylinder, torus and sphere and their materials per equip cost 110 ms on a cold gun.
+static func _part(part: String) -> Resource:
+	if not _parts.has(part):
+		match part:
+			"lens":
+				var disc := CylinderMesh.new()
+				disc.top_radius = 1.0
+				disc.bottom_radius = 1.0
+				disc.height = 0.01
+				disc.radial_segments = 32
+				disc.rings = 1
+				disc.cap_bottom = false
+				_parts[part] = disc
+			"rim":
+				var ring := TorusMesh.new()
+				ring.inner_radius = 1.0
+				ring.outer_radius = 1.0 + RIM_SHARE
+				ring.rings = 48
+				ring.ring_segments = 6
+				_parts[part] = ring
+			"dot":
+				var sphere := SphereMesh.new()
+				sphere.radius = 1.0
+				sphere.height = 2.0
+				sphere.radial_segments = 12
+				sphere.rings = 6
+				_parts[part] = sphere
+			"lens_material":
+				_parts[part] = _flat(LENS_COLOR, true)
+			"rim_material":
+				_parts[part] = _flat(RIM_COLOR, false)
+	return _parts[part]
+
+
+static func _glow(color: Color) -> StandardMaterial3D:
+	var key := "glow|%s" % color
+	if not _parts.has(key):
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.albedo_color = color
+		glow.no_depth_test = true
+		glow.render_priority = Material.RENDER_PRIORITY_MAX
+		_parts[key] = glow
+	return _parts[key]
 
 
 static func _flat(color: Color, see_through: bool) -> StandardMaterial3D:
