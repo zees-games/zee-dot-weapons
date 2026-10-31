@@ -30,5 +30,3 @@ jobs:
             contents: write
         with:
             pack: true
-        with:
-            pack: true
