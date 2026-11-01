@@ -179,6 +179,18 @@ func _stock_sounds() -> void:
 	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY + 0.1).timeout
 	_check("indoors the _far tail follows the report", heard.size() == before + 3 and _stock_path(heard[-1], "rifle_far"))
 	fx.roof = null
+	var calls: Array = []
+	fx.shot_sound = func(id: StringName, kind: StringName, _at: Vector3, indoors: bool) -> bool:
+		calls.append([id, kind, indoors])
+		return true
+	var mark := heard.size()
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	_check("a shot_sound hook is handed the weapon and replaces the stock report",
+		calls.size() == 1 and calls[0][0] == ZeeWeaponIds.RIFLE and heard.size() == mark)
+	fx.shot_sound = func(_i: StringName, _k: StringName, _a: Vector3, _in: bool) -> bool: return false
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	_check("a hook returning false falls back to the stock report", heard.size() == mark + 1)
+	fx.shot_sound = Callable()
 	ZeeWeaponSound.set_class(&"zz_probe", ZeeWeaponSound.SNIPER)
 	_check("a pack's class outranks the built-in table", ZeeWeaponSound.class_for(&"zz_probe", &"") == ZeeWeaponSound.SNIPER)
 	ZeeWeaponSound.set_class(&"zz_probe", &"")
@@ -194,7 +206,7 @@ func _stock_sounds() -> void:
 		ZeeWeaponSound.dry_stream(&"zz_probe") != own and ZeeWeaponSound.reload_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN) != own)
 	fx.sounds = false
 	fx.play_equip(Vector3.ZERO)
-	_check("and with sounds off nothing plays", heard.size() == before + 3)
+	_check("and with sounds off nothing plays", heard.size() == mark + 1)
 	fx.queue_free()
 
 	_stock_rig_sounds()

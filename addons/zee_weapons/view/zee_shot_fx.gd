@@ -101,6 +101,9 @@ var rail_charge := 0.0
 ## Where a weapon's `extra.muzzle_flash` is read from; the rig sets it. Without it the class decides.
 var catalogue: DotWeaponCatalogue = null
 
+## Replaces the stock report and tail: `func(id: StringName, kind: StringName, at: Vector3, indoors: bool) -> bool`, e.g. wrapping a DotShotPlayer's `fire`. Return true when it played the shot; false falls back to the stock sound. Unset keeps the stock sound.
+var shot_sound: Callable = Callable()
+
 ## Multiplier on every flash's size, on top of the weapon class's own ([constant FLASH]).
 @export_range(0.0, 3.0, 0.05) var flash_scale: float = 1.0
 
@@ -873,6 +876,8 @@ func _play_casing(at: Vector3) -> void:
 
 func _report(id: StringName, kind: StringName, at: Vector3) -> void:
 	if not sounds or kind == DotWeaponOutcome.KIND_NONE:
+		return
+	if shot_sound.is_valid() and bool(shot_sound.call(id, kind, at, roof != null and bool(roof.get(&"roofed")))):
 		return
 
 	var heard: AudioStream = null
