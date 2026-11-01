@@ -93,6 +93,16 @@ static func scene(path: String) -> DotResult:
 	return DotResult.success(loaded)
 
 
+## Loads every scene in [param paths] into the cache, so the first equip of each does not read
+## its file (90-110 ms in the middle of a fight). Returns how many are cached.
+static func warm(paths: Array) -> int:
+	var cached := 0
+	for path: Variant in paths:
+		if scene(str(path)).ok:
+			cached += 1
+	return cached
+
+
 ## A fresh instance of the model at [param path], or null.
 ##
 ## [b]Returns null rather than failing loudly for a missing model[/b], because a missing
