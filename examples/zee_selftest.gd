@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 794
+const CHECKS := 798
 
 
 func _ready() -> void:
@@ -640,6 +640,10 @@ func _wall_slam() -> void:
 	_check("a hit past the muzzle and margin is 0", ZeeWallSlam.obstruction(0.45, 0.6) == 0.0)
 	_check("a hit short of the muzzle is positive", ZeeWallSlam.obstruction(0.45, 0.3) > 0.1)
 	_check("the retract is capped", ZeeWallSlam.obstruction(0.9, 0.0) == 0.34)
+	_check("world model: no wall is no pull", ZeeWorldModel.wall_pull(INF, 0.8) == 0.0)
+	_check("world model: a wall past the gun is no pull", ZeeWorldModel.wall_pull(1.5, 0.8) == 0.0)
+	_check("world model: a wall inside the gun pulls it back by the overlap", is_equal_approx(ZeeWorldModel.wall_pull(1.0, 0.8), 0.29))
+	_check("world model: the pull is capped", ZeeWorldModel.wall_pull(0.0, 0.8, 0.45, 0.04, 0.3) == 0.3)
 	_check("the reach is the drawn distance over the drawn scale", is_equal_approx(ZeeWallSlam.reach_of(1.0, 2.0, 1.0), 0.5))
 
 	# A floor under a low eye (crouch, slide) is not an obstacle unless the view looks down at it.

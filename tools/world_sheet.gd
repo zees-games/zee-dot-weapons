@@ -58,6 +58,25 @@ func _build_world() -> void:
 	# Turned a quarter to the camera's left: the swing crosses the frame instead of coming at it.
 	_figure.rotation = Vector3(0.0, deg_to_rad(-60.0), 0.0)
 
+	var wall_at := float(_argument("--wall", "0"))
+	if wall_at > 0.0:
+		var wall := StaticBody3D.new()
+		var box := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(3.0, 3.0, 0.2)
+		box.shape = shape
+		wall.add_child(box)
+		var mesh := MeshInstance3D.new()
+		var slab := BoxMesh.new()
+		slab.size = shape.size
+		mesh.mesh = slab
+		var glass := StandardMaterial3D.new()
+		glass.albedo_color = Color(0.9, 0.3, 0.2, 0.25)
+		glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mesh.material_override = glass
+		wall.add_child(mesh)
+		add_child(wall)
+		wall.global_transform = _figure.global_transform * Transform3D(Basis.IDENTITY, Vector3(0.0, 1.5, -wall_at - 0.1))
 	var sun := DirectionalLight3D.new()
 	sun.light_energy = 1.2
 	sun.shadow_enabled = true

@@ -129,6 +129,25 @@ const RELOAD_SUPPORT_KEYS := [
 ## property existed fails to parse a pack that names it.
 @export var sounds: bool = true
 
+## Pulls the weapon back and holds it low when a wall is within the gun's length, so a watcher does not see it through the wall. Off switch for a game with its own.
+@export var wall_response: bool = true
+## Physics layers the wall probe stops on; the carrier's own body is skipped, and so are other characters.
+@export_flags_3d_physics var wall_mask: int = 0xFFFFFFFF
+## Furthest the gun is pulled back, in metres.
+@export_range(0.0, 1.0, 0.01) var wall_max_pull: float = 0.3
+## Degrees the muzzle drops per metre of pull-back.
+@export_range(0.0, 400.0, 1.0) var wall_tilt_per_m: float = 150.0
+## Smoothing rate of the response, per second.
+@export_range(0.5, 40.0, 0.5) var wall_rate: float = 12.0
+
+const WALL_ARM := 0.45
+const WALL_MARGIN := 0.04
+const WALL_PROBE_EVERY := 0.05
+
+var _wall_amount: float = 0.0
+var _wall_target: float = 0.0
+var _wall_clock: float = 0.0
+var _wall_was: bool = false
 var _holder: Node3D = null
 var _weapon: Node3D = null
 var _attachments: Array[Node3D] = []
@@ -454,7 +473,12 @@ func advance(delta: float) -> void:
 	_reload_blend = move_toward(_reload_blend, 1.0 if _reloading else 0.0, delta / 0.2)
 	_reload_time += delta
 	_follow_person()
-	if _kick <= 0.00001 and _action >= 1.0 and _sprint <= 0.0 and not _sprint_was_on and _reload_blend <= 0.0 and not _reloading:
+	_advance_wall(delta)
+	if _wall_amount <= 0.0 and _wall_was and _kick <= 0.00001:
+		_wall_was = false
+	elif _wall_amount > 0.0:
+		_wall_was = true
+	if not _wall_was and _kick <= 0.00001 and _action >= 1.0 and _sprint <= 0.0 and not _sprint_was_on and _reload_blend <= 0.0 and not _reloading:
 		return
 	_sprint_was_on = _sprint > 0.0
 
@@ -481,9 +505,66 @@ func advance(delta: float) -> void:
 	# About the grip, which is where the hand is: the rest transform's origin.
 	var rest := _rest()
 	var carry := _sprint_carry()
+	var low := Basis.from_euler(Vector3(-deg_to_rad(_wall_amount * wall_tilt_per_m), 0.0, 0.0))
 	_holder.transform = Transform3D(
-		carry[1] * turn * rest.basis, rest.origin + moved + carry[0] + Vector3(0.0, 0.0, _kick)
+		low * carry[1] * turn * rest.basis, rest.origin + moved + carry[0] + Vector3(0.0, 0.0, _kick + _wall_amount)
 	)
+
+
+## Metres the gun must be pulled back for a wall [param hit] away from a ray that starts [param arm] behind the hand (INF for none).
+static func wall_pull(hit: float, gun_length: float, arm: float = WALL_ARM, margin: float = WALL_MARGIN, max_pull: float = 0.3) -> float:
+	if not is_finite(hit) or not is_finite(gun_length):
+		return 0.0
+	return clampf(arm + gun_length + margin - hit, 0.0, maxf(max_pull, 0.0))
+
+
+## Probes forward from behind the hand every [constant WALL_PROBE_EVERY] and eases toward the answer.
+func _advance_wall(delta: float) -> void:
+	_wall_clock += delta
+	if wall_response and _wall_clock >= WALL_PROBE_EVERY and _weapon != null and _weapon.visible and is_inside_tree():
+		_wall_clock = 0.0
+		_wall_target = _probe_wall()
+	elif not wall_response or _weapon == null:
+		_wall_target = 0.0
+	_wall_amount = lerpf(_wall_amount, _wall_target, 1.0 - exp(-wall_rate * clampf(delta, 0.0, 0.25)))
+	if _wall_target == 0.0 and _wall_amount < 0.002:
+		_wall_amount = 0.0
+
+
+func _probe_wall() -> float:
+	var world := get_world_3d()
+	if world == null:
+		return 0.0
+	var person := _person()
+	var facing: Node3D = person if person is Node3D else self
+	var forward := -facing.global_basis.z
+	forward.y = 0.0
+	if forward.length_squared() < 0.0001:
+		return 0.0
+	forward = forward.normalized()
+	var hand := _holder.global_position
+	var from := hand - forward * WALL_ARM
+	var length := hand.distance_to(muzzle_transform().origin)
+	var exclude: Array[RID] = []
+	var body := _carrier_body()
+	if body is CollisionObject3D:
+		exclude.append((body as CollisionObject3D).get_rid())
+	var query := PhysicsRayQueryParameters3D.create(from, from + forward * (WALL_ARM + length + WALL_MARGIN), wall_mask, exclude)
+	query.collide_with_areas = false
+	for _hop in range(6):
+		var found := world.direct_space_state.intersect_ray(query)
+		if found.is_empty():
+			return 0.0
+		if found["collider"] is CharacterBody3D:
+			query.exclude.append(found["rid"])
+			continue
+		return wall_pull(from.distance_to(found["position"]), length, WALL_ARM, WALL_MARGIN, wall_max_pull)
+	return 0.0
+
+
+## The pull-back now, for a suite and a tool.
+func wall_amount() -> float:
+	return _wall_amount
 
 
 ## The art's third-person transform, scaled by its pose's share of the figure's hand scale.

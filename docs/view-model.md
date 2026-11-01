@@ -179,3 +179,7 @@ Sprinting lowers the weapon on its own layer, separate from the aim layer: `ZeeV
 `forearm_scale` is an art key beside `hand_scale` (0 keeps the arms' own): a one-hand pistol row sets it near 0.36 so the forearm no longer fills the lower right of the screen.
 
 `scope_arms_hide` (aim fraction 0 to 1, below 0 keeps `ZeeViewModel.scope_arms_hide`, 0.6) is when a scoped weapon's arms vanish, and `max_lean` (metres-ish cap, below 0 keeps the arms' own 0.4, 0 is no lean) caps how far the arms lean to reach a hand target; both are art keys per weapon, and a game's cvar overrides them (`ZeeViewModel.scope_arms_hide_override`, `art_max_lean()`).
+
+## The third-person gun stops at walls
+
+`ZeeWorldModel` probes from 0.45 m behind the hand along the person's flattened forward, the gun's drawn length plus a margin, every 50 ms, and eases the holder back (up to `wall_max_pull`, 0.3 m) and tilts the muzzle up (`wall_tilt_per_m` degrees per metre pulled). `ZeeWorldModel.wall_pull(hit, length)` is the pure distance-to-offset rule the selftest checks. `wall_response = false` turns it off; `wall_mask` picks what counts as a wall. `tools/world_sheet.sh`-style check: `world_sheet.tscn -- --weapon rifle --wall 0.3` draws a translucent slab that far in front of the figure.
