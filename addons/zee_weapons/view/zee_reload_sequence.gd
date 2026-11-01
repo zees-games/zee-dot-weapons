@@ -4,7 +4,7 @@ extends RefCounted
 ## gun turns, and what is in sight (magazine, cases, rounds, belt) at every point from 0 to 1 of the rig's reload time.
 ## Row keys: `style` (STYLES), `eject` ("spent", "all" or "none"), `part`, `round`, `case` (zee_reload_parts.gd names), `clip` (rounds per stripper clip), `loader` ("speedloader" or
 ## "single"), `weights` {phase: weight}, `hands` {phase: {left|right: [anchor, [x, y, z]]}}, `anchors` {name: [x, y, z]} in
-## model metres, `prop_scale`. Preloaded by path (no class_name), as zee_reload_parts.gd is. Positions are in Aim space.
+## model metres, `prop_scale`, `gun_scale` (multiplies how far the gun lifts and turns; a heavy or large-drawn gun wants more). Preloaded by path (no class_name), as zee_reload_parts.gd is. Positions are in Aim space.
 
 const STYLES: Array[StringName] = [&"magazine", &"pistol", &"revolver", &"tube", &"bolt", &"belt", &"launcher", &"cell", &"generic"]
 
@@ -317,9 +317,10 @@ func _finish() -> void:
 		if p.t1 - float(left_keys.back()[0]) < 0.004:
 			continue
 		var g: Array = GUN.get(p.gun, GUN[&"rest"])
+		var gs := float(_spec.get("gun_scale", 1.0))
 		left_keys.append([p.t1, p.left, Vector3.ZERO])
 		right_keys.append([p.t1, p.right, Vector3.ZERO])
-		gun_keys.append([p.t1, g[0], g[1]])
+		gun_keys.append([p.t1, (g[0] as Vector3) * gs, (g[1] as Vector3) * gs])
 	if float(left_keys.back()[0]) < 1.0:
 		left_keys.append([1.0, fore, Vector3.ZERO])
 		right_keys.append([1.0, Vector3.ZERO, Vector3.ZERO])
