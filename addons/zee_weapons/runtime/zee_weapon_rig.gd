@@ -10,6 +10,13 @@ const CHANNEL := "zee.rig"
 
 const BASH_BEHAVIOUR := "res://addons/zee_weapons/behaviour/zee_weapon_bash.gd"
 
+## Layers the wall probe stops on beyond the shot mask: set it to what stops the carrier (clip brushes and fences a shot passes), so the gun lowers at them.
+@export_flags_3d_physics var wall_extra_mask: int = 0:
+	set(v):
+		wall_extra_mask = v
+		if _view != null and _fx != null:
+			_view.wall_mask = _fx.collision_mask | v
+
 ## A use happened. Carries the whole outcome, so a listener can tell a swing from a shot.
 signal used(outcome: DotWeaponOutcome)
 
@@ -127,7 +134,7 @@ func _resolve_presentation() -> void:
 		_fx.catalogue = catalogue
 		add_child(_fx)
 		_fx.exclude_carrier(_player)
-		_view.wall_mask = _fx.collision_mask
+		_view.wall_mask = _fx.collision_mask | wall_extra_mask
 
 
 func _connect_arsenal() -> void:
