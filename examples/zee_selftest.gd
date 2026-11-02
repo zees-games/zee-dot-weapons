@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 810
+const CHECKS := 814
 
 
 func _ready() -> void:
@@ -66,6 +66,7 @@ func _ready() -> void:
 	await _wall_lean()
 	await _wall_barrel()
 	await _wall_arms()
+	await _near_plane()
 	_effects_pack_light()
 	_view_screen()
 
@@ -692,6 +693,30 @@ func _wall_slam() -> void:
 
 
 ## The gun leans away from where it meets the wall and eases in with depth.
+func _near_plane() -> void:
+	_begin("a hand never comes through the near plane")
+	var camera := Camera3D.new()
+	add_child(camera)
+	var view := ZeeViewModel.new()
+	camera.add_child(view)
+	var _eq := view.equip(ZeeWeaponArtTable.get_art(&"charge_rifle"))
+	for i in range(30):
+		view.advance(1.0 / 60.0)
+	var floor_m := camera.near + ZeeViewModel.NEAR_CLEAR
+	var rest: float = view._arms.nearest_hand_depth(camera.global_transform)
+	_check("hands at rest are clear of the near plane (%.3f m past it)" % (rest - camera.near), rest >= floor_m)
+	view._animated.global_position += camera.global_basis.z * (rest - camera.near + 0.04)
+	var pressed: float = view._arms.nearest_hand_depth(camera.global_transform)
+	_check("a hand pressed to the lens is through it (%.3f m)" % pressed, pressed < camera.near)
+	view._keep_off_near_plane()
+	var after: float = view._arms.nearest_hand_depth(camera.global_transform)
+	_check("it is slid back past the near plane and margin (%.3f m)" % after, after >= floor_m - 0.0001)
+	var again := view._animated.global_position
+	view._keep_off_near_plane()
+	_check("and a model already clear is left where it is", view._animated.global_position.is_equal_approx(again))
+	_end()
+
+
 func _wall_lean() -> void:
 	_begin("the view model leans by where it meets the wall")
 	var camera := Camera3D.new()

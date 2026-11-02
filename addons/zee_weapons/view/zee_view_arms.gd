@@ -194,6 +194,19 @@ var support_free := false
 ## Where each shoulder and hand was put last ([method _hands_for]'s keys), in this node's space, for a check.
 var last_hands: Dictionary = {}
 
+## Half a glove's width, metres: a hand nearer the camera than this has its far side through the near plane.
+const HAND_RADIUS := 0.06
+
+
+## Depth in front of [param eye] (metres) of the nearest drawn hand's near edge; INF before the first reach.
+func nearest_hand_depth(eye: Transform3D) -> float:
+	var best := INF
+	var inverse := eye.affine_inverse()
+	for key: String in ["left", "right"]:
+		if last_hands.has(key):
+			best = minf(best, -(inverse * (global_transform * (last_hands[key] as Vector3))).z - HAND_RADIUS)
+	return best
+
 
 ## Points each arm from a shoulder below the screen to its hand on the weapon: the right
 ## hand on [param grip], the left on [param fore] (both in the view model's space, which is

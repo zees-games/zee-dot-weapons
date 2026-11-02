@@ -30,6 +30,8 @@ var _sight_aim := Transform3D.IDENTITY
 ## The camera's near plane the eye relief keeps the gun's back end in front of, plus a margin
 ## for the kick pushing it back. A view model under no camera assumes Godot's default.
 const NEAR_MARGIN := 0.05
+## Metres beyond the camera near plane that no part of the drawn model may come nearer than.
+const NEAR_CLEAR := 0.02
 
 var _pose := ZeeWeaponPose.make()
 var _wall := ZeeWallSlam.new()
