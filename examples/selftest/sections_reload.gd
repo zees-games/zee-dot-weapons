@@ -78,6 +78,14 @@ func _reload_sequences() -> void:
 	_check("a cancelled reload ends the sequence and hides its parts (%d shown mid-way, %d after)" % [mid, view.reload_parts_shown()],
 		mid >= 1 and view.reload_sequence() == null and view.reload_parts_shown() == 0)
 
+	_reload_data(view, gl)
+	view.queue_free()
+	_watched_reload()
+	_end()
+
+
+## The style a profile row picks, and the order of a sequence's keys.
+func _reload_data(view: ZeeViewModel, gl: ZeeWeaponArt) -> void:
 	# Data: a profile's `art: reload:` row picks the style; the cvar turns every gun back to the generic reload.
 	var over := ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE).with_overrides({"reload": {"style": "belt"}})
 	_check("a profile row sets the style (%s)" % ReloadSequence.style_of(over), ReloadSequence.style_of(over) == &"belt")
@@ -105,9 +113,6 @@ func _reload_sequences() -> void:
 			for seg: Array in prop.segments:
 				all_held = all_held and seg[2] == "hand"
 	_check("the revolver's speedloader stays in the hand to the end of its use (%d loaders)" % loaders, loaders == 1 and all_held)
-	view.queue_free()
-	_watched_reload()
-	_end()
 
 
 ## Somebody else's reload: the replicated flag dips the gun and walks the support hand to the well, the belt and back.

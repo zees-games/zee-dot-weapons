@@ -769,20 +769,13 @@ func _apply_skin(root: Node) -> void:
 func _set_on_top(root: Node) -> void:
 	for mesh in HandReach.meshes(root):
 		mesh.sorting_offset = 100.0
-
-		# [b]A view model casts no shadow.[/b] It is drawn half a metre from the camera at
-		# well under life size, so the shadow it casts is a large dark smear on the ground
-		# a couple of metres ahead of the player — an object-shaped shadow with no object,
-		# because the thing casting it is only visible to one viewer. The third-person
-		# world model is what casts the shadow other people see.
+		# A view model casts no shadow: drawn near the camera at under life size, it would leave a large
+		# smear on the ground ahead of the player; the world model casts the shadow others see.
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 		var material: Material = mesh.material_override
-
 		if material == null:
-			# Duplicated from the imported material rather than replaced by a fresh one:
-			# a new StandardMaterial3D turns the model flat white, and the imported one is
-			# shared with the third-person copy of the same mesh, which must not be edited.
+			# Duplicated, not new: a fresh material turns the model flat white, and the imported one is shared with the world model.
 			var source := mesh.get_active_material(0)
 			material = (source as StandardMaterial3D).duplicate() \
 				if source is StandardMaterial3D else StandardMaterial3D.new()

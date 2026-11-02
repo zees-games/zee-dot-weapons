@@ -192,6 +192,18 @@ func _stock_sounds() -> void:
 	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
 	_check("a hook returning false falls back to the stock report", heard.size() == mark + 1)
 	fx.shot_sound = Callable()
+	_stock_overrides()
+	fx.sounds = false
+	fx.play_equip(Vector3.ZERO)
+	_check("and with sounds off nothing plays", heard.size() == mark + 1)
+	fx.queue_free()
+
+	_layered_sounds()
+	_stock_rig_sounds()
+	_end()
+
+
+func _stock_overrides() -> void:
 	ZeeWeaponSound.set_class(&"zz_probe", ZeeWeaponSound.SNIPER)
 	_check("a pack's class outranks the built-in table", ZeeWeaponSound.class_for(&"zz_probe", &"") == ZeeWeaponSound.SNIPER)
 	ZeeWeaponSound.set_class(&"zz_probe", &"")
@@ -205,14 +217,6 @@ func _stock_sounds() -> void:
 	ZeeWeaponSound.set_stage_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN, null)
 	_check("and taken out they fall back to the stock",
 		ZeeWeaponSound.dry_stream(&"zz_probe") != own and ZeeWeaponSound.reload_stream(&"zz_probe", ZeeWeaponSound.RELOAD_IN) != own)
-	fx.sounds = false
-	fx.play_equip(Vector3.ZERO)
-	_check("and with sounds off nothing plays", heard.size() == mark + 1)
-	fx.queue_free()
-
-	_layered_sounds()
-	_stock_rig_sounds()
-	_end()
 
 
 func _layered_sounds() -> void:

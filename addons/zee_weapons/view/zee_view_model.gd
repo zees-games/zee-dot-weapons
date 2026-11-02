@@ -1,14 +1,10 @@
 @tool
 class_name ZeeViewModel
-extends "zee_view_model_state.gd"
+extends "zee_view_model_materials.gd"
 
-## By path, not by class_name: see the file's own header.
-const SightFit := preload("zee_sight_fit.gd")
 const ReloadParts := preload("zee_reload_parts.gd")
 const Dress := preload("zee_attachment_dress.gd")
 const HipHold := preload("zee_hip_hold.gd")
-const HandReach := preload("zee_hand_reach.gd")
-const ReloadSequence := preload("zee_reload_sequence.gd")
 const ReloadProps := preload("zee_reload_props.gd")
 
 ## The weapon you see in your own hands. Parent it to the camera; it is told what happened (on_used, on_reload_started)
@@ -21,10 +17,6 @@ const CHANNEL := "zee.view"
 ## For a muzzle flash, laser or scope overlay that cannot be hung before the model exists.
 signal model_ready(id: StringName, weapon: Node3D)
 
-## Every frame, where the hands belong: [param grip] and [param fore] in [param anchor]'s space, for a game that draws its own arms (with [member show_arms] off).
-## With [member hands_scale] or [member hands_min_distance] set, the anchor is the drawn weapon scaled about the eye to
-## that share of life size ([ZeeHandsFrame]), so a game's own arms reach it; otherwise the drawn weapon itself.
-signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringName)
 
 @export_group("Wiring")
 
@@ -34,8 +26,6 @@ signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringN
 
 @export_group("Behaviour")
 
-## The size of a game's own arms against life size: [signal hands_reached]'s anchor shrinks the weapon to match, about the eye.
-@export var hands_scale: float = 1.0
 ## How far into the aim-in a scoped weapon's arms are hidden: past it the raised gun is out of the arms' reach and the scope covers the view.
 @export_range(0.0, 1.0, 0.01) var scope_arms_hide: float = 0.6
 ## A game's setting (a cvar) that beats the weapon's art and [member scope_arms_hide]; below 0 is off.
@@ -45,9 +35,6 @@ var _belt: Node3D = null
 var _charge_fx: Node3D = null
 
 var scope_arms_hide_override: float = -1.0
-## The nearest the hands frame brings the grip to the eye, metres (0 = no limit): a weapon drawn close, a pistol, would
-## otherwise put a life-size hand over the whole view.
-@export var hands_min_distance: float = 0.0
 
 ## Whether to build and show hands at all.
 ## A real configuration (non-humanoid characters, a gun with no holder), not a debug switch.
@@ -81,17 +68,9 @@ var scope_arms_hide_override: float = -1.0
 
 @export_group("Wall")
 
-## Physics layers the wall probe stops on (the world and bodies; the carrier is skipped). The rig copies its shot effects' mask.
-@export_flags_3d_physics var wall_mask: int = 0xFFFFFFFF
-## When on, the probe passes through character bodies: a person crossing the muzzle is not a wall and must not slam the weapon.
-@export var wall_ignore_characters: bool = true
 
 @export_group("Light")
 
-## The render layer (1 to 20) every mesh of the view model and its arms is drawn on, and the
-## only one [member view_light_energy]'s light reaches. 0 leaves the meshes on the default
-## layer and builds no light. A game whose camera culls this layer does not see its hands.
-@export_range(0, 20) var view_layer: int = 20
 
 ## The energy of the view model's own key light, which turns with the camera and lights only the view model. 0 builds none.
 ## The world's sun is fixed, so turning round leaves the gun lit by ambient alone; a key light keeps its side lit the same way.
@@ -102,37 +81,11 @@ var scope_arms_hide_override: float = -1.0
 @export var view_light_rotation: Vector3 = Vector3(-38.0, -32.0, 0.0)
 
 @export_group("Finish")
-## Gives each surface of a real-world gun its own metal, polymer, wood or glass shading (see
-## [ZeeWeaponFinish]); off leaves the imported materials as they came.
-@export var finish_materials: bool = true
-## Metallic factor of bare metal. Kept modest: metal with no reflections to show is black.
-@export_range(0.0, 1.0, 0.05) var finish_metal: float = 0.4
-## Roughness of metal (low is shiny), polymer and wood.
-@export_range(0.0, 1.0, 0.05) var finish_metal_roughness: float = 0.38
-@export_range(0.0, 1.0, 0.05) var finish_polymer_roughness: float = 0.6
-@export_range(0.0, 1.0, 0.05) var finish_wood_roughness: float = 0.85
-## Multiplier on the albedo of finished surfaces (1 as authored).
-@export_range(0.5, 4.0, 0.05) var finish_lift: float = 1.4
 
 @export_group("Feel")
 
 ## Scales sway, bob and kick for everything this rig draws.
 @export_range(0.0, 3.0, 0.05) var feel: float = 1.0
-
-## The server's amounts for sway, strafe tilt, bob and the landing (the `mp_vm_*` cvars). One
-## object per view model, shared with its pose; assign a game's own to share it between rigs.
-var feel_rules := ZeeViewFeel.new():
-	set(value):
-		feel_rules = value if value != null else ZeeViewFeel.new()
-		if _pose != null:
-			_pose.rules = feel_rules
-
-## The server's aiming rules (enabled, time, zoom, sway, hold or toggle); null aims by the art alone.
-var ads_rules: ZeeAdsRules = null:
-	set(value):
-		ads_rules = value
-		if _source_art != null and _art != null:
-			var _again := equip(_source_art)
 
 
 ## Sets [member hands_fov] from a horizontal field of view measured on a 4:3 frame, the
@@ -144,7 +97,6 @@ func set_hands_fov_at_4_3(horizontal: float) -> void:
 ## The vertical field of view that is [param horizontal] degrees across a 4:3 frame.
 static func vertical_from_horizontal_4_3(horizontal: float) -> float:
 	return DotViewLens.vertical_from_horizontal_4_3(horizontal)
-
 
 
 func _init() -> void:
@@ -368,118 +320,6 @@ func _reach_for(art: ZeeWeaponArt) -> void:
 	_place_hands()
 
 
-## Every frame, the arms onto the hands: the hands follow the gun while the built arms' shoulders stay
-## put in the view, so neither a wall's pull-back nor a reload swings them up into view or past the near plane.
-func _place_hands() -> void:
-	if _art == null or _aim_node == null:
-		return
-	var aim := _aim_node.transform
-	var pose := _art.pose if _art.has_model() else &"fists"
-	var fore := aim * _support_hand()
-	var in_seq := _seq != null and _reload_fraction > 0.0 and _reload_fraction < 1.0
-	var grip := aim * (_grip_at + (_seq.right_offset(_reload_fraction) if in_seq else Vector3.ZERO))
-	var anchor := _animated
-	if hands_scale != 1.0 or hands_min_distance > 0.0:
-		var to_holder := transform * _animated.transform * aim * _holder.transform
-		var scale := ZeeHandsFrame.life_scale(to_holder, _art) / maxf(hands_scale, 0.01)
-		scale = ZeeHandsFrame.keep_distance(scale, (transform * _animated.transform * grip).length(), hands_min_distance)
-		ZeeHandsFrame.place(_hands_frame, self, _animated, scale)
-		anchor = _hands_frame
-	hands_reached.emit(anchor, grip, fore, pose)
-	if _arms == null or not _arms.has_method("reach"):
-		return
-	var into := Transform3D.IDENTITY
-	if _arms.get_parent() == _animated:
-		_arms.transform = _animated.transform.affine_inverse()
-		into = _arms.transform.affine_inverse()
-	aim = into * aim
-	grip = into * grip
-	fore = into * fore
-	if "support_free" in _arms:
-		_arms.set("support_free", in_seq or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
-	# A game's own arms may answer the older three-argument reach; they get no axes.
-	if _arms.get_method_argument_count("reach") >= 6:
-		_arms.call(
-			"reach", grip, fore, pose,
-			aim.basis * _grip_axis, aim.basis * _fore_axis, _grip_radius
-		)
-	else:
-		_arms.call("reach", grip, fore, pose)
-
-
-## Where the support hand is this frame: on the fore-end, or, through a reload of a weapon with
-## a magazine, to the well, down with the old magazine and out of sight, back up with the next
-## one, and back to the fore-end. Keys in the same shape as the gun's, so the two agree.
-func _support_hand() -> Vector3:
-	var f := _reload_fraction
-	if _seq != null and f > 0.0 and f < 1.0:
-		return _seq.left_hand(f)
-	if not _has_well or f <= 0.0 or f >= 1.0:
-		return _fore_at
-	if _feeds:
-		return ZeeWeaponPose.sample_keys(_feed_keys, f)[0]
-	var below := _well + Vector3(0.0, -0.24, 0.08)
-	var keys := [
-		[0.0, _fore_at, Vector3.ZERO],
-		[0.08, _fore_at, Vector3.ZERO],
-		[0.16, _well + Vector3(0.0, -0.03, 0.0), Vector3.ZERO],
-		[0.30, below, Vector3.ZERO],
-		[0.40, below + Vector3(0.0, -0.04, 0.0), Vector3.ZERO],
-		[0.50, _well + Vector3(0.0, -0.08, 0.0), Vector3.ZERO],
-		[0.58, _well + Vector3(0.0, -0.035, 0.0), Vector3.ZERO],
-		[0.64, _well + Vector3(0.0, -0.03, 0.0), Vector3.ZERO],
-		[0.78, _fore_at, Vector3.ZERO],
-		[1.0, _fore_at, Vector3.ZERO],
-	]
-	return ZeeWeaponPose.sample_keys(keys, f)[0]
-
-
-## The support hand's keys for a gun fed by hand ([member ZeeWeaponArt.load_from]): bolt back, each round fetched, carried and pushed home, bolt closed. Built once per weapon.
-## The round is drawn at the hand ([constant FEED_CARRY] above it) for the whole trip, because [method _animate_magazine] reads the hand and the two must not part.
-func _build_feed_keys(art: ZeeWeaponArt) -> Array:
-	var carry := FEED_CARRY
-	var keys: Array = [[0.0, _fore_at, Vector3.ZERO], [0.06, _fore_at, Vector3.ZERO]]
-	var start := FEED_START
-	if _bolted:
-		keys.append([0.12, _bolt, Vector3.ZERO])
-		keys.append([0.20, _bolt_back, Vector3.ZERO])
-	# Fetched from below the gun, out of frame the first time and from a pouch nearer for the
-	# next, so a round at a time does not send the hand off screen between each.
-	var far := _well + Vector3(0.0, -0.26, 0.06)
-	var near := _entry - carry + Vector3(0.0, -0.13, 0.05)
-	var count := maxi(1, art.load_count)
-	var span := (FEED_END - start) / float(count)
-	for i in count:
-		var a := start + span * float(i)
-		keys.append([a, far if i == 0 else near, Vector3.ZERO])
-		keys.append([a + span * FEED_AT_ENTRY, _entry - carry, Vector3.ZERO])
-		keys.append([a + span * FEED_AT_SEAT, _well - carry, Vector3.ZERO])
-	if _bolted:
-		keys.append([0.75, _bolt_back, Vector3.ZERO])
-		keys.append([0.82, _bolt, Vector3.ZERO])
-		keys.append([0.92, _fore_at, Vector3.ZERO])
-	else:
-		keys.append([0.84, _fore_at, Vector3.ZERO])
-	keys.append([1.0, _fore_at, Vector3.ZERO])
-	return keys
-
-
-## A fed round in the hand: where it is this frame in the holder's (model) space, and whether
-## it is drawn; empty when it is in the gun or not yet fetched.
-func _fed_round(fraction: float) -> Dictionary:
-	var count := maxi(1, _art.load_count)
-	var span := (FEED_END - FEED_START) / float(count)
-	var into := fraction - FEED_START
-	if into < 0.0 or fraction >= FEED_END:
-		return {}
-	var local := fmod(into, span) / span
-	if local >= FEED_AT_SEAT:
-		return {}
-	var hand := _support_hand() + FEED_CARRY
-	var at := _holder.transform.affine_inverse() * hand
-	return {"at": at} if at.is_finite() else {}
-
-
 ## Removes whatever is in hand.
 func clear() -> void:
 	_clear_models()
@@ -496,14 +336,6 @@ func equipped() -> StringName:
 ## The drawn weapon's model node, or null. A search by name can find the last one, which is freed only at the frame's end.
 func weapon_node() -> Node3D:
 	return _weapon
-
-
-## Where the muzzle is right now in world space, for a flash, a tracer and a shell; the simulation never reads it.
-func muzzle_transform() -> Transform3D:
-	if _weapon == null:
-		return global_transform
-
-	return _weapon.global_transform * Transform3D(Basis.IDENTITY, _muzzle)
 
 
 ## The multiple of the default speed this weapon's cases leave at ([member ZeeWeaponArt.eject_speed]).
@@ -612,10 +444,7 @@ func on_reload(fraction: float) -> void:
 	_animate_magazine(_reload_fraction)
 
 
-## The reload being played as phases (zee_reload_sequence.gd), or null for the generic one.
-var _seq: ReloadSequence = null
 static var _parts_warmed := false
-var _hands_frame: Node3D = null
 var _seq_ran := false
 var _props: ReloadProps = null
 
@@ -760,84 +589,6 @@ func advance(delta: float) -> void:
 		_arms.visible = not (scoped or arms_hidden_by_scope())
 
 
-var _strafe_now: float = 0.0
-
-
-## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
-func _advance_wall(delta: float) -> void:
-	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()
-	var w := _wall_numbers()
-	var target := 0.0
-	if on:
-		var muzzle := muzzle_transform().origin
-		var cam: Node3D = (get_parent() as Node3D) if get_parent() is Node3D else self
-		var to_muzzle := muzzle - cam.global_position
-		var dist := to_muzzle.length()
-		if dist > 0.01:
-			var scale_now: float = ads_rules.view_scale_for(_art.id) if ads_rules != null and _art != null else 2.0
-			var reach := ZeeWallSlam.reach_of(dist, scale_now, w["reach"])
-			var hit := ZeeWallSlam.probe(self, reach, wall_mask, wall_ignore_characters, _wall_exclude(), to_muzzle / dist,
-				w["margin"], w["max"], w["floor_look"], w["spread"] / maxf(scale_now, 0.1), w["cast"])
-			target = hit["depth"]
-			if target > 0.0:
-				# Walking into the wall pushes the spring's rest point deeper: force decides how far the gun gives.
-				target = minf(target + clampf(_speed * 0.012, 0.0, 0.1) * w["impulse"], w["max"])
-			_wall.aim_at(hit["normal"], _speed, _strafe_now)
-			_wall.set_lean(hit["sides"], _screen_offset(to_muzzle, cam), w["lean"])
-	_wall.step(target, delta, w["stiffness"], w["damping"], w["lean_rate"])
-	if _wall.amount > 0.0:
-		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction(), w["impulse"]) * _animated.transform
-		_keep_off_near_plane()
-
-
-## Slides the view model away from the eye until no part of the hands is nearer than the camera's near plane plus a margin: a hand through the lens shows its inside as flat colour filling the view.
-func _keep_off_near_plane() -> void:
-	var camera := get_parent() as Camera3D
-	if camera == null or _arms == null or not _arms.has_method(&"nearest_hand_depth"):
-		return
-	var deficit := camera.near + NEAR_CLEAR - _arms.nearest_hand_depth(camera.global_transform)
-	if deficit > 0.0 and deficit < 1.0:
-		_animated.global_position -= camera.global_basis.z * deficit
-
-
-## Where the muzzle sits on the screen relative to the crosshair, as a view-space slope (x right, y up).
-func _screen_offset(to_muzzle: Vector3, cam: Node3D) -> Vector2:
-	var local := cam.global_basis.inverse() * to_muzzle
-	var depth := maxf(-local.z, 0.05)
-	return Vector2(local.x, local.y) / depth
-
-
-## The wall response's numbers for the held weapon (the profile's, or the defaults).
-func _wall_numbers() -> Dictionary:
-	if ads_rules != null and _art != null:
-		return ads_rules.wall_for(_art.id)
-	var out := {}
-	for key: String in ["reach", "margin", "stiffness", "damping", "push", "nudge", "max", "floor_look", "lean", "spread", "lean_rate", "cast", "impulse"]:
-		out[key] = float(ZeeAdsRules.SPECS["wall_" + key]["default"])
-	return out
-
-
-## The carrier's own body, so the probe never stops on the player it hangs from.
-func _wall_exclude() -> Array[RID]:
-	if _wall_excluded.is_empty():
-		var node: Node = get_parent()
-		while node != null and not (node is CollisionObject3D):
-			node = node.get_parent()
-		if node != null:
-			_wall_excluded.append((node as CollisionObject3D).get_rid())
-	return _wall_excluded
-
-
-## The retract and pitch the wall asks of the weapon now, for a suite and a tool.
-func wall_amount() -> float:
-	return _wall.amount
-
-
-## The wall's eased lean for a suite and a tool: x positive turns the barrel left, y positive tips it up.
-func wall_lean() -> Vector2:
-	return _wall.lean
-
-
 ## The scale that draws the hands at [member hands_fov]. See there.
 func _apply_hands_lens() -> void:
 	# Only under a camera: the scale is in the camera's own space, and a view model hung
@@ -881,11 +632,6 @@ func hip_zero() -> float:
 
 func _toggles() -> bool:
 	return ads_rules != null and _art != null and ads_rules.toggle_for(_art.id)
-
-
-## 0 at the hip to 1 at full aim.
-func aim_fraction() -> float:
-	return _aim_fraction
 
 
 ## Whether the weapon in hand can be aimed at all (melee and throwables cannot).
@@ -1204,58 +950,6 @@ func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 	return art.model_forward.normalized() * distance + art.muzzle_offset
 
 
-## Draws a part so it reads as a view model without breaking its own depth.
-## Depth testing stays ON: `no_depth_test` stops a wall clipping but lets the arms and gun paint over each other. A sorting offset biases the order instead.
-## The cost: it can still clip a wall the player is pressed against (offsets stay within 0.6 m); a game wanting it gone renders through its own SubViewport camera.
-func _set_on_top(root: Node) -> void:
-	for mesh in HandReach.meshes(root):
-		mesh.sorting_offset = 100.0
-
-		# A view model casts no shadow: it is drawn half a metre from the camera at under life size, so its shadow
-		# would be a large dark smear ahead of the player with no object; the world model casts the shadow others see.
-		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
-		# Each surface is its own material (one override flattened a rifle to a tan plank), duplicated from the imported one
-		# because a fresh StandardMaterial3D turns flat white and the import is shared with the third-person copy.
-		# It receives no shadow (the world's shadow map darkened it whenever the head was in shade); sun, ambient and key light still shade it.
-		if mesh.mesh != null and mesh.material_override == null:
-			for surface in mesh.mesh.get_surface_count():
-				mesh.set_surface_override_material(surface, _view_material(mesh.get_active_material(surface)))
-		elif mesh.material_override is BaseMaterial3D:
-			(mesh.material_override as BaseMaterial3D).disable_receive_shadows = true
-
-		if view_layer > 0:
-			mesh.layers = 1 << (view_layer - 1)
-
-
-## The view copy of [param source], made once per source and finish and kept for good.
-## Kept for good: when the last copy dies the engine drops its shader, and recompiling it stalled 60 ms per switch.
-func _view_material(source: Material) -> Material:
-	var key := "%d|%s|%s|%s|%s|%s|%s" % [source.get_instance_id() if source != null else 0, finish_materials,
-		finish_metal, finish_metal_roughness, finish_polymer_roughness, finish_wood_roughness, finish_lift]
-	if _view_materials.has(key):
-		return _view_materials[key]
-	var material: Material = (source as StandardMaterial3D).duplicate() \
-		if source is StandardMaterial3D else StandardMaterial3D.new()
-	if material is BaseMaterial3D:
-		var base := material as BaseMaterial3D
-		base.disable_receive_shadows = true
-		SightFit.sharpen(base)
-		if finish_materials:
-			ZeeWeaponFinish.apply(base, finish_metal, finish_metal_roughness,
-				finish_polymer_roughness, finish_wood_roughness, finish_lift)
-	_view_materials[key] = material
-	# The source is pinned with its copy: an id of a freed material could be handed to another.
-	_view_sources.append(source)
-	return material
-
-
-## Every view material made so far, for a loading cover to draw once so their shaders compile
-## under it.
-static func prepared_materials() -> Array:
-	return _view_materials.values()
-
-
 ## Builds [param art]'s view of the weapon once and drops it again, so the model is loaded,
 ## its materials made and its hand spans measured before the weapon is first drawn in play.
 ## Call it on a spare view model under a loading cover, one weapon a frame.
@@ -1313,7 +1007,4 @@ func describe_lines() -> PackedStringArray:
 	out.append("  %s" % str(_pose.describe()))
 	return out
 
-
-static var _view_materials: Dictionary = {}
-static var _view_sources: Array = []
 

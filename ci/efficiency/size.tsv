@@ -1,9 +1,7 @@
 # size
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
 addons/zee_weapons/content/zee_weapon_pack.gd	915
-addons/zee_weapons/view/zee_shot_fx.gd	925
-addons/zee_weapons/view/zee_view_model.gd	1043
+addons/zee_weapons/view/zee_shot_fx.gd	840
+addons/zee_weapons/view/zee_view_model.gd	1010
 addons/zee_weapons/view/zee_weapon_sound.gd::bake	113
-examples/zee_range.gd::_run_sheet	132
 examples/zee_selftest.gd::_aim	110
-examples/zee_selftest.gd::_view_models	101

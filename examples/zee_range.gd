@@ -5,6 +5,7 @@ extends "res://examples/zee_range_world.gd"
 ## The half of the suite no assertion reaches: look at it (`tools/screenshot.sh`). It sets no [DotNodeRef]s; the defaults find everything by type.
 
 const CHANNEL := "zee.range"
+const Frames := preload("res://examples/zee_range_frames.gd")
 
 ## Where the player stands, far enough back that a target is a shot rather than a poke.
 const SPAWN := Vector3(0.0, 0.2, 14.0)
@@ -427,44 +428,12 @@ func _capture_shot() -> void:
 	get_tree().quit()
 
 
-## The frames of one weapon's contact sheet, in order: a label and what to do before it.
-##
-## [b]Why a sheet and not a screenshot.[/b] A view model is motion, and one frame of it at
-## rest says nothing about the reload, the kick or the sway, which are where every
-## complaint about this pack's hands came from (a reload that pointed the gun at the sky,
-## a kick nobody could see). Eighteen frames on one image are a review a person can do in
-## a glance, and the same sixteen every time, so a before and an after can be laid side by
-## side.
-const SHEET_FRAMES := [
-	["hip", "rest"], ["aimed", "aim"],
-	["fire 1", "fire:1"], ["fire 2", "fire:2"], ["fire 4", "fire:4"],
-	["fire 8", "fire:8"], ["fire 14", "fire:14"],
-	["reload 0%", "reload:0.0"], ["reload 25%", "reload:0.25"],
-	["reload 50%", "reload:0.5"], ["reload 75%", "reload:0.75"],
-	["reload 90%", "reload:0.9"],
-	["walking", "walk"], ["turning right", "turn"],
-	["draw 30%", "deploy:0.3"], ["draw 70%", "deploy:0.7"],
-	["in shade", "shade"], ["aimed, fire 4", "aimfire:4"],
-]
-
-## `--moves`: how the weapon moves with its carrier, hip and aimed. Review on this after
-## touching sway, tilt, bob or the landing.
-const MOVE_FRAMES := [
-	["hip", "rest"], ["aimed", "aim"],
-	["strafe right", "strafe:5"], ["strafe left", "strafe:-5"],
-	["aimed, strafe right", "aimstrafe:5"], ["aimed, strafe left", "aimstrafe:-5"],
-	["turning right", "turn"], ["aimed, turning right", "aimturn"],
-	["walking", "walk"], ["aimed, walking", "aimwalk"],
-	["landing", "land"], ["aimed, landing", "aimland"],
-	["sprint, stride low", "sprint:30"], ["sprint, stride high", "sprint:45"],
-]
-
 ## The fixed step the sheet advances the view model by: 60 frames a second, so "fire 4"
 ## is 67 ms after the shot on any machine and under any renderer.
 const SHEET_STEP := 1.0 / 60.0
 
 
-## Renders [constant SHEET_FRAMES] to `<prefix>_NN.png` and quits.
+## Renders sheet frames to `<prefix>_NN.png` and quits.
 ##
 ## [b]The view model is stepped by hand.[/b] Its own `_process` is switched off and
 ## [method ZeeViewModel.advance] is called with [constant SHEET_STEP], so what a frame shows
@@ -487,39 +456,7 @@ func _run_sheet(prefix: String) -> void:
 	for i in range(30):
 		await RenderingServer.frame_post_draw
 
-	# `--reloads 0.1,0.3,0.5` renders a reload frame at each fraction instead: a whole reload on
-	# one sheet, which the sheet's five reload frames cannot show for a gun fed a round at a time.
-	var frames: Array = SHEET_FRAMES
-	if OS.get_cmdline_user_args().has("--moves"):
-		frames = MOVE_FRAMES
-	# `--wallsheet`: five wall distances in four directions (head-on, wall only below, only above, only on the right).
-	if OS.get_cmdline_user_args().has("--wallsheet"):
-		frames = []
-		for kind: String in ["full", "below", "above", "right"]:
-			for d: float in [0.9, 0.7, 0.55, 0.4, 0.28]:
-				frames.append(["wall %s %.0f%%" % [kind, d * 100.0], "wall:%f:%s" % [d, kind]])
-	if _argument("--reloads") != "":
-		frames = []
-		for fraction in _argument("--reloads").split_floats(","):
-			frames.append(["reload %d%%" % roundi(fraction * 100.0), "reload:%f" % fraction])
-
-	# `--charges` renders the charge ball at 10/30/60/90/100% (the swirl's phase differs by time), a
-	# fizzle, and the full-charge beam at 0/6/14/24 steps after the release.
-	if OS.get_cmdline_user_args().has("--charges"):
-		frames = []
-		for f: float in [0.1, 0.3, 0.6, 0.9, 1.0]:
-			frames.append(["charge %d%%" % roundi(f * 100.0), "charge:%f" % f])
-		frames.append(["fizzle +3", "fizzle:3"])
-		frames.append(["fizzle +9", "fizzle:9"])
-		for n2: int in [0, 6, 14, 24]:
-			frames.append(["beam +%d" % n2, "rail:%d" % n2])
-
-	# `--aimin 2,4,6` renders the sights coming up after that many 60 fps steps: the quick scope's transition.
-	if _argument("--aimin") != "":
-		frames = []
-		for steps in _argument("--aimin").split_floats(","):
-			frames.append(["aim-in %d" % int(steps), "aimin:%f" % steps])
-
+	var frames: Array = Frames.frames(OS.get_cmdline_user_args(), _argument("--reloads"), _argument("--aimin"))
 	var roof: Node3D = null
 	for n in range(frames.size()):
 		if not only.is_empty() and not only.has(float(n)):
@@ -530,97 +467,9 @@ func _run_sheet(prefix: String) -> void:
 		var parts := step.split(":")
 		var arg := parts[1].to_float() if parts.size() > 1 else 0.0
 
-		match parts[0]:
-			"rest":
-				_sheet_steps(30)
-			"aim":
-				_view.aim(true)
-				_sheet_steps(40)
-			"aimin":
-				_view.aim(true)
-				_sheet_steps(int(arg))
-			"fire":
-				_sheet_steps(10)
-				_sheet_fire(recoil)
-				_sheet_steps(int(arg))
-			"reload":
-				# `--aimed` holds the aim button through the reload: a player reloading with
-				# the button down, which the hip-only frames never showed.
-				if OS.get_cmdline_user_args().has("--aimed"):
-					_view.aim(true)
-					_sheet_steps(40)
-				_view.on_reload(arg)
-				_sheet_steps(30 if OS.get_cmdline_user_args().has("--aimed") else 2)
-			"walk":
-				# A quarter of a stride past a footfall, where the bob is furthest out.
-				for i in range(27):
-					_view.drive(Vector2.ZERO, 5.0, true)
-					_view.advance(SHEET_STEP)
-			"sprint":
-				_view.set_sprinting(true)
-				for i in range(int(arg)):
-					_view.drive(Vector2.ZERO, 8.0, true)
-					_view.advance(SHEET_STEP)
-				_view.set_sprinting(false)
-			"turn":
-				# 180 degrees a second to the right, for a fifth of a second.
-				for i in range(12):
-					_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
-					_view.advance(SHEET_STEP)
-			"strafe", "aimstrafe":
-				_view.aim(parts[0] == "aimstrafe")
-				for i in range(40):
-					_view.drive(Vector2.ZERO, absf(arg), true, false, arg)
-					_view.advance(SHEET_STEP)
-			"aimturn":
-				_view.aim(true)
-				_sheet_steps(40)
-				for i in range(12):
-					_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
-					_view.advance(SHEET_STEP)
-			"aimwalk":
-				_view.aim(true)
-				_sheet_steps(40)
-				for i in range(27):
-					_view.drive(Vector2.ZERO, 5.0, true)
-					_view.advance(SHEET_STEP)
-			"land", "aimland":
-				_view.aim(parts[0] == "aimland")
-				_sheet_steps(40)
-				_view.on_landed(9.0)
-				_sheet_steps(3)
-			"charge":
-				_view.on_charge(arg)
-				_sheet_steps(18)
-			"fizzle":
-				_view.on_charge(0.6)
-				_sheet_steps(20)
-				_view.on_charge(0.0)
-				_sheet_steps(int(arg))
-			"rail":
-				_view.on_charge(1.0)
-				_sheet_steps(30)
-				var mz := _view.muzzle_transform()
-				_view.note_fired()
-				_view.on_charge(0.0)
-				_rig.shot_fx()._rail_beam(mz.origin, mz.origin + (-_controller.eye_transform().basis.z) * 18.0)
-				_sheet_steps(int(arg))
-			"deploy":
-				_view.on_deploy(arg)
-				_sheet_steps(2)
-			"shade":
-				# A roof between the sun and the player: the view model must look exactly as
-				# it does in the open, because the world's shadow map is not its business.
-				roof = _sheet_roof()
-				_sheet_steps(30)
-			"wall":
-				_sheet_steps(60)
-				await _sheet_wall(arg, parts[2])
-			"aimfire":
-				_view.aim(true)
-				_sheet_steps(40)
-				_sheet_fire(recoil)
-				_sheet_steps(int(arg))
+		var made := await _sheet_step(parts, arg, recoil)
+		if made != null:
+			roof = made
 
 		var weapon := String(def.id) if def != null else "?"
 		_readout.text = "%s  ·  %s" % [weapon, label]
@@ -639,6 +488,109 @@ func _run_sheet(prefix: String) -> void:
 
 	print("sheet: %d frames at %s_NN.png" % [frames.size(), prefix])
 	get_tree().quit()
+
+
+## One frame's scripted action. Returns the shade roof it built, or null.
+func _sheet_step(parts: PackedStringArray, arg: float, recoil: Vector2) -> Node3D:
+	var roof: Node3D = null
+	match parts[0]:
+		"rest":
+			_sheet_steps(30)
+		"aim":
+			_view.aim(true)
+			_sheet_steps(40)
+		"aimin":
+			_view.aim(true)
+			_sheet_steps(int(arg))
+		"fire":
+			_sheet_steps(10)
+			_sheet_fire(recoil)
+			_sheet_steps(int(arg))
+		"reload":
+			# `--aimed` holds the aim button through the reload: a player reloading with
+			# the button down, which the hip-only frames never showed.
+			if OS.get_cmdline_user_args().has("--aimed"):
+				_view.aim(true)
+				_sheet_steps(40)
+			_view.on_reload(arg)
+			_sheet_steps(30 if OS.get_cmdline_user_args().has("--aimed") else 2)
+		"walk", "sprint", "turn", "strafe", "aimstrafe", "aimturn", "aimwalk":
+			_sheet_motion(parts[0], arg)
+		"land", "aimland":
+			_view.aim(parts[0] == "aimland")
+			_sheet_steps(40)
+			_view.on_landed(9.0)
+			_sheet_steps(3)
+		"charge":
+			_view.on_charge(arg)
+			_sheet_steps(18)
+		"fizzle":
+			_view.on_charge(0.6)
+			_sheet_steps(20)
+			_view.on_charge(0.0)
+			_sheet_steps(int(arg))
+		"rail":
+			_view.on_charge(1.0)
+			_sheet_steps(30)
+			var mz := _view.muzzle_transform()
+			_view.note_fired()
+			_view.on_charge(0.0)
+			_rig.shot_fx()._rail_beam(mz.origin, mz.origin + (-_controller.eye_transform().basis.z) * 18.0)
+			_sheet_steps(int(arg))
+		"deploy":
+			_view.on_deploy(arg)
+			_sheet_steps(2)
+		"shade":
+			# A roof between the sun and the player: the view model must look exactly as
+			# it does in the open, because the world's shadow map is not its business.
+			roof = _sheet_roof()
+			_sheet_steps(30)
+		"wall":
+			_sheet_steps(60)
+			await _sheet_wall(arg, parts[2])
+		"aimfire":
+			_view.aim(true)
+			_sheet_steps(40)
+			_sheet_fire(recoil)
+			_sheet_steps(int(arg))
+	return roof
+
+
+func _sheet_motion(kind: String, arg: float) -> void:
+	match kind:
+		"walk":
+			# A quarter of a stride past a footfall, where the bob is furthest out.
+			for i in range(27):
+				_view.drive(Vector2.ZERO, 5.0, true)
+				_view.advance(SHEET_STEP)
+		"sprint":
+			_view.set_sprinting(true)
+			for i in range(int(arg)):
+				_view.drive(Vector2.ZERO, 8.0, true)
+				_view.advance(SHEET_STEP)
+			_view.set_sprinting(false)
+		"turn":
+			# 180 degrees a second to the right, for a fifth of a second.
+			for i in range(12):
+				_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
+				_view.advance(SHEET_STEP)
+		"strafe", "aimstrafe":
+			_view.aim(kind == "aimstrafe")
+			for i in range(40):
+				_view.drive(Vector2.ZERO, absf(arg), true, false, arg)
+				_view.advance(SHEET_STEP)
+		"aimturn":
+			_view.aim(true)
+			_sheet_steps(40)
+			for i in range(12):
+				_view.drive(Vector2(-3.0 * float(i + 1), 0.0), 0.0, true)
+				_view.advance(SHEET_STEP)
+		"aimwalk":
+			_view.aim(true)
+			_sheet_steps(40)
+			for i in range(27):
+				_view.drive(Vector2.ZERO, 5.0, true)
+				_view.advance(SHEET_STEP)
 
 
 var _sheet_wall_body: StaticBody3D = null
