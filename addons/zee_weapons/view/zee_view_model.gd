@@ -614,6 +614,7 @@ func on_reload(fraction: float) -> void:
 
 ## The reload being played as phases (zee_reload_sequence.gd), or null for the generic one.
 var _seq: ReloadSequence = null
+static var _parts_warmed := false
 var _hands_frame: Node3D = null
 var _seq_ran := false
 var _props: ReloadProps = null
@@ -1261,6 +1262,11 @@ static func prepared_materials() -> Array:
 func prewarm(art: ZeeWeaponArt) -> void:
 	var _r := equip(art)
 	clear()
+	if not _parts_warmed:
+		_parts_warmed = true
+		for node in ReloadParts.build_all():
+			_set_on_top(node)
+			node.free()
 
 
 func _clear_models() -> void:

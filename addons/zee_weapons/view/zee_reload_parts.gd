@@ -22,6 +22,17 @@ const BOX_MAGAZINE := &"box_magazine"
 const LOOSE := [&"casing", &"round", &"shell", &"grenade", &"grenade_case", &"rocket", &"speedloader", &"clip", &"belt"]
 
 
+## Every part built once, for [method ZeeViewModel.prewarm] to dress and free under a loading cover: the first
+## reload of a session otherwise built and dressed them mid-play (a 150 ms frame on a GPU box).
+static func build_all() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	for part: StringName in [CELL, AMMO_BOX, BOX_MAGAZINE] + LOOSE:
+		var node := build(part)
+		if node != null:
+			out.append(node)
+	return out
+
+
 ## The part named [param part] (tagged with it as the `part` meta), or null for a name this file does not know.
 static func build(part: StringName) -> Node3D:
 	var node: Node3D = null
