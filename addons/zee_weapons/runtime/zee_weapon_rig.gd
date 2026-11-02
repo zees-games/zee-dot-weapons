@@ -17,6 +17,9 @@ const BASH_BEHAVIOUR := "res://addons/zee_weapons/behaviour/zee_weapon_bash.gd"
 		if _view != null and _fx != null:
 			_view.wall_mask = _fx.collision_mask | v
 
+## Layers a wall-pushed barrel stops on when the rig draws no shots itself (a server): the shot effects' default, every layer.
+@export_flags_3d_physics var wall_shot_mask: int = 0xFFFFFFFF
+
 ## A use happened. Carries the whole outcome, so a listener can tell a swing from a shot.
 signal used(outcome: DotWeaponOutcome)
 
@@ -196,6 +199,7 @@ func simulate_tick(
 	if _view != null:
 		_view.set_sprinting(context.sprinting)
 	_aim_along_sprint_barrel(context)
+	_aim_along_wall_barrel(context)
 
 	_notice_holster(tick)
 
@@ -232,6 +236,33 @@ func _aim_along_sprint_barrel(context: DotWeaponContext) -> void:
 	var hand := Basis.from_euler(Vector3(deg_to_rad(rot.x), deg_to_rad(rot.y), deg_to_rad(rot.z)))
 	var aim := Basis.looking_at(context.direction, Vector3.UP)
 	context.direction = (aim * (hand * Vector3.FORWARD)).normalized()
+
+
+## Turns [member DotWeaponContext.direction] to where a wall has pushed the barrel, recomputed each tick from the carrier's eye, aim and speed so a server, a prediction and a replay agree without the rendered pose. The origin stays the eye: a muzzle inside the wall would shoot through it.
+func _aim_along_wall_barrel(context: DotWeaponContext) -> void:
+	var def := current_def()
+	var art := current_art()
+	if def == null or art == null or ads_rules == null or not ads_rules.wall_shot_for(def.id) or not (_player is Node3D):
+		return
+	var turn := wall_barrel(context.origin, context.direction, art, context.speed, ads_progress())
+	if turn != Basis.IDENTITY:
+		var aim := Basis.looking_at(context.direction, Vector3.UP if absf(context.direction.dot(Vector3.UP)) < 0.999 else Vector3.FORWARD)
+		context.direction = (aim * (turn * Vector3.FORWARD)).normalized()
+
+
+## The rotation (view space) a wall puts on the held gun's barrel for an eye at [param origin] looking along [param direction].
+func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: float, aim: float) -> Basis:
+	var node := _player as Node3D
+	if node == null or not node.is_inside_tree() or node.get_world_3d() == null:
+		return Basis.IDENTITY
+	var up := Vector3.UP if absf(direction.dot(Vector3.UP)) < 0.999 else Vector3.FORWARD
+	var eye := Transform3D(Basis.looking_at(direction, up), origin)
+	var exclude: Array[RID] = []
+	if node is CollisionObject3D:
+		exclude.append((node as CollisionObject3D).get_rid())
+	var mask := (_fx.collision_mask if _fx != null else wall_shot_mask) | wall_extra_mask
+	return ZeeWallSlam.barrel_turn(node.get_world_3d().direct_space_state, eye, art.hip_muzzle(), ads_rules.view_scale_for(art.id),
+		ads_rules.wall_for(art.id), 1.0, 1.0, speed, aim, mask, true, exclude)
 
 
 ## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button

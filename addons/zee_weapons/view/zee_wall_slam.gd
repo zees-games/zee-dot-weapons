@@ -77,14 +77,20 @@ func set_lean(sides: Dictionary, gun: Vector2, gain: float = 1.0) -> void:
 ## unless the view looks down (or up) past [param floor_look] degrees. Returns `{depth, normal}` (normal in view space).
 static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool, exclude: Array[RID],
 		muzzle_dir: Vector3, margin: float, cap: float, floor_look: float, spread: float = 0.0, cast_radius: float = 0.0) -> Dictionary:
-	var out := {"depth": 0.0, "normal": Vector3.ZERO, "sides": {"up": 0.0, "down": 0.0, "left": 0.0, "right": 0.0}}
-	var space := host.get_world_3d().direct_space_state if host.get_world_3d() != null else null
 	var camera := host.get_parent() as Node3D
 	var cam: Node3D = camera if camera != null else host
+	var space := host.get_world_3d().direct_space_state if host.get_world_3d() != null else null
+	return probe_from(space, cam.global_transform, reach, mask, ignore_characters, exclude, muzzle_dir, margin, cap, floor_look, spread, cast_radius)
+
+
+## [method probe] from an eye transform and a physics space, so a server with no view model asks the same question.
+static func probe_from(space: PhysicsDirectSpaceState3D, eye: Transform3D, reach: float, mask: int, ignore_characters: bool, exclude: Array[RID],
+		muzzle_dir: Vector3, margin: float, cap: float, floor_look: float, spread: float = 0.0, cast_radius: float = 0.0) -> Dictionary:
+	var out := {"depth": 0.0, "normal": Vector3.ZERO, "sides": {"up": 0.0, "down": 0.0, "left": 0.0, "right": 0.0}}
 	if space == null or reach <= 0.01:
 		return out
-	var from := cam.global_position
-	var forward: Vector3 = -cam.global_basis.z.normalized()
+	var from := eye.origin
+	var forward: Vector3 = -eye.basis.z.normalized()
 	var pitch_down := rad_to_deg(asin(clampf(-forward.y, -1.0, 1.0)))
 	var best := INF
 	var best_normal := Vector3.ZERO
@@ -119,7 +125,7 @@ static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool
 				best = INF
 	out["depth"] = obstruction(reach, best, margin, cap)
 	if spread > 0.0:
-		var cb := cam.global_basis
+		var cb := eye.basis
 		var offsets := {"up": cb.y, "down": -cb.y, "left": -cb.x, "right": cb.x}
 		var sides: Dictionary = out["sides"]
 		for key: String in offsets:
@@ -141,7 +147,7 @@ static func probe(host: Node3D, reach: float, mask: int, ignore_characters: bool
 				break
 			var along := dir.dot(forward)
 			sides[key] = obstruction(reach * along, d * along, margin, cap)
-	out["normal"] = cam.global_basis.inverse() * best_normal
+	out["normal"] = eye.basis.inverse() * best_normal
 	return out
 
 
@@ -219,3 +225,27 @@ func reset() -> void:
 	_lean_target = lean
 	_lean_gain = 1.0
 	normal_local = Vector3.ZERO
+
+
+## Where the barrel points against a wall, as a pure function of the carrier's own state: the rotation (view space, applied to the
+## forward axis) the settled spring would hold. The shot and the picture share [method probe_from], [method set_lean] and
+## [method offset], so a server with no view model gets the answer the client draws. [param muzzle] is the muzzle at hip in view
+## space, [param aim] the fraction aimed (the push fades with it), [param w] the gun's `wall_*` numbers.
+static func barrel_turn(space: PhysicsDirectSpaceState3D, eye: Transform3D, muzzle: Vector3, view_scale: float, w: Dictionary,
+		retract_scale: float, tilt_scale: float, speed: float, aim: float, mask: int, ignore_characters: bool, exclude: Array[RID]) -> Basis:
+	var dist := muzzle.length()
+	if space == null or dist < 0.01 or retract_scale <= 0.0:
+		return Basis.IDENTITY
+	var to_muzzle: Vector3 = eye.basis * muzzle
+	var reach := reach_of(dist, view_scale, w["reach"])
+	var hit := probe_from(space, eye, reach, mask, ignore_characters, exclude, to_muzzle / dist, w["margin"], w["max"],
+		w["floor_look"], w["spread"] / maxf(view_scale, 0.1), w["cast"])
+	var depth: float = hit["depth"]
+	if depth <= 0.0:
+		return Basis.IDENTITY
+	var slam := ZeeWallSlam.new()
+	slam.amount = minf(depth + clampf(speed * 0.012, 0.0, 0.1) * w["impulse"], w["max"])
+	slam.aim_at(hit["normal"], speed, 0.0)
+	slam.set_lean(hit["sides"], Vector2(muzzle.x, muzzle.y) / maxf(-muzzle.z, 0.05), w["lean"])
+	slam.lean = slam._lean_target
+	return slam.offset(retract_scale, tilt_scale, w["push"], w["nudge"], aim, w["impulse"]).basis

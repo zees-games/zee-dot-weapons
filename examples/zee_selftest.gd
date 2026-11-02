@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 798
+const CHECKS := 807
 
 
 func _ready() -> void:
@@ -64,6 +64,7 @@ func _ready() -> void:
 	await _stock_sounds()
 	await _wall_slam()
 	await _wall_lean()
+	await _wall_barrel()
 	await _wall_arms()
 	_effects_pack_light()
 	_view_screen()
@@ -760,6 +761,77 @@ func _wall_lean() -> void:
 	slam.set_lean({"up": 0.3, "down": 0.0, "left": 0.0, "right": 0.2}, Vector2(0.1, -0.1), 0.0)
 	_check("lean 0 keeps the plain tilt up", slam.offset(1.0, 1.0).basis.get_euler().x > 0.0)
 	camera.queue_free()
+	wall.queue_free()
+	_end()
+
+
+## A server rig with no view model sends a shot along the barrel a wall has pushed, from the carrier's own state alone.
+func _wall_barrel() -> void:
+	_begin("a shot follows the barrel a wall has pushed")
+	var carrier := CharacterBody3D.new()
+	var body := CollisionShape3D.new()
+	body.shape = CapsuleShape3D.new()
+	carrier.add_child(body)
+	add_child(carrier)
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.SERVER
+	rig.authority = true
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.ads_rules = ZeeAdsRules.new()
+	carrier.add_child(rig)
+	_check("the server rig sets up", rig.setup().ok)
+	var _given := rig.give(ZeeWeaponIds.RIFLE)
+	rig.arsenal.select(rig.arsenal.catalogue.get_def(ZeeWeaponIds.RIFLE).slot, 0)
+	var wall := StaticBody3D.new()
+	var box := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(20, 20, 1)
+	box.shape = shape
+	wall.add_child(box)
+	add_child(wall)
+	var art := rig.current_art()
+	var reach := ZeeWallSlam.reach_of(art.hip_muzzle().length(), ZeeAdsRules.new().view_scale_for(art.id), 1.0)
+	var ctx := DotWeaponContext.new()
+	ctx.origin = Vector3(0, 1, 0)
+	ctx.direction = Vector3.FORWARD
+	wall.position = Vector3(0, 1, -(reach * 4.0))
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	rig._aim_along_wall_barrel(ctx)
+	_check("open air leaves the shot on the crosshair line", ctx.direction.is_equal_approx(Vector3.FORWARD))
+	var tips := []
+	for f in [0.8, 0.5, 0.3]:
+		wall.position = Vector3(0, 1, -(reach * f + 0.5))
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		ctx.direction = Vector3.FORWARD
+		rig._aim_along_wall_barrel(ctx)
+		tips.append(ctx.direction)
+	_check("a wall inside the reach lifts the shot above the crosshair (%.3f)" % tips[1].y, tips[1].y > 0.01)
+	_check("a closer wall lifts it more (%.3f -> %.3f)" % [tips[0].y, tips[2].y], tips[2].y > tips[0].y)
+	_check("the turned direction is a unit vector", is_equal_approx(tips[2].length(), 1.0))
+	ctx.direction = Vector3.FORWARD
+	var again := DotWeaponContext.new()
+	again.origin = ctx.origin
+	again.direction = Vector3.FORWARD
+	rig._aim_along_wall_barrel(ctx)
+	rig._aim_along_wall_barrel(again)
+	_check("the same state gives the same shot, so a client and a server agree", ctx.direction.is_equal_approx(again.direction))
+	var faster := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 6.0, 0.0)
+	var slower := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 0.0)
+	_check("a faster approach pushes back harder and tilts less", faster != slower and (faster * Vector3.FORWARD).y < (slower * Vector3.FORWARD).y)
+	_check("aimed fully the barrel stays on the sight line", rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 1.0).is_equal_approx(Basis.IDENTITY))
+	rig.ads_rules.set_def_row(art.id, {"wall_shot": false})
+	ctx.direction = Vector3.FORWARD
+	rig._aim_along_wall_barrel(ctx)
+	_check("a profile with wall_shot off keeps the crosshair line", ctx.direction.is_equal_approx(Vector3.FORWARD))
+	var side := DotWeaponContext.new()
+	side.origin = Vector3(0, 1, 0)
+	side.direction = Vector3.FORWARD
+	rig.ads_rules.set_def_row(art.id, {})
+	wall.position = Vector3.ZERO
+	carrier.queue_free()
 	wall.queue_free()
 	_end()
 

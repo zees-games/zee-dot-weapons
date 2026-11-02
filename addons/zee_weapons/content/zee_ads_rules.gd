@@ -59,6 +59,7 @@ const SPECS := {
 	"wall_lean_rate": {"default": 10.0, "min": 1.0, "max": 60.0},
 	"wall_cast": {"default": 0.08, "min": 0.0, "max": 0.4},
 	"wall_impulse": {"default": 1.0, "min": 0.0, "max": 4.0},
+	"wall_shot": {"default": true},
 	"red_dot": {"default": false},
 	"red_dot_window": {"default": 4.0, "min": 0.5, "max": 20.0},
 	"red_dot_size": {"default": 0.25, "min": 0.02, "max": 1.0},
@@ -259,6 +260,11 @@ func red_dot_for(id: StringName) -> Dictionary:
 	return {"window": float(value_for(id, "red_dot_window")), "size": float(value_for(id, "red_dot_size")),
 		"brightness": float(value_for(id, "red_dot_brightness")), "color": Color.html(str(value_for(id, "red_dot_color"))),
 		"on": bool(value_for(id, "red_dot"))}
+
+
+## Whether a shot leaves along the barrel the wall has pushed (server rule; false keeps it on the crosshair).
+func wall_shot_for(id: StringName) -> bool:
+	return bool(value_for(id, "wall_shot"))
 
 
 ## The wall response's numbers for [param id]: reach (share of the gun's real length), margin (m), stiffness, damping,
