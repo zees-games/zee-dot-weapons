@@ -5,10 +5,7 @@ extends Node
 const TARGETS := "res://assets/blaster-kit/"
 
 
-## A floor, a back wall and the kit's own targets, built in code.
-##
-## In code because this example is meant to be read top to bottom, and a scene file is
-## the one part of a Godot project that cannot be. A real level is a scene an artist
+## In code so the example reads top to bottom; a scene file cannot.
 ## made; this is a page you can check.
 func _build_world() -> void:
 	var world := $World
@@ -32,9 +29,7 @@ func _build_world() -> void:
 	_add_targets(world)
 
 
-## The kit's targets and crates, at the ranges the weapons are tuned for.
-##
-## Placed by distance on purpose: the shotgun stops at 26 m and the sniper reaches a
+## Placed by distance on purpose: the shotgun stops at 26 m, the sniper reaches a kilometre.
 ## kilometre, so a range with everything at one distance tells you nothing about either.
 func _add_targets(world: Node3D) -> void:
 	var rows := [
@@ -51,11 +46,6 @@ func _add_targets(world: Node3D) -> void:
 			var model := ZeeModelCache.instantiate(TARGETS + str(row["model"]))
 			if model == null:
 				continue
-
-			# [b]Turned a quarter and lifted off the floor.[/b] The target discs are
-			# modelled in the YZ plane — five centimetres thick along X — so dropped in
-			# untouched they face sideways and read as saucers lying on the ground. They
-			# are also 34 cm across, which is a dinner plate at thirty metres, so they
 			# are scaled up to something a sniper can be aimed at.
 			model.rotation = Vector3(0.0, PI * 0.5, 0.0)
 			model.scale = Vector3.ONE * 3.0

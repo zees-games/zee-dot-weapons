@@ -1,9 +1,7 @@
 extends Node
 
-## Renders and measures every weapon's hip and aimed view for review. Not headless for PNGs.
-##   godot --path . res://tools/view_check.tscn -- --out DIR [--ids pistol,smg] [--rules] [--fov 90] [--sprint]
-##     [--rot "pitch,yaw,roll"] [--off "x,y,z"]   (tuning: replace the hip rotation, add to the hip offset)
-## Prints one line per weapon and view; with --out saves DIR/<id>_hip.png and <id>_aim.png.
+##   godot --path . res://tools/view_check.tscn -- --out DIR [--ids a,b] [--rules] [--fov 90] [--sprint] [--rot "p,y,r"] [--off "x,y,z"]
+## Prints a line per weapon and view; with --out saves DIR/<id>_hip.png and _aim.png.
 
 const Measure := preload("res://tools/view_measure.gd")
 

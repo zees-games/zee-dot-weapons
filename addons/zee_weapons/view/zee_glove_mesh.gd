@@ -6,12 +6,8 @@ extends RefCounted
 const GRIP_RADIUS := 0.017
 
 
-## A gloved fist closed round a cylinder of [constant GRIP_RADIUS] along +Y, at the origin.
-## The forearm leaves along +Z and the back of the hand faces +X; the index finger is the +Y
-## end, so a pistol grip's top and a fore-end's muzzle end are +Y.
-##
-## [b]Boxes, merged into one mesh.[/b] Twelve boxes in a ring are a blocky fist in the
-## world's own blocky style, built in code with no model to license; one surface is one draw.
+## A gloved fist closed round a cylinder of [constant GRIP_RADIUS] along +Y, forearm leaving along +Z.
+## Twelve merged boxes in the world's blocky style: no model to license, one draw.
 static var _glove_cache: ArrayMesh = null
 
 static func mesh() -> ArrayMesh:

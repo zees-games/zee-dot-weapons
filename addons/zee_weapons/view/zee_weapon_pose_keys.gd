@@ -34,9 +34,8 @@ const THROW_KEYS := [
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 
-## Every magazine gun first dips and cants (the first inner key), then lifts to show the well.
-## A long gun: lifted in and rolled onto its side so the well is in sight as the magazine drops (0.10-0.28), held while
-## the next is fetched (0.36-0.55), a jolt as it seats (0.55-0.60), rolled back to the hip, a rack (0.84-0.90).
+## A long gun is lifted and rolled so the well is in sight as the magazine drops, then jolts as it seats and racks.
+## Lifted because at the hip the well is below the screen and the reload plays out of frame.
 ## Lifted, because at the hip the well is below the bottom of the screen and the reload plays out of frame.
 const RELOAD_KEYS_RIFLE := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],

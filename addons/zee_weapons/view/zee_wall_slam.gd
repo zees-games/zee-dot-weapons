@@ -54,10 +54,9 @@ func step(target: float, delta: float, stiffness: float = 160.0, damping: float 
 		velocity = 0.0
 
 
-## Which way the gun is shoved, from the depths each of four probes around the muzzle found ([param sides] keys up, down,
-## left, right) and where the muzzle sits against the crosshair ([param gun], view slope). The wall touching the lower part
-## tips the barrel up, the upper part dips it, the right part turns it left and the left part right; with an even contact
-## the barrel goes toward the crosshair, so a head-on wall lifts a low gun. [param gain] scales it (0 = no lean, 1 = tilt as before).
+## Which way the gun is shoved, from four probe depths ([param sides]: up, down, left, right) and the muzzle against
+## the crosshair ([param gun]). Low contact tips the barrel up, high dips it; even contact aims at the crosshair.
+## [param gain] scales it (0 = no lean).
 func set_lean(sides: Dictionary, gun: Vector2, gain: float = 1.0) -> void:
 	var up: float = sides.get("up", 0.0)
 	var down: float = sides.get("down", 0.0)

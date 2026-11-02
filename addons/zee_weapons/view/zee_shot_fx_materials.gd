@@ -178,15 +178,8 @@ static func _mark_mat() -> StandardMaterial3D:
 	return _mark_material
 
 
-# --- Internals --------------------------------------------------------------
-
-## A width that stays about the same on screen wherever the effect is.
-##
-## [b]Sized by distance from the camera, because a fixed width is invisible.[/b] A tracer
-## is seen almost end-on from behind the gun, and two centimetres at thirty metres is a
-## pixel — the first render of this showed a sniper shot as one yellow fleck. Here
-## [param per_metre] is metres of width per metre of distance, so 0.004 is about a
-## quarter of a degree: three or four pixels on a 1080-line screen at any range.
+## A width that stays about the same on screen at any distance.
+## Fixed widths vanish: a tracer is seen end-on, and [param per_metre] 0.004 keeps it a few pixels wide.
 func _screen_width(at: Vector3, per_metre: float) -> float:
 	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
 	var distance := camera.global_position.distance_to(at) if camera != null else 4.0

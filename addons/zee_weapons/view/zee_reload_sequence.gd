@@ -1,10 +1,8 @@
 extends RefCounted
 
-## A reload as phases, built from an art's `reload` row and the rounds actually left: where each hand goes, how the
-## gun turns, and what is in sight (magazine, cases, rounds, belt) at every point from 0 to 1 of the rig's reload time.
-## Row keys: `style` (STYLES), `eject` ("spent", "all" or "none"), `part`, `round`, `case` (zee_reload_parts.gd names), `clip` (rounds per stripper clip), `loader` ("speedloader" or
-## "single"), `weights` {phase: weight}, `hands` {phase: {left|right: [anchor, [x, y, z]]}}, `anchors` {name: [x, y, z]} in
-## model metres, `prop_scale`, `gun_scale` (multiplies how far the gun lifts and turns; a heavy or large-drawn gun wants more). Preloaded by path (no class_name), as zee_reload_parts.gd is. Positions are in Aim space.
+## A reload as phases from an art's `reload` row and the rounds left: hand targets, gun turn and what is in sight, 0 to 1.
+## Row keys: `style`, `eject`, `part`, `round`, `case`, `clip`, `loader`, `weights`, `hands`, `anchors`, `prop_scale`, `gun_scale`.
+## Preloaded by path (no class_name), like zee_reload_parts.gd. Positions are in Aim space.
 
 const STYLES: Array[StringName] = [&"magazine", &"pistol", &"revolver", &"tube", &"bolt", &"belt", &"launcher", &"cell", &"generic"]
 

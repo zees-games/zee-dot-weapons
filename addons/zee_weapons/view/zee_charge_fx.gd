@@ -1,8 +1,6 @@
 extends Node3D
-## The energy ball a charging weapon builds at its muzzle: it grows, brightens and swirls with
-## the draw, holds a clear "ready" pulse at 100%, collapses into the shot on a release and
-## shrinks into a fizzle on an early one. Pooled by being one node per model, built on the
-## first charge, and costing nothing while the draw is zero.
+## The energy ball a charging weapon builds at its muzzle: grows with the draw, pulses at 100%,
+## collapses on release, fizzles on an early one. One node per model, built on first charge.
 
 const READY := 0.98
 const SWIRL := 6

@@ -530,6 +530,8 @@ func _advance_wall(delta: float) -> void:
 	if _wall_target == 0.0 and _wall_amount < 0.002:
 		_wall_amount = 0.0
 
+var _wall_query: PhysicsRayQueryParameters3D
+
 
 func _probe_wall() -> float:
 	var world := get_world_3d()
@@ -545,12 +547,17 @@ func _probe_wall() -> float:
 	var hand := _holder.global_position
 	var from := hand - forward * WALL_ARM
 	var length := hand.distance_to(muzzle_transform().origin)
-	var exclude: Array[RID] = []
+	if _wall_query == null:
+		_wall_query = PhysicsRayQueryParameters3D.new()
+		_wall_query.collide_with_areas = false
+	var query := _wall_query
+	query.from = from
+	query.to = from + forward * (WALL_ARM + length + WALL_MARGIN)
+	query.collision_mask = wall_mask
+	query.exclude.clear()
 	var body := _carrier_body()
 	if body is CollisionObject3D:
-		exclude.append((body as CollisionObject3D).get_rid())
-	var query := PhysicsRayQueryParameters3D.create(from, from + forward * (WALL_ARM + length + WALL_MARGIN), wall_mask, exclude)
-	query.collide_with_areas = false
+		query.exclude.append((body as CollisionObject3D).get_rid())
 	for _hop in range(6):
 		var found := world.direct_space_state.intersect_ray(query)
 		if found.is_empty():

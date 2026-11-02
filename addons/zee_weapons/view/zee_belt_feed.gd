@@ -1,8 +1,6 @@
 extends Node3D
-## The belt of a belt-fed gun, moving: a short run of rounds from the ammo box to the feed tray,
-## one step along per shot, the last one going into the receiver as a fresh one leaves the box.
-## Six meshes sharing one mesh and one material, a child of the weapon so it rides every
-## animation; nothing is drawn for a weapon that is not firing.
+## The belt of a belt-fed gun: rounds from the ammo box to the feed tray, one step per shot.
+## Six instances of one mesh and material, a child of the weapon; nothing draws unless firing.
 
 const COUNT := 6
 ## Rounds per second the belt can be pulled at: a gun firing faster than this shows a belt at its limit, not a blur.
