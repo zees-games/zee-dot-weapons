@@ -121,7 +121,16 @@ func _wall_slam() -> void:
 
 	_wall_obstruction_maths()
 
-	# A floor under a low eye (crouch, slide) is not an obstacle unless the view looks down at it.
+	await _wall_slam_floor(view, camera, wall)
+
+	_wall_slam_response()
+	camera.queue_free()
+	wall.queue_free()
+	_end()
+
+
+## A floor under a low eye (crouch, slide) is not an obstacle unless the view looks down at it.
+func _wall_slam_floor(view: ZeeViewModel, camera: Camera3D, wall: StaticBody3D) -> void:
 	wall.position = Vector3(0.0, 0.0, -100.0)
 	var floor_body := StaticBody3D.new()
 	var fbox := CollisionShape3D.new()
@@ -142,11 +151,6 @@ func _wall_slam() -> void:
 	_check("looking down at it, the floor is an obstacle (%.3f m)" % view.wall_amount(), view.wall_amount() > 0.03)
 	camera.rotation_degrees.x = 0.0
 	floor_body.queue_free()
-
-	_wall_slam_response()
-	camera.queue_free()
-	wall.queue_free()
-	_end()
 
 
 ## The gun leans away from where it meets the wall and eases in with depth.
