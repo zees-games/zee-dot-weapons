@@ -227,10 +227,9 @@ func reset() -> void:
 	normal_local = Vector3.ZERO
 
 
-## Where the barrel points against a wall, as a pure function of the carrier's own state: the rotation (view space, applied to the
-## forward axis) the settled spring would hold. The shot and the picture share [method probe_from], [method set_lean] and
-## [method offset], so a server with no view model gets the answer the client draws. [param muzzle] is the muzzle at hip in view
-## space, [param aim] the fraction aimed (the push fades with it), [param w] the gun's `wall_*` numbers.
+## Where the barrel points against a wall, as a pure function of the carrier's own state: the rotation (view space, applied to the forward axis) the settled spring would hold.
+## The shot and the picture share [method probe_from], [method set_lean] and [method offset], so a server with no view model gets the answer the client draws.
+## [param muzzle] is the muzzle at hip in view space, [param aim] the fraction aimed (the push fades with it), [param w] the gun's `wall_*` numbers.
 static func barrel_turn(space: PhysicsDirectSpaceState3D, eye: Transform3D, muzzle: Vector3, view_scale: float, w: Dictionary,
 		retract_scale: float, tilt_scale: float, speed: float, aim: float, mask: int, ignore_characters: bool, exclude: Array[RID], strafe: float = 0.0) -> Basis:
 	var dist := muzzle.length()
