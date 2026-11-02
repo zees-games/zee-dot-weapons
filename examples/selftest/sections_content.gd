@@ -586,6 +586,16 @@ func _muzzles() -> void:
 	var cached := ZeeModelCache.describe()
 	_check("the cache measured something", int(cached["measured"]) > 0)
 
+	# A failed load must not be remembered as a reach of zero, or the muzzle attachment stays unmeasured for the run.
+	var dress := preload("res://addons/zee_weapons/view/zee_attachment_dress.gd")
+	var ghost := ZeeWeaponArtTable.rifle()
+	ghost.model_path = "res://nothing/at/all.glb"
+	var fitted := DotWeaponFitting.make(&"rifle")
+	fitted.fit(DotWeaponAttachment.MOUNT_MUZZLE, &"suppressor")
+	var cache_before: int = dress._reach_cache.size()
+	_check("a missing model's muzzle reach is zero and is not cached",
+		dress.muzzle_reach(ghost, fitted) == 0.0 and dress._reach_cache.size() == cache_before)
+
 	_end()
 
 

@@ -71,15 +71,19 @@ static func muzzle_reach(art: ZeeWeaponArt, fitting: DotWeaponFitting) -> float:
 	if _reach_cache.has(key):
 		return _reach_cache[key]
 	var reach := 0.0
+	var measured := false
 	var weapon := ZeeModelCache.instantiate(art.model_path)
 	var socket := weapon.find_child(String(ZeeAttachmentArt.socket_name(DotWeaponAttachment.MOUNT_MUZZLE)), true, false) as Node3D if weapon != null else null
 	var part := ZeeModelCache.instantiate(path) if socket != null else null
 	if part != null:
 		socket.add_child(part)
 		reach = muzzle_reach_in(weapon, part, art.model_forward)
+		measured = true
 	if weapon != null:
 		weapon.free()
-	_reach_cache[key] = reach
+	# A failed load may succeed later (asset root set after first call); only successes are cached.
+	if measured:
+		_reach_cache[key] = reach
 	return reach
 
 
