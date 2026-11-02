@@ -168,7 +168,7 @@ func _effects() -> void:
 	)
 	_check(
 		"and plays a report",
-		fx != null and int(fx.describe()["voices"]) >= 1
+		fx != null and (int(fx.describe()["voices"]) >= 1 or bool(fx.describe()["layered"]))
 	)
 
 	_check("a real gun's shot throws a case (%d)" % fx.shell_count(), fx.shell_count() >= 1)

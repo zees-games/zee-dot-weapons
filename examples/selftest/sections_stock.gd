@@ -153,6 +153,7 @@ func _stock_sounds() -> void:
 		_stock_path(ZeeWeaponSound.stream(ZeeWeaponSound.SUPPRESSED), "suppressed_fire"))
 
 	var fx := ZeeShotFx.new()
+	fx.layered_shots = false
 	add_child(fx)
 	var heard: Array[AudioStream] = []
 	fx.heard.connect(func(stream: AudioStream) -> void: heard.append(stream))
@@ -209,8 +210,40 @@ func _stock_sounds() -> void:
 	_check("and with sounds off nothing plays", heard.size() == mark + 1)
 	fx.queue_free()
 
+	_layered_sounds()
 	_stock_rig_sounds()
 	_end()
+
+
+func _layered_sounds() -> void:
+	_check("dot-audio's shot player is linked", ZeeShotLayers.available())
+	_check("a stock class maps to its shot, suppressed to light, a minigun to none",
+		ZeeShotLayers.shot_class(ZeeWeaponSound.SNIPER) == &"sniper"
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.SUPPRESSED) == &"light"
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.MINIGUN) == &"")
+	var fx := ZeeShotFx.new()
+	add_child(fx)
+	var heard: Array[AudioStream] = []
+	fx.heard.connect(func(stream: AudioStream) -> void: heard.append(stream))
+	var layers: ZeeShotLayers = null
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	for child in fx.get_children():
+		if child is ZeeShotLayers:
+			layers = child
+	_check("a rifle shot builds the layered player and plays no single sound",
+		layers != null and layers.is_ready() and heard.is_empty())
+	var player: Node = layers.player if layers != null else null
+	_check("the player has every stock class registered",
+		player != null and ZeeShotLayers.STOCK_CLASSES.all(func(c: StringName) -> bool: return player.call(&"has_shot", StringName("shot_%s" % c))))
+	var queued_before := int(player.call(&"queued")) if player != null else -1
+	_check("a distant shot plays", layers != null and layers.fire(ZeeWeaponSound.RIFLE, Vector3(200, 0, 0), Vector3.ZERO))
+	_check("a distant shot is queued behind the speed of sound", player != null and int(player.call(&"queued")) > queued_before)
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.MINIGUN)
+	_check("a class with no stock shot falls back to the single sound", heard.size() == 1)
+	fx.layered_shots = false
+	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
+	_check("layered_shots off falls back to the single sound", heard.size() == 2)
+	fx.queue_free()
 
 
 func _stock_rig_sounds() -> void:

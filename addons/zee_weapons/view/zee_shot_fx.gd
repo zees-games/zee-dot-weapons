@@ -104,6 +104,11 @@ var catalogue: DotWeaponCatalogue = null
 ## Replaces the stock report and tail: `func(id: StringName, kind: StringName, at: Vector3, indoors: bool) -> bool`, e.g. wrapping a DotShotPlayer's `fire`. Return true when it played the shot; false falls back to the stock sound. Unset keeps the stock sound.
 var shot_sound: Callable = Callable()
 
+## Play guns as dot-audio's layered, room-aware shot when it is linked and the class has a stock shot; off, or missing, plays the single sound.
+@export var layered_shots: bool = true
+
+var _layers: ZeeShotLayers = null
+
 ## Multiplier on every flash's size, on top of the weapon class's own ([constant FLASH]).
 @export_range(0.0, 3.0, 0.05) var flash_scale: float = 1.0
 
@@ -470,6 +475,10 @@ func _process(delta: float) -> void:
 ## Moves every effect on by [param delta] seconds. [method _process] calls it; a capture that
 ## steps time by hand (the range's contact sheet) calls it instead.
 func advance(delta: float) -> void:
+	if _layers != null:
+		var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
+		if camera != null:
+			_layers.probe(delta, camera.global_position, get_world_3d().direct_space_state)
 	if not _marks.is_empty():
 		_advance_marks(delta)
 
@@ -879,6 +888,8 @@ func _report(id: StringName, kind: StringName, at: Vector3) -> void:
 		return
 	if shot_sound.is_valid() and bool(shot_sound.call(id, kind, at, roof != null and bool(roof.get(&"roofed")))):
 		return
+	if _layered(id, kind, at):
+		return
 
 	var heard: AudioStream = null
 	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
@@ -887,6 +898,26 @@ func _report(id: StringName, kind: StringName, at: Vector3) -> void:
 
 	_play(heard if heard != null else ZeeWeaponSound.stream_for(id, kind), at, 0.0)
 	_play_tail(id, kind, at)
+
+
+## Plays the layered shot for a gun class that has one; false leaves the single sound to the caller.
+func _layered(id: StringName, kind: StringName, at: Vector3) -> bool:
+	if not layered_shots or not is_inside_tree():
+		return false
+	if ZeeShotLayers.shot_class(ZeeWeaponSound.class_for(id, kind)) == &"":
+		return false
+	if _layers == null:
+		if not ZeeShotLayers.available():
+			layered_shots = false
+			return false
+		_layers = ZeeShotLayers.new()
+		add_child(_layers)
+		if not _layers.setup(bus):
+			layered_shots = false
+			return false
+	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
+	var listener := camera.global_position if camera != null else at
+	return _layers.fire(ZeeWeaponSound.class_for(id, kind), at, listener)
 
 
 ## Indoors the class's distant recording follows the report, [constant DotWeaponSound.TAIL_DELAY] late.
@@ -986,4 +1017,5 @@ func describe() -> Dictionary:
 		"excluded": exclude.size(),
 		"visuals": visuals,
 		"sounds": sounds,
+		"layered": _layers != null and _layers.is_ready(),
 	}
