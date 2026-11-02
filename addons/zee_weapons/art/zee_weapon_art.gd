@@ -356,13 +356,14 @@ func view_transform() -> Transform3D:
 	return _transform(view_offset, view_rotation, view_scale)
 
 
-## The muzzle at the hip in view space, from the art alone (no scene needed beyond the measured bounds), so a server places it where the view model does.
-func hip_muzzle() -> Vector3:
+## The muzzle at the hip in view space, from the art alone (no scene needed beyond the measured bounds), so a server places it where the view model does; a muzzle attachment in [param fitting] lengthens it as it does there.
+func hip_muzzle(fitting: DotWeaponFitting = null) -> Vector3:
 	var local: Vector3
 	if muzzle_socket.is_finite():
 		local = muzzle_socket
 	else:
 		var d := muzzle_distance if muzzle_distance > 0.0 else ZeeModelCache.muzzle_distance(model_path, model_forward)
+		d = maxf(d, preload("../view/zee_attachment_dress.gd").muzzle_reach(self, fitting))
 		local = model_forward.normalized() * d + muzzle_offset
 	return view_transform() * local
 

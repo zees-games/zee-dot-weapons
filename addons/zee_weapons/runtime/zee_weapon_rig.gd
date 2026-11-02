@@ -265,7 +265,7 @@ func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: 
 	if node is CollisionObject3D:
 		exclude.append((node as CollisionObject3D).get_rid())
 	var mask := (_fx.collision_mask if _fx != null else wall_shot_mask) | wall_extra_mask
-	return ZeeWallSlam.barrel_turn(node.get_world_3d().direct_space_state, eye, art.hip_muzzle(), ads_rules.view_scale_for(art.id),
+	return ZeeWallSlam.barrel_turn(node.get_world_3d().direct_space_state, eye, art.hip_muzzle(arsenal.fitting_at(arsenal.current_slot()) if arsenal != null else null), ads_rules.view_scale_for(art.id),
 		ads_rules.wall_for(art.id), 1.0, 1.0, speed, aim, mask, true, exclude, strafe)
 
 

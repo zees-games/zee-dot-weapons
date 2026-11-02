@@ -40,7 +40,7 @@ static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, b
 				node.visible = false
 				out.hidden.append(node)
 		if mount == DotWeaponAttachment.MOUNT_MUZZLE:
-			out.reach = _far_end(_bounds(part, weapon), f)
+			out.reach = muzzle_reach_in(weapon, part, f)
 		var aim: StringName = entry.get("aim", &"")
 		var glass := _glass_of(part)
 		if aim != &"" and glass != null:
@@ -51,6 +51,36 @@ static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, b
 			out.scoped = aim == &"scoped"
 			out.zoom = float(entry.get("zoom", 0.0))
 	return out
+
+
+## How far along [param forward] a muzzle attachment's mesh ends, in [param weapon]'s space; the one measure client and server share.
+static func muzzle_reach_in(weapon: Node3D, part: Node3D, forward: Vector3) -> float:
+	return _far_end(_bounds(part, weapon), forward.normalized())
+
+
+static var _reach_cache: Dictionary = {}
+
+
+## The muzzle attachment's reach on [param art] for [param fitting], measured once per model and attachment (a server draws nothing).
+static func muzzle_reach(art: ZeeWeaponArt, fitting: DotWeaponFitting) -> float:
+	if art == null or fitting == null or not fitting.mounts().has(DotWeaponAttachment.MOUNT_MUZZLE):
+		return 0.0
+	var entry := ZeeAttachmentArt.of(fitting.attachment_on(DotWeaponAttachment.MOUNT_MUZZLE))
+	var path := str(entry.get("path", ""))
+	var key := "%s|%s|%s" % [art.model_path, path, art.model_forward]
+	if _reach_cache.has(key):
+		return _reach_cache[key]
+	var reach := 0.0
+	var weapon := ZeeModelCache.instantiate(art.model_path)
+	var socket := weapon.find_child(String(ZeeAttachmentArt.socket_name(DotWeaponAttachment.MOUNT_MUZZLE)), true, false) as Node3D if weapon != null else null
+	var part := ZeeModelCache.instantiate(path) if socket != null else null
+	if part != null:
+		socket.add_child(part)
+		reach = muzzle_reach_in(weapon, part, art.model_forward)
+	if weapon != null:
+		weapon.free()
+	_reach_cache[key] = reach
+	return reach
 
 
 ## Frees what [method apply] added and shows what it hid.
