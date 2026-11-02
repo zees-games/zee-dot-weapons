@@ -238,20 +238,24 @@ func _aim_along_sprint_barrel(context: DotWeaponContext) -> void:
 	context.direction = (aim * (hand * Vector3.FORWARD)).normalized()
 
 
+## Sideways speed last given to [method drive_view]; the wall shot tilts with it, as the drawn gun does. A server sets it from `context.extra[&"strafe"]` instead.
+var _drive_strafe: float = 0.0
+
+
 ## Turns [member DotWeaponContext.direction] to where a wall has pushed the barrel, recomputed each tick from the carrier's eye, aim and speed so a server, a prediction and a replay agree without the rendered pose. The origin stays the eye: a muzzle inside the wall would shoot through it.
 func _aim_along_wall_barrel(context: DotWeaponContext) -> void:
 	var def := current_def()
 	var art := current_art()
 	if def == null or art == null or ads_rules == null or not ads_rules.wall_shot_for(def.id) or not (_player is Node3D):
 		return
-	var turn := wall_barrel(context.origin, context.direction, art, context.speed, ads_progress())
+	var turn := wall_barrel(context.origin, context.direction, art, context.speed, ads_progress(), float(context.extra.get(&"strafe", _drive_strafe)))
 	if turn != Basis.IDENTITY:
 		var aim := Basis.looking_at(context.direction, Vector3.UP if absf(context.direction.dot(Vector3.UP)) < 0.999 else Vector3.FORWARD)
 		context.direction = (aim * (turn * Vector3.FORWARD)).normalized()
 
 
 ## The rotation (view space) a wall puts on the held gun's barrel for an eye at [param origin] looking along [param direction].
-func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: float, aim: float) -> Basis:
+func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: float, aim: float, strafe: float = 0.0) -> Basis:
 	var node := _player as Node3D
 	if node == null or not node.is_inside_tree() or node.get_world_3d() == null:
 		return Basis.IDENTITY
@@ -262,7 +266,7 @@ func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: 
 		exclude.append((node as CollisionObject3D).get_rid())
 	var mask := (_fx.collision_mask if _fx != null else wall_shot_mask) | wall_extra_mask
 	return ZeeWallSlam.barrel_turn(node.get_world_3d().direct_space_state, eye, art.hip_muzzle(), ads_rules.view_scale_for(art.id),
-		ads_rules.wall_for(art.id), 1.0, 1.0, speed, aim, mask, true, exclude)
+		ads_rules.wall_for(art.id), 1.0, 1.0, speed, aim, mask, true, exclude, strafe)
 
 
 ## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button
@@ -502,6 +506,8 @@ func _show_fitting() -> void:
 ## Called on a render frame, not a tick, so sway is not quantised to the tick rate.
 ## [param strafe] is sideways speed in m/s, positive right; left out, the view model measures it.
 func drive_view(look: Vector2, speed: float, on_floor: bool, crouched: bool, strafe: float = NAN) -> void:
+	if not is_nan(strafe):
+		_drive_strafe = strafe
 	if _view != null:
 		_view.drive(look, speed, on_floor, crouched, strafe)
 

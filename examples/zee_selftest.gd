@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_reload.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 807
+const CHECKS := 810
 
 
 func _ready() -> void:
@@ -821,6 +821,22 @@ func _wall_barrel() -> void:
 	var faster := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 6.0, 0.0)
 	var slower := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 0.0)
 	_check("a faster approach pushes back harder and tilts less", faster != slower and (faster * Vector3.FORWARD).y < (slower * Vector3.FORWARD).y)
+	var strafing := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 0.0, 4.0)
+	_check("strafing into the wall tilts the shot as it tilts the drawn gun", strafing != slower)
+	var via_extra := DotWeaponContext.new()
+	via_extra.origin = ctx.origin
+	via_extra.direction = Vector3.FORWARD
+	via_extra.extra[&"strafe"] = 4.0
+	rig._aim_along_wall_barrel(via_extra)
+	var via_arg := Basis.looking_at(Vector3.FORWARD) * (strafing * Vector3.FORWARD)
+	_check("a server hands the strafe in the context and gets the same shot", via_extra.direction.is_equal_approx(via_arg.normalized()))
+	rig.drive_view(Vector2.ZERO, 0.0, true, false, 4.0)
+	var via_drive := DotWeaponContext.new()
+	via_drive.origin = ctx.origin
+	via_drive.direction = Vector3.FORWARD
+	rig._aim_along_wall_barrel(via_drive)
+	_check("the strafe given to drive_view is the strafe the shot tilts with", via_drive.direction.is_equal_approx(via_extra.direction))
+	rig.drive_view(Vector2.ZERO, 0.0, true, false, 0.0)
 	_check("aimed fully the barrel stays on the sight line", rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 1.0).is_equal_approx(Basis.IDENTITY))
 	rig.ads_rules.set_def_row(art.id, {"wall_shot": false})
 	ctx.direction = Vector3.FORWARD

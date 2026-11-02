@@ -232,7 +232,7 @@ func reset() -> void:
 ## [method offset], so a server with no view model gets the answer the client draws. [param muzzle] is the muzzle at hip in view
 ## space, [param aim] the fraction aimed (the push fades with it), [param w] the gun's `wall_*` numbers.
 static func barrel_turn(space: PhysicsDirectSpaceState3D, eye: Transform3D, muzzle: Vector3, view_scale: float, w: Dictionary,
-		retract_scale: float, tilt_scale: float, speed: float, aim: float, mask: int, ignore_characters: bool, exclude: Array[RID]) -> Basis:
+		retract_scale: float, tilt_scale: float, speed: float, aim: float, mask: int, ignore_characters: bool, exclude: Array[RID], strafe: float = 0.0) -> Basis:
 	var dist := muzzle.length()
 	if space == null or dist < 0.01 or retract_scale <= 0.0:
 		return Basis.IDENTITY
@@ -245,7 +245,7 @@ static func barrel_turn(space: PhysicsDirectSpaceState3D, eye: Transform3D, muzz
 		return Basis.IDENTITY
 	var slam := ZeeWallSlam.new()
 	slam.amount = minf(depth + clampf(speed * 0.012, 0.0, 0.1) * w["impulse"], w["max"])
-	slam.aim_at(hit["normal"], speed, 0.0)
+	slam.aim_at(hit["normal"], speed, strafe)
 	slam.set_lean(hit["sides"], Vector2(muzzle.x, muzzle.y) / maxf(-muzzle.z, 0.05), w["lean"])
 	slam.lean = slam._lean_target
 	return slam.offset(retract_scale, tilt_scale, w["push"], w["nudge"], aim, w["impulse"]).basis
