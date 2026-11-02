@@ -306,6 +306,27 @@ func _effects_budgets() -> void:
 	capped.queue_free()
 
 
+## Both report paths emit `heard` once per shot with the same stream.
+func _effects_heard() -> void:
+	_begin("heard on both shot paths")
+	var counts := [0, 0]
+	var streams: Array = [null, null]
+	for mode in 2:
+		var fx := ZeeShotFx.new()
+		fx.layered_shots = mode == 1
+		add_child(fx)
+		fx.heard.connect(func(stream: AudioStream) -> void:
+			counts[mode] += 1
+			streams[mode] = stream)
+		fx.call(&"_report", ZeeWeaponIds.RIFLE, DotWeaponOutcome.KIND_SHOT, Vector3(0, 0, -5))
+		fx.queue_free()
+	_check("the single sound emits heard once (%d)" % counts[0], counts[0] >= 1)
+	if ZeeShotLayers.available():
+		_check("the layered shot emits heard once (%d)" % counts[1], counts[1] == 1)
+		_check("both paths emit a stream (the variant is random, so not the same one)", streams[0] != null and streams[1] != null)
+	_end()
+
+
 ## A flash (dot-fx's when linked, else ours) still makes the one capped muzzle light, and the art's own is off (no double).
 func _effects_pack_light() -> void:
 	_begin("dot-fx muzzle light")

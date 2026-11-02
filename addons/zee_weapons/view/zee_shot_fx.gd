@@ -917,7 +917,10 @@ func _layered(id: StringName, kind: StringName, at: Vector3) -> bool:
 			return false
 	var camera := get_viewport().get_camera_3d() if get_viewport() != null else null
 	var listener := camera.global_position if camera != null else at
-	return _layers.fire(ZeeWeaponSound.class_for(id, kind), at, listener)
+	if not _layers.fire(ZeeWeaponSound.class_for(id, kind), at, listener):
+		return false
+	heard.emit(ZeeWeaponSound.stream_for(id, kind))
+	return true
 
 
 ## Indoors the class's distant recording follows the report, [constant DotWeaponSound.TAIL_DELAY] late.
