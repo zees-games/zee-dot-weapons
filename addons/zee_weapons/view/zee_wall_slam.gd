@@ -4,7 +4,9 @@ extends RefCounted
 ## The view model against a wall: a spring that settles on how far the gun's real reach is inside the surface, pushed back
 ## by approach speed and nudged up or sideways by a slow, angled approach. Presentation only; a shot still leaves the eye.
 
-const MAX_TILT_DEG := 40.0
+const MAX_TILT_DEG := 20.0
+## The most the gun is pulled back toward the eye (view-space metres): more puts it behind the lens, which draws crossed forearms and no gun.
+const MAX_BACK := 0.3
 ## Pitch up per metre of depth, before the cvar multiplier.
 const TILT_DEG_PER_M := 120.0
 ## Approach speed (m/s) at which the response is all push-back and no nudge.
@@ -202,7 +204,7 @@ func offset(retract_scale: float, tilt_scale: float, push: float = 1.0, nudge: f
 	var keep := 1.0 - clampf(guard, 0.0, 1.0)
 	var fast := clampf(closing / FAST_SPEED, 0.0, 1.0)
 	var depth := amount * maxf(retract_scale, 0.0) * keep
-	var back := depth * push * lerpf(0.7, 1.4, fast)
+	var back := minf(depth * push * lerpf(0.7, 1.4, fast), MAX_BACK)
 	var gain := _lean_gain
 	var tip := 1.0 + (lean.y - 1.0) * gain
 	var turn := lean.x * gain
