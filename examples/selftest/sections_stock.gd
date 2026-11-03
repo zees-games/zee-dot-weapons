@@ -221,10 +221,11 @@ func _stock_overrides() -> void:
 
 func _layered_sounds() -> void:
 	_check("dot-audio's shot player is linked", ZeeShotLayers.available())
-	_check("a stock class maps to its shot, suppressed to light, a minigun to none",
+	_check("a stock class maps to its shot, suppressed to light, a launcher to its own, a charge rifle to none",
 		ZeeShotLayers.shot_class(ZeeWeaponSound.SNIPER) == &"sniper"
 		and ZeeShotLayers.shot_class(ZeeWeaponSound.SUPPRESSED) == &"light"
-		and ZeeShotLayers.shot_class(ZeeWeaponSound.MINIGUN) == &"")
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.LAUNCHER) == &"launcher"
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.CHARGE) == &"")
 	var fx := ZeeShotFx.new()
 	add_child(fx)
 	var heard: Array[AudioStream] = []
