@@ -22,7 +22,8 @@ ads:
     view_shift_z: -0.15
     hip_cant: 0.3
     hip_lean: 25.0
-    # the hip barrel crosses the crosshair this many metres out; 0 stands it up by hip_lean instead
+    # the hip barrel crosses the crosshair this many metres out; 0 stands it up by hip_lean instead.
+    # A long gun cannot cross the centre nearer than ~3 m (its bore error and cant leave the selftest limits), so only sidearms override it.
     hip_zero: 3.0
     thrown_span: 0.31
     # radius in degrees of a glowing dot on a gun's own front post, shown as the aim arrives; 0 draws none
@@ -64,12 +65,20 @@ ads:
     pistol:
       view_scale: 1.9
       view_shift_x: 0.04
+      hip_zero: 1.2
     revolver:
       view_scale: 1.9
       view_shift_x: 0.04
+      hip_zero: 1.2
     machine_pistol:
       view_scale: 1.9
       view_shift_x: 0.04
+      hip_zero: 1.2
     derringer:
       view_scale: 3.2
       view_shift_x: 0.04
+      hip_zero: 1.2
+    zz_pistol:
+      hip_zero: 1.2
+    zz_knife:
+      hip_zero: 1.2
