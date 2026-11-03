@@ -2,7 +2,7 @@ class_name ZeeArtDress
 extends RefCounted
 
 ## Gives a stand-in [ZeeWeaponArt] another pack's model and hold from that pack's art row
-## (`{model, muzzle, motion, view: {hold, rot, scale, aim, zoom, scoped, iron, sight}}`, `sight: "red_dot"` for an optic); aimed, the model's own sight is used. The hip hold is a layer of its own
+## (`{model, muzzle, motion, world_scale (third-person size), view: {hold, rot, scale, aim, zoom, scoped, iron, sight}}`, `sight: "red_dot"` for an optic); aimed, the model's own sight is used. The hip hold is a layer of its own
 ## (`view_offset`, `view_rotation`, `view_scale`) that a sprint or lowered pose blends over in [ZeeWeaponPose]; nothing here animates.
 
 const SIGHT_RELIEF := 0.32
@@ -23,6 +23,7 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	art.reload = (row.get("reload", {}) as Dictionary).duplicate(true)
 
 	# A melee model stands along +Y and a thrown one has no front: the stand-in's carry stays.
+	art.world_scale = float(row.get("world_scale", art.world_scale if motion != "gun" else 1.0))
 	if motion != "gun":
 		art.model_forward = Vector3.UP if motion == "melee" else art.model_forward
 		return
@@ -40,7 +41,6 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	art.aim_eye_relief = SIGHT_RELIEF
 	art.world_offset = Vector3.ZERO
 	art.world_rotation = Vector3.ZERO
-	art.world_scale = 1.0
 	art.aim_rotation = Vector3.ZERO
 	art.view_scale = float(view.get("scale", 1.0))
 	art.view_rotation = view.get("rot", Vector3.ZERO)
