@@ -151,6 +151,9 @@ extends Resource
 
 @export_range(0.05, 8.0, 0.01) var world_scale: float = 1.0
 
+## The size the first-person hands frame takes as life size; 0 takes [member world_scale], so a third-person size can change without moving the view model's hands.
+@export_range(0.0, 8.0, 0.01) var hands_life: float = 0.0
+
 ## How many hands hold it in third person: 0 takes the pose's (a pistol one, a long gun two), 1 or 2 says.
 @export_range(0, 2, 1) var hands: int = 0
 

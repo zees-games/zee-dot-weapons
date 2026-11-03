@@ -24,6 +24,7 @@ static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 
 	# A melee model stands along +Y and a thrown one has no front: the stand-in's carry stays.
 	art.world_scale = float(row.get("world_scale", art.world_scale if motion != "gun" else 1.0))
+	art.hands_life = float(row.get("hands_life", 0.0))
 	if motion != "gun":
 		art.model_forward = Vector3.UP if motion == "melee" else art.model_forward
 		return

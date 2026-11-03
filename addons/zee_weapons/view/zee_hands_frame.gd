@@ -9,7 +9,11 @@ extends RefCounted
 ## The weapon's drawn size over its size in a hand: the holder's scale across the view over the art's [member ZeeWeaponArt.world_scale].
 static func life_scale(to_holder: Transform3D, art: ZeeWeaponArt) -> float:
 	var across := to_holder.basis.x.length()
-	var world := art.world_scale if art != null and art.world_scale > 0.0 else 1.0
+	var world := 1.0
+	if art != null:
+		world = art.hands_life if art.hands_life > 0.0 else art.world_scale
+	if world <= 0.0:
+		world = 1.0
 	return maxf(across / world, 0.001)
 
 
