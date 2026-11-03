@@ -38,7 +38,7 @@ const SPECS := {
 	"thrown_span": {"default": 0.31, "min": 0.05, "max": 1.0},
 	"hip_cant": {"default": 0.3, "min": 0.0, "max": 1.0},
 	"hip_lean": {"default": 25.0, "min": -30.0, "max": 60.0},
-	"hip_zero": {"default": 20.0, "min": 0.0, "max": 200.0},
+	"hip_zero": {"default": 3.0, "min": 0.0, "max": 200.0},
 	"hit_flinch_multiplier": {"default": 1.0, "min": 0.0, "max": 5.0},
 	"sight_dot": {"default": 0.15, "min": 0.0, "max": 1.0},
 	"sight_cut": {"default": 2.0, "min": 0.0, "max": 15.0},

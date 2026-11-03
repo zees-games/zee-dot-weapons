@@ -54,8 +54,8 @@ static func converged(art: ZeeWeaponArt, roll: float, zero: float, depth: float 
 	var muzzle := art.model_forward.normalized() * reach + art.muzzle_offset
 	var target := Vector3(0.0, 0.0, -zero - depth)
 	var rot := Vector3(0.0, 0.0, roll)
-	# The muzzle moves as the gun turns about the grip; a few rounds settle it to well under a hundredth of a degree.
-	for _i in 4:
+	# The muzzle moves as the gun turns about the grip; ten rounds settle it even for a near zero.
+	for _i in 10:
 		var basis := Basis.from_euler(rot * (PI / 180.0)).scaled(Vector3.ONE * art.view_scale)
 		var to := (target - (art.view_offset + basis * muzzle)).normalized()
 		rot.x = rad_to_deg(asin(clampf(to.y, -1.0, 1.0)))
