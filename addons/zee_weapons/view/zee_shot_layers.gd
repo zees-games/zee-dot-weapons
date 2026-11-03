@@ -12,7 +12,7 @@ const CATALOGUE := ROOT + "core/dot_audio_catalogue.gd"
 const SHOT_STOCK := ROOT + "core/dot_audio_shot_stock.gd"
 
 ## Weapon classes with a stock shot; the suppressed class plays the light set, suppressed.
-const STOCK_CLASSES: Array[StringName] = [&"light", &"magnum", &"smg", &"rifle", &"heavy", &"sniper", &"shotgun", &"launcher", &"minigun", &"beam"]
+const STOCK_CLASSES: Array[StringName] = [&"light", &"magnum", &"smg", &"rifle", &"heavy", &"sniper", &"shotgun", &"launcher", &"minigun", &"beam", &"charge", &"swing", &"throw"]
 
 var player: Node = null
 var enclosure: Node = null

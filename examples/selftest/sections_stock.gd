@@ -225,7 +225,9 @@ func _layered_sounds() -> void:
 		ZeeShotLayers.shot_class(ZeeWeaponSound.SNIPER) == &"sniper"
 		and ZeeShotLayers.shot_class(ZeeWeaponSound.SUPPRESSED) == &"light"
 		and ZeeShotLayers.shot_class(ZeeWeaponSound.LAUNCHER) == &"launcher"
-		and ZeeShotLayers.shot_class(ZeeWeaponSound.CHARGE) == &"")
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.CHARGE) == &"charge"
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.SWING) == &"swing"
+		and ZeeShotLayers.shot_class(ZeeWeaponSound.THROW) == &"throw")
 	var fx := ZeeShotFx.new()
 	add_child(fx)
 	var heard: Array[AudioStream] = []
