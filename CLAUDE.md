@@ -56,6 +56,7 @@ Short forms; the reasoning is in the linked file.
 - Durations are ticks at `ZeeWeaponPack.TICK_RATE` (64), through `rpm_ticks`; never seconds. Every builder sets `authored_tick_rate = TICK_RATE`, and the arsenal scales to the running rate; the rig reads a duration only through `arsenal.ticks_for` / `charge_for`, never the raw field. [design](docs/design.md#durations-are-ticks)
 - The bash is the rig's own state machine; dot-weapon is not forked. [design](docs/design.md#the-alt-fire-is-not-a-fork)
 - The previous command's buttons and the bash cooldown are in the rig's snapshot. [design](docs/design.md#what-the-rig-counts-and-why)
+- An idle tick (no button, nothing under way) builds no full context: the rig installs `idle_posture` on its arsenal (needs dot-weapon API 23). [design](docs/design.md#what-the-rig-counts-and-why)
 - The holster is seen by `is_switching()` going true; `switched` fires between holster and deploy. [design](docs/design.md#what-the-rig-counts-and-why)
 - `player_ref` resolves on a SERVER rig too; a rig without a carrier is handed a context from the eye, not the camera. [design](docs/design.md#the-rig-needs-its-player-on-every-role)
 - Shots replicate as a four-bit counter in the snapshot; compare with wrap-aware `uses_between()`. [design](docs/design.md#replication-is-a-counter-not-an-event)

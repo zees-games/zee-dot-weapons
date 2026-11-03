@@ -36,6 +36,7 @@ The arsenal knows how far through a reload it is and keeps it private, correctly
 
 - **`switched` fires between the holster and the deploy**, not at the start of the holster. The holster half is noticed by watching `is_switching()` go true, before the arsenal runs; a rig that waited for `switched` draws the weapon at rest the whole way down.
 - **The previous command's buttons are simulation state and belong in the snapshot.** The bash, the reload and every semi-automatic weapon are edge-triggered against it. The arsenal is handed the previous command; the rig keeps one, so the rig saves it. Left out, a restored rig thinks the alt-fire was already down and refuses the next press, once.
+- **An idle tick builds no full context, even with a view and enabled spread rules.** `setup()` installs `_posture_now` as the arsenal's `idle_posture` (dot-weapon API 23), a motion-only context from `DotWeaponPlayerBridge.posture_for`, and the view's sprint flag is read from the same; eye, entity and direction are the cost and an idle tick needs none. `_rig_idle_posture` runs 900 ticks against a rig without the provider and compares outcomes, snapshots, spread and the drawn sprint.
 
 ## The rig needs its player on every role
 

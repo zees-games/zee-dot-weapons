@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_wall.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 826
+const CHECKS := 830
 
 
 func _ready() -> void:
@@ -51,6 +51,7 @@ func _ready() -> void:
 	_rig_carrier()
 	_rig_rollback()
 	_rig_idle()
+	_rig_idle_posture()
 	_tick_rate()
 	_view_models()
 	_belt_feed()

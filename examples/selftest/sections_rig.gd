@@ -421,6 +421,96 @@ func _rig_idle() -> void:
 	_end()
 
 
+## A carrier that answers `component` and `motion` the way the bridge asks, with a posture set per tick.
+class PostureCarrier extends Node3D:
+	var posture: Dictionary = {}
+
+	func component(_type: StringName) -> Object:
+		return self
+
+	func motion() -> Dictionary:
+		return posture
+
+
+func _posture_at(tick: int) -> Dictionary:
+	match (tick / 50) % 5:
+		1: return {"speed": 2.0, "on_floor": true}
+		2: return {"speed": 7.0, "on_floor": true, "sprinting": true}
+		3: return {"speed": 0.0, "on_floor": true, "crouched": true}
+		4: return {"speed": 3.0, "on_floor": false}
+	return {"speed": 0.0, "on_floor": true}
+
+
+func _posture_rig(provider: bool) -> Array:
+	var carrier := PostureCarrier.new()
+	add_child(carrier)
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	carrier.add_child(view)
+	var rig := ZeeWeaponRig.new()
+	rig.role = ZeeWeaponRig.Role.LOCAL
+	rig.authority = true
+	rig.tick_rate = ZeeWeaponPack.TICK_RATE
+	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.view_model_ref = DotNodeRef.of_path(view.get_path())
+	carrier.add_child(rig)
+	var _setup: DotResult = rig.setup()
+	var _given: Variant = rig.give_everything()
+	rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
+	rig.arsenal.spread_rules = DotWeaponSpreadRules.new()
+	rig.arsenal.spread_rules.enabled = true
+	rig.arsenal.spread_rules.recovery = 40.0
+	if not provider:
+		rig.arsenal.idle_posture = Callable()
+	return [carrier, rig, view]
+
+
+func _rig_idle_posture() -> void:
+	_begin("an idle rig with spread rules and a view builds no full context")
+
+	var full := _posture_rig(false)
+	var quick := _posture_rig(true)
+	var full_rig: ZeeWeaponRig = full[1]
+	var quick_rig: ZeeWeaponRig = quick[1]
+	_check("without a provider enabled rules still force the full context",
+		not full_rig.arsenal.is_idle_for(DotWeaponCommand.new(), null))
+	_check("the rig installs the provider by itself", quick_rig.arsenal.idle_posture.is_valid())
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var same := true
+	var skipped := 0
+
+	for tick in range(900):
+		var command := DotWeaponCommand.new()
+		if (tick / 40) % 3 == 0:
+			command.set_button(DotWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
+			command.set_button(DotWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
+			command.slot = rng.randi_range(1, 4) if rng.randf() < 0.04 else 0
+		(full[0] as PostureCarrier).posture = _posture_at(tick)
+		(quick[0] as PostureCarrier).posture = _posture_at(tick)
+
+		if quick_rig.arsenal.is_idle_for(command, quick_rig.get("_previous_command")):
+			skipped += 1
+
+		var want := full_rig.simulate_tick(command, tick)
+		var got := quick_rig.simulate_tick(command.duplicate_command(), tick)
+
+		if want.used != got.used or want.kind != got.kind or want.shots.size() != got.shots.size() \
+				or var_to_str(full_rig.snapshot()) != var_to_str(quick_rig.snapshot()) \
+				or full_rig.arsenal.spread_now() != quick_rig.arsenal.spread_now() \
+				or full[2].get("_sprinting") != quick[2].get("_sprinting"):
+			same = false
+			break
+
+	_check("outcomes, snapshots, spread and the drawn sprint agree on every tick of a mixed stream", same)
+	_check("and the idle path ran for much of it (%d ticks)" % skipped, skipped > 300)
+
+	_cleanup(full[0])
+	_cleanup(quick[0])
+	_end()
+
+
 func _ads_rules() -> void:
 	_begin("aiming rules")
 

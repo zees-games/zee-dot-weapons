@@ -61,6 +61,8 @@ func setup() -> DotResult:
 			_bash = (script as Script).new()
 
 	_resolve_carrier()
+	if not arsenal.idle_posture.is_valid():
+		arsenal.idle_posture = _posture_now
 	_resolve_presentation()
 	_connect_arsenal()
 
@@ -268,7 +270,7 @@ func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: 
 func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
 	# Sprinting is just movement: no button is down, so this is the path a sprint usually takes.
 	if _view != null and _player != null:
-		_view.set_sprinting(_context_for(tick).sprinting)
+		_view.set_sprinting(DotWeaponPlayerBridge.posture_for(_player, tick).sprinting)
 	_notice_holster(tick)
 	_ads_move = 1.0
 	_ads_progress = 0.0
@@ -644,6 +646,13 @@ func _notice_switch_end() -> void:
 	if _switch_started >= 0 and not arsenal.is_switching():
 		_switch_started = -1
 		_was_switching = false
+
+
+## The motion-only context an idle tick hands the arsenal (see [member DotWeaponArsenal.idle_posture]).
+func _posture_now() -> DotWeaponContext:
+	var ctx := DotWeaponPlayerBridge.posture_for(_player, _last_tick)
+	ctx.authority = authority
+	return ctx
 
 
 func _context_for(tick: int) -> DotWeaponContext:
