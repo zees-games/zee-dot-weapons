@@ -31,7 +31,7 @@ static var _view_sources: Array = []
 
 ## Draws a part so it reads as a view model without breaking its own depth.
 ## Depth testing stays ON: `no_depth_test` stops a wall clipping but lets the arms and gun paint over each other. A sorting offset biases the order instead.
-## The cost: it can still clip a wall the player is pressed against (offsets stay within 0.6 m); a game wanting it gone renders through its own SubViewport camera.
+## It can still clip a wall the player is pressed against; ZeeViewOverlay draws the layer again, wall-free, while the wall response is active.
 func _set_on_top(root: Node) -> void:
 	for mesh in HandReach.meshes(root):
 		mesh.sorting_offset = 100.0

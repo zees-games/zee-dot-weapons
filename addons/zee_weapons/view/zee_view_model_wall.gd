@@ -11,6 +11,8 @@ extends "zee_view_model_hands.gd"
 
 var _strafe_now: float = 0.0
 
+var _overlay: ZeeViewOverlay = null
+
 ## Pulls the weapon back and up when its muzzle would be inside a wall. The probe is cast against the un-retracted pose, so the answer does not feed back into itself.
 func _advance_wall(delta: float) -> void:
 	var on := feel_rules.wall_retract > 0.0 and _weapon != null and is_inside_tree()

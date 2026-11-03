@@ -68,6 +68,9 @@ var scope_arms_hide_override: float = -1.0
 
 @export_group("Wall")
 
+## Draws the view model again in a pass with no world in it while it is pressed against one, so a wall cannot hide the gun. Costs a second render of the view layer only while active.
+@export var wall_overlay: bool = true
+
 
 @export_group("Light")
 
@@ -108,6 +111,10 @@ func _ready() -> void:
 		return
 
 	_build_structure()
+	if wall_overlay and view_layer > 0:
+		_overlay = ZeeViewOverlay.new()
+		add_child(_overlay)
+		_overlay.setup(self, view_layer)
 
 
 # --- Building ---------------------------------------------------------------
@@ -577,6 +584,9 @@ func advance(delta: float) -> void:
 	_advance_aim(delta)
 	_animated.transform = _pose.offset()
 	_advance_wall(delta)
+	if _overlay != null:
+		# Hysteresis: the pass must not flicker at the edge of contact.
+		_overlay.update(_wall.amount > (0.002 if _overlay.is_active() else 0.02), get_parent() as Camera3D)
 	_place_hands()
 	_apply_hands_lens()
 	if _sight != null:
