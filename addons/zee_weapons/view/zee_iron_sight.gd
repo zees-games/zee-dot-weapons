@@ -315,6 +315,12 @@ static func _top_near(triangles: Array[Dictionary], f: Vector3, side: Vector3, s
 
 # --- Building ---------------------------------------------------------------
 
+## The corners' UVs spread round the swatch's point: one shared UV has zero derivatives, and the view material's
+## anisotropic filter (SightFit.sharpen) turns those into per-pixel black and white speckle on llvmpipe.
+const UV_SPREAD := 0.001
+const UV_CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(-1, 1), Vector2(1, 1), Vector2(1, -1)]
+
+
 static func _begin() -> SurfaceTool:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -331,7 +337,7 @@ static func _commit(st: SurfaceTool, name: String, material: Material) -> MeshIn
 
 
 ## A box at [param c] with axes [param x], [param y], [param z] and full [param size], every
-## corner on [param uv] so it takes the one colour of the swatch under it.
+## corner within [constant UV_SPREAD] of [param uv] so it takes the one colour of the swatch under it.
 static func _box(st: SurfaceTool, c: Vector3, x: Vector3, y: Vector3, z: Vector3, size: Vector3, uv: Vector2) -> void:
 	var ax := [x.normalized() * size.x * 0.5, y.normalized() * size.y * 0.5, z.normalized() * size.z * 0.5]
 	# Each face: its outward normal axis and two in-plane axes with a × b = n, so
@@ -348,5 +354,5 @@ static func _box(st: SurfaceTool, c: Vector3, x: Vector3, y: Vector3, z: Vector3
 			var normal := n.normalized()
 			for k: int in [0, 1, 2, 0, 2, 3]:
 				st.set_normal(normal)
-				st.set_uv(uv)
+				st.set_uv(uv + UV_CORNERS[k] * UV_SPREAD)
 				st.add_vertex(corners[k])
