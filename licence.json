@@ -1,0 +1,56 @@
+[
+ {
+  "paths": [
+   ""
+  ],
+  "licence": "MIT",
+  "author": "zees-games",
+  "url": "https://github.com/zees-games/zee-dot-weapons",
+  "title": "zee-dot-weapons code and original art"
+ },
+ {
+  "paths": [
+   "assets/blaster-kit"
+  ],
+  "licence": "CC0-1.0",
+  "author": "Kenney",
+  "url": "https://kenney.nl/assets/blaster-kit",
+  "title": "Blaster Kit"
+ },
+ {
+  "paths": [
+   "assets/melee"
+  ],
+  "licence": "CC0-1.0",
+  "author": "Kenney",
+  "url": "https://kenney.nl/assets/weapon-pack",
+  "title": "Weapon Pack and Survival Kit"
+ },
+ {
+  "paths": [
+   "assets/ammo"
+  ],
+  "licence": "CC0-1.0",
+  "author": "Kenney",
+  "url": "https://kenney.nl/assets",
+  "title": "Ammo"
+ },
+ {
+  "paths": [
+   "assets/low-poly-guns"
+  ],
+  "licence": "CC0-1.0",
+  "author": "Quaternius",
+  "url": "https://opengameart.org/content/low-poly-guns-pack",
+  "title": "Ultimate Low Poly Guns Pack"
+ },
+ {
+  "paths": [
+   "assets/arms"
+  ],
+  "licence": "CC0-1.0",
+  "author": "para",
+  "url": "https://opengameart.org/content/fps-arms-rigged-only",
+  "title": "fps arms (rigged only)"
+ }
+]
