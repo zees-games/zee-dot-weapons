@@ -30,3 +30,4 @@ jobs:
             contents: write
         with:
             pack: true
+            pack-exclude-dirs: reports art-src
