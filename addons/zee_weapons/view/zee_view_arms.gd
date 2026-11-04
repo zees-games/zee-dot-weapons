@@ -452,8 +452,10 @@ static func surface_albedos(root: Node) -> Array[Color]:
 ## The glove now worn: [member glove_color], or the light one when the held gun [param weapon] is as dark as it.
 func fit_glove_to(weapon: Node) -> Color:
 	var glove := glove_color
-	if glove_contrast and weapon != null:
-		glove = glove_for(surface_albedos(weapon), glove_color, glove_light_color, glove_contrast_min)
+	if glove_contrast:
+		# Nothing held (fists) has no surface to contrast with: the light skin, as on a rifle.
+		var surfaces := surface_albedos(weapon) if weapon != null else ([] as Array[Color])
+		glove = glove_light_color if surfaces.is_empty() else glove_for(surfaces, glove_color, glove_light_color, glove_contrast_min)
 	for arm in [_left, _right]:
 		if arm is ZeeRiggedArm:
 			(arm as ZeeRiggedArm).set_colors(glove, sleeve_color)

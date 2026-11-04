@@ -32,6 +32,8 @@ const PALM_DEPTH := 0.022
 const PALM_BACK := 0.012
 ## Half a finger's thickness, added to the grip radius for the wrap.
 const FINGER_THICKNESS := 0.011
+## Each finger segment after the first is this much thinner than the one before it.
+const TAPER := 0.88
 ## No joint folds further than this (radians): a finger bends past ninety degrees at the
 ## knuckle and a little less at the others, and a fist is the limit.
 const MAX_CURL := 1.65
@@ -214,6 +216,7 @@ func _curl_fingers(rho: float, open: float) -> void:
 			var angle := clampf(float(_seg_len[bone]) / rho, 0.0, MAX_CURL)
 			angle *= float([1.0, 0.95, 0.8][j]) * (1.0 - slack)
 			_bend(bone, flex, angle)
+			_taper(bone, j)
 
 	# The thumb closes across: toward the palm and a little over the fingers.
 	var thumb_n := (palm_n + _hand_frame.z * 0.35).normalized()
@@ -222,6 +225,15 @@ func _curl_fingers(rho: float, open: float) -> void:
 		var tflex: Vector3 = _dir_rest[bone].cross(thumb_n).normalized()
 		var angle: float = clampf(float(_seg_len[bone]) / rho, 0.0, MAX_CURL) * float([0.55, 0.8, 0.8][j])
 		_bend(bone, tflex, angle * (1.0 - slack))
+		_taper(bone, j)
+
+
+## Thins segment [param j] of a finger by [constant TAPER] and keeps its child where it was, so the finger narrows toward the tip without shortening.
+func _taper(bone: int, j: int) -> void:
+	var t := 1.0 if j == 0 else TAPER
+	skeleton.set_bone_pose_scale(bone, Vector3.ONE * t)
+	if j > 0:
+		skeleton.set_bone_pose_position(bone, skeleton.get_bone_rest(bone).origin / (TAPER if j == 2 else 1.0))
 
 
 ## Bends [param bone] about a global rest axis, in its own local frame.

@@ -18,6 +18,7 @@
 # model is stepped at a fixed 60 fps by the range (`--sheet`), so the same frame is the same
 # picture every run, and a before and an after can be compared side by side.
 #
+#   tools/screenshot.sh --sheet --reloads 0,0.2,0.4,0.6,0.8,1 rifle   # reload frames only (a flag, because `heavy` drops EXTRA)
 #   EXTRA="--moves" tools/screenshot.sh --sheet rifle   # 14 frames: strafe, turn, walk, landing, sprint, hip and aimed
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
 #   tools/screenshot.sh --aim --all                # every weapon aimed down its sight, tiled into screenshots/all_aim.png
@@ -70,6 +71,9 @@ while [ $# -gt 0 ]; do
         --rack) RACK=1; shift ;;
         --sheet) SHEET=1; shift ;;
         --world) WORLD=1; shift ;;
+        --reloads) # optional comma list of fractions; a leading digit tells it from a weapon id
+            if [[ "${2:-}" =~ ^[0-9] ]]; then EXTRA="$EXTRA --reloads $2"; shift 2
+            else EXTRA="$EXTRA --reloads 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"; shift; fi ;;
         --aim) AIM=1; EXTRA="$EXTRA --aim"; shift ;;
         --pack) EXTRA="$EXTRA --pack $2"; shift 2 ;;
         --wait) WAIT="$2"; shift 2 ;;
