@@ -23,7 +23,10 @@
 # $DOT_SERVER_DEPLOY). dot-bootstrap puts it there. Both rebuild this game's pack first, so
 # what you play is what is on disk now.
 #
-# The same script is in every game repository; only the settings below differ.
+# The same script is in every game repository; only the settings below differ. It is
+# GENERATED from dot-game-template/tools/game.sh.in and this repository's game.conf by
+# dot-game-template/tools/gen-game-sh.py: edit those, never this file (the generator's
+# --check mode fails when they disagree).
 
 # --- This game ------------------------------------------------------------------
 # PACK is the game's id in dot-server-deploy (empty if it has no server), EXTRA_PACKS
@@ -48,7 +51,7 @@ CR=$'\r\033[K'
 [ -t 1 ] || { RED=""; GRN=""; YLW=""; OFF=""; CR=""; }
 
 die() { printf '%s%s%s\n' "$RED" "$1" "$OFF" >&2; exit "${2:-1}"; }
-usage() { sed -n '3,24p' "$ROOT/$(basename "${BASH_SOURCE[0]}")" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '3,/^#   --no-parse/p' "$ROOT/$(basename "${BASH_SOURCE[0]}")" | sed 's/^# \{0,1\}//'; }
 
 while [ $# -gt 0 ]; do
     case "$1" in
