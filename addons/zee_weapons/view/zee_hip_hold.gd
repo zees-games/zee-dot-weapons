@@ -10,7 +10,7 @@ static func sized(art: ZeeWeaponArt, rules: ZeeAdsRules, depth: float) -> ZeeWea
 	# A knife or a grenade sized like a rifle is a fist round a log: a grenade has its own span, a knife none.
 	if art.pose == ZeeWeaponArtTable.POSE_THROWN:
 		return sized_thrown(art, rules)
-	if not art.model_forward.is_equal_approx(Vector3.FORWARD):
+	if not _along_z(art.model_forward):
 		return art
 	var out := art.duplicate() as ZeeWeaponArt
 	var lean: float = ZeeAdsRules.SPECS["hip_lean"]["default"]
@@ -53,14 +53,28 @@ static func converged(art: ZeeWeaponArt, roll: float, zero: float, depth: float 
 		reach = ZeeModelCache.muzzle_distance(art.model_path, art.model_forward)
 	var muzzle := art.model_forward.normalized() * reach + art.muzzle_offset
 	var target := Vector3(0.0, 0.0, -zero - depth)
+	var orient := art.orientation()
+	var back := art.model_forward.z > 0.0
 	var rot := Vector3(0.0, 0.0, roll)
 	# The muzzle moves as the gun turns about the grip; ten rounds settle it even for a near zero.
 	for _i in 10:
-		var basis := Basis.from_euler(rot * (PI / 180.0)).scaled(Vector3.ONE * art.view_scale)
-		var to := (target - (art.view_offset + basis * muzzle)).normalized()
-		rot.x = rad_to_deg(asin(clampf(to.y, -1.0, 1.0)))
-		rot.y = rad_to_deg(atan2(-to.x, -to.z))
+		var basis := orient * Basis.from_euler(rot * (PI / 180.0)).scaled(Vector3.ONE * art.view_scale)
+		var to := orient.inverse() * (target - (art.view_offset + basis * muzzle)).normalized()
+		# The rotation is the model's own, turned by orientation() after: a +Z model's pitch and yaw swap sign.
+		if back:
+			rot.x = rad_to_deg(-asin(clampf(to.y, -1.0, 1.0)))
+			rot.y = rad_to_deg(atan2(to.x, to.z))
+		else:
+			rot.x = rad_to_deg(asin(clampf(to.y, -1.0, 1.0)))
+			rot.y = rad_to_deg(atan2(-to.x, -to.z))
 	return rot
+
+
+## Whether [param forward] lies along the Z axis, either way: the models whose bore roll leaves alone.
+static func _along_z(forward: Vector3) -> bool:
+	var f := forward.normalized()
+	return absf(f.z) > 0.9999
+
 
 
 ## The hip yaw (degrees, positive muzzle-in) that draws a barrel held at [param hold] leaning [param lean] degrees
