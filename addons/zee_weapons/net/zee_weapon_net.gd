@@ -49,6 +49,15 @@ const FIRE_KIND_BITS := 3
 const CHARGE_BITS := 4
 const CHARGE_MAX := (1 << CHARGE_BITS) - 1
 
+## Opt-in held states for packs whose weapons are not guns (melee, shields, bows): whether the carrier guards, how far a
+## bow or similar is drawn, and which swing style the last use was. Zero on every field is "nothing held", so a gun
+## pack that never declares them loses nothing.
+const GUARD_BITS := 1
+const DRAW_BITS := 4
+const DRAW_MAX := (1 << DRAW_BITS) - 1
+const SWING_STYLE_BITS := 3
+const SWING_NONE := 0
+
 const KIND_NONE := 0
 const KIND_SHOT := 1
 const KIND_SWING := 2
@@ -105,6 +114,17 @@ static func charge_specs() -> Array[Dictionary]:
 	}]
 
 
+## Opt-in: `net_guard` (bool), `net_draw` (4 bits, 0..1) and `net_swing_style` (3 bits, a pack-defined style number,
+## [constant SWING_NONE] = none). A game that declares these properties and adds these specs shows watchers a raised
+## guard, a drawn bow and the swing's style; [method apply] feeds them to [method ZeeWorldModel.on_held].
+static func held_specs() -> Array[Dictionary]:
+	return [
+		{"property": &"net_guard", "type": "BOOL", "bits": GUARD_BITS, "owner_only": false, "interpolated": false},
+		{"property": &"net_draw", "type": "UINT", "bits": DRAW_BITS, "owner_only": false, "interpolated": false},
+		{"property": &"net_swing_style", "type": "UINT", "bits": SWING_STYLE_BITS, "owner_only": false, "interpolated": false},
+	]
+
+
 ## Every spec a carrier with weapons needs: dot-weapon's, then these.
 ##
 ## The one call a game should make. Concatenating the two lists by hand is the same
@@ -151,6 +171,16 @@ static func pull(rig: Object, target: Object) -> void:
 	target.set(&"net_fire_kind", int(rig.get("fire_kind")))
 	target.set(&"net_charge", roundi(clampf(float(rig.get("charge_shown")), 0.0, 1.0) * CHARGE_MAX))
 
+	# Held states: only when the target declares them; a rig without them reads as nothing held.
+	if &"net_guard" in target:
+		target.set(&"net_guard", rig.get("guarding") == true)
+	if &"net_draw" in target:
+		var draw: Variant = rig.get("draw_shown")
+		target.set(&"net_draw", roundi(clampf(float(draw if draw != null else 0.0), 0.0, 1.0) * DRAW_MAX))
+	if &"net_swing_style" in target:
+		var style: Variant = rig.get("swing_style")
+		target.set(&"net_swing_style", clampi(int(style if style != null else 0), 0, (1 << SWING_STYLE_BITS) - 1))
+
 
 # --- Receiving --------------------------------------------------------------
 
@@ -193,6 +223,12 @@ static func apply(
 		if &"net_charge" in source:
 			# Before on_fired, so the world model still knows the draw the shot released.
 			world_model.on_charge(float(int(source.get(&"net_charge"))) / CHARGE_MAX)
+
+		if &"net_guard" in source or &"net_draw" in source or &"net_swing_style" in source:
+			var swing: int = int(source.get(&"net_swing_style")) if &"net_swing_style" in source else SWING_NONE
+			var draw: int = int(source.get(&"net_draw")) if &"net_draw" in source else 0
+			var guard: bool = &"net_guard" in source and source.get(&"net_guard") == true
+			world_model.on_held(guard, float(draw) / DRAW_MAX, swing)
 
 		if &"net_fitted" in source:
 			world_model.on_fitted(int(source.get(&"net_fitted")))

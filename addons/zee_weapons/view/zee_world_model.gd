@@ -162,6 +162,10 @@ var art_provider: ZeeArtProvider = ZeeArtProvider.new()
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
 const ChargeFx := preload("zee_charge_fx.gd")
+## Last held states from [method on_held]; the defaults are "nothing held".
+var held_guard: bool = false
+var held_draw: float = 0.0
+var held_swing_style: int = 0
 var _charge_fx: Node3D = null
 var _last_charge := 0.0
 
@@ -335,6 +339,14 @@ func on_charge(fraction: float) -> void:
 	if _charge_fx != null:
 		_charge_fx.set_charge(fraction)
 	_last_charge = fraction
+
+
+## Held states from the snapshot for non-gun weapons: [param guard] raised, [param draw] 0 to 1, [param swing_style] a
+## pack-defined number (0 = none). Stored for a subclass or pack to pose from; zee's guns ignore them.
+func on_held(guard: bool, draw: float, swing_style: int) -> void:
+	held_guard = guard
+	held_draw = draw
+	held_swing_style = swing_style
 
 
 ## The charge ball, or null. For a suite.
