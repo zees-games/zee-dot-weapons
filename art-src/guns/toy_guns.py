@@ -89,3 +89,49 @@ def minigun():
         parts.append(box((0.012, 0.025, 0.1), "ccu", (sx * 0.075, 0.0, zc - 0.03), "polymer", 0.15))
         parts.append(box((0.012, 0.09, 0.022), "ccc", (sx * 0.075, -0.03, zc - 0.13), "polymer", 0.15))
     return join(parts, "minigun"), None, 1.0
+
+
+def beamer():
+    # A ray gun: a short orange body, a thin core with coil rings that shrink toward the front,
+    # a glowing emitter cone at the tip and a swept dorsal fin; a pistol grip, no stock.
+    zb = 0.12
+    parts = [
+        box((0.05, 0.30, 0.08), "cbc", (0, 0.0, zb), "signal", 0.2),
+        cyl(0.013, 0.42, "cbc", (0, 0.28, zb + 0.012), material="steel", sides=8),
+        cyl(0.03, 0.03, "cbc", (0, 0.26, zb + 0.012), material="graphite", sides=12),
+        cyl(0.05, 0.075, "cbc", (0, 0.64, zb + 0.012), material="teal", sides=12, radius2=0.018, chamfer=0.05),
+    ]
+    for y, r, m in ((0.33, 0.046, "graphite"), (0.41, 0.040, "signal"), (0.49, 0.034, "graphite"), (0.56, 0.028, "signal")):
+        parts.append(cyl(r, 0.04, "cbc", (0, y, zb + 0.012), material=m, sides=12, chamfer=0.1))
+    fin = box((0.012, 0.22, 0.085), "cbd", (0, 0.0, zb + 0.04), "graphite", 0.1)
+    shear(fin, 1, 2, -0.8)
+    parts.append(fin)
+    grip = box((0.04, 0.06, 0.14), "cbu", (0, 0.05, zb - 0.03), "graphite", 0.15)
+    shear(grip, 1, 2, 0.35)
+    parts.append(grip)
+    parts.append(box((0.012, 0.07, 0.006), "ccd", (0, 0.2, zb - 0.045), "graphite", 0.1))
+    return join(parts, "beamer"), None, 0.66
+
+
+def charge_rifle():
+    # A tuning-fork rifle: a stock and receiver, a fat capacitor drum mid-body and two long
+    # rails ahead of it (one over the other, a gap and a glowing coil between them).
+    zb = 0.16
+    parts = [
+        box((0.06, 0.22, 0.10), "cbc", (0, 0.0, zb), "graphite", 0.15),
+        cyl(0.078, 0.30, "cbc", (0, 0.22, zb + 0.008), material="signal", sides=14, chamfer=0.08),
+        cyl(0.082, 0.025, "cbc", (0, 0.27, zb + 0.008), material="steel", sides=14, chamfer=0.1),
+        cyl(0.082, 0.025, "cbc", (0, 0.42, zb + 0.008), material="steel", sides=14, chamfer=0.1),
+        box((0.03, 0.46, 0.026), "cbc", (0, 0.52, zb + 0.06), "steel", 0.2),
+        box((0.03, 0.46, 0.026), "cbc", (0, 0.52, zb - 0.045), "steel", 0.2),
+        box((0.04, 0.022, 0.15), "cbc", (0, 0.98, zb + 0.008), "graphite", 0.15),
+        box((0.026, 0.30, 0.056), "cbc", (0, 0.62, zb + 0.008), "teal", 0.2),
+        box((0.045, 0.022, 0.14), "cbc", (0, 0.54, zb + 0.008), "signal", 0.15),
+        box((0.012, 0.03, 0.02), "ccd", (0, 0.04, zb + 0.058), "polymer", 0.1),
+    ]
+    stock = box((0.045, 0.26, 0.15), "cfc", (0, 0.0, zb - 0.02), "graphite", 0.2)
+    shear(stock, 2, 1, -0.1)
+    pad = box((0.05, 0.02, 0.16), "cfc", (0, at(stock, "cbc").y, at(stock, "cbc").z), "signal", 0.2)
+    grip = box((0.04, 0.06, 0.12), "cbu", (0, 0.1, zb - 0.045), "polymer", 0.15)
+    shear(grip, 1, 2, 0.3)
+    return join(parts + [stock, pad, grip], "charge_rifle"), None, 0.95

@@ -541,6 +541,8 @@ RECIPES = {
     "derringer": toy_guns.derringer,
     "drum_shotgun": toy_guns.drum_shotgun,
     "minigun": toy_guns.minigun,
+    "beamer": toy_guns.beamer,
+    "charge_rifle": toy_guns.charge_rifle,
     "rifle": rifle,
     "carbine": carbine,
     "smg": smg,

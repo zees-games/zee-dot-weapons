@@ -555,26 +555,28 @@ static func launcher() -> ZeeWeaponArt:
 ## The slimmest model in the kit. Nothing about it reads as a magazine, so it is the
 ## one that does not have one.
 static func beamer() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.BEAMER, "blaster-h", POSE_RIFLE)
+	var art := _gun(ZeeWeaponIds.BEAMER, "beamer", POSE_RIFLE)
 	art.weight = 1.2
 	# A glowing cell under the body (built in code), dropped and replaced like the charge rifle's.
 	art.magazine_part = &"cell"
-	art.magazine_offset = Vector3(0.0, -0.18, -0.10)
+	art.ejects = false
+	art.magazine_offset = Vector3(0.0, -0.10, 0.0)
 	art.magazine_scale = 1.3
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_CELL
 	return art
 
 
 static func charge_rifle() -> ZeeWeaponArt:
-	var art := _blaster(ZeeWeaponIds.CHARGE_RIFLE, "blaster-d", POSE_HEAVY)
-	art.with_attachment(SCOPE_LARGE_ALT, Vector3(0.0, 0.19, 0.10))
+	var art := _gun(ZeeWeaponIds.CHARGE_RIFLE, "charge_rifle", POSE_HEAVY)
+	art.with_attachment(SCOPE_LARGE_ALT, Vector3(0.0, 0.095, 0.10))
+	art.ejects = false
 	art.weight = 1.5
 	# Aimed through the scope it carries, like the bullpup.
 	art.aim_scoped = true
 	art.aim_zoom = 0.6
 	# A glowing cell under the body, dropped and replaced (built in code: view/zee_reload_parts.gd).
 	art.magazine_part = &"cell"
-	art.magazine_offset = Vector3(0.0, -0.33, -0.15)
+	art.magazine_offset = Vector3(0.0, -0.11, -0.10)
 	art.magazine_scale = 1.5
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_CELL
 	return art
