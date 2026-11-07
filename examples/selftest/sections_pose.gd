@@ -280,7 +280,41 @@ const MAX_HIP_CANT := 12.0
 const THROWN_HIP_WIDTH := Vector2(0.20, 0.351)
 
 
+## Degrees between a hip barrel's line from the muzzle and the point [param zero] metres down the view axis.
+func _bore_miss(art: ZeeWeaponArt, zero: float) -> float:
+	var view := art.view_transform()
+	var forward := art.model_forward.normalized()
+	var muzzle := view * (forward * art.muzzle_distance)
+	var bore := (view.basis * forward).normalized()
+	var to := (Vector3(0.0, 0.0, -zero) - muzzle).normalized()
+	return rad_to_deg(bore.angle_to(to))
+
+
+## A +Z model (a zed gun) is turned at the screen centre at its hip zero like a -Z one: no early return.
+func _hip_converge_any_forward() -> void:
+	_begin("hip convergence for any model forward")
+	var Hold := preload("res://addons/zee_weapons/view/zee_hip_hold.gd")
+	var rules := ZeeAdsRules.load_config()
+	var misses := []
+	for forward: Vector3 in [Vector3.FORWARD, Vector3.BACK]:
+		var art := ZeeWeaponArt.make(&"probe")
+		art.model_forward = forward
+		art.muzzle_distance = 0.5
+		art.view_rotation = Vector3(8.0, -5.0, 12.0)
+		var hip := Hold.sized(art, rules, 0.0)
+		misses.append(_bore_miss(hip, rules.hip_zero_for(art.id)))
+	_check("hip: a -Z model's barrel points at its zero (%.2f degrees)" % misses[0], misses[0] < 1.0)
+	_check("hip: a +Z model's barrel points at its zero too (%.2f degrees)" % misses[1], misses[1] < 1.0)
+	var along_x := ZeeWeaponArt.make(&"probe")
+	along_x.model_forward = Vector3.RIGHT
+	along_x.view_rotation = Vector3(3.0, 4.0, 5.0)
+	_check("hip: a model pointing off the Z axis keeps its written rotation", Hold.sized(along_x, rules, 0.0) == along_x)
+	_end()
+
+
+
 ## What the player sees, measured through a camera, so a check cannot pass while the render is diagonal.
+
 func _view_screen() -> void:
 	_begin("view on screen")
 	var measure := preload("res://tools/view_measure.gd").new()
