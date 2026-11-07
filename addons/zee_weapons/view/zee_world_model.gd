@@ -157,6 +157,8 @@ var _fit_code: int = -1
 
 ## The catalogue [method on_fitted] decodes a replicated fitting against; the arsenal's own.
 var attachments: DotWeaponAttachments = null
+## Where this model gets its meshes, pose factors and documents; a pack with its own art assigns a [ZeeArtProvider] subclass.
+var art_provider: ZeeArtProvider = ZeeArtProvider.new()
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""
 const ChargeFx := preload("zee_charge_fx.gd")
@@ -252,7 +254,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	if not art.has_model():
 		return DotResult.success(null)
 
-	_weapon = ZeeModelCache.instantiate(art.model_path)
+	_weapon = art_provider.instantiate(art.model_path)
 
 	if _weapon == null:
 		return DotResult.fail(
@@ -286,7 +288,7 @@ func on_fitted(code: int) -> void:
 	if code == _fit_code or attachments == null or _id == &"":
 		return
 	_fit_code = code
-	var base := ZeeWeaponPack.catalogue().get_def(_id)
+	var base := art_provider.def_of(_id)
 	if base != null and attachments.code_bits(base) <= DotWeaponNetSync.FITTED_BITS:
 		set_fitting(attachments.decode(base, code))
 
@@ -310,7 +312,7 @@ func muzzle_transform() -> Transform3D:
 	var distance := _art.muzzle_distance
 
 	if distance <= 0.0:
-		distance = ZeeModelCache.muzzle_distance(_art.model_path, _art.model_forward)
+		distance = art_provider.muzzle_distance(_art.model_path, _art.model_forward)
 
 	distance = maxf(distance, float(_dressed.get("reach", 0.0)))
 
@@ -450,10 +452,10 @@ func reload_fraction() -> float:
 
 ## One cycle of the support hand: the weapon's whole reload, or one round of a reload by the round.
 func _cycle_seconds() -> float:
-	var def: DotWeaponDef = ZeeWeaponPack.catalogue().get_def(_id) if _id != &"" else null
+	var def: DotWeaponDef = art_provider.def_of(_id) if _id != &"" else null
 	if def == null or def.reload_ticks <= 0:
 		return 1.5
-	var rate := float(def.authored_tick_rate) if def.authored_tick_rate > 0 else float(ZeeWeaponPack.TICK_RATE)
+	var rate := float(def.authored_tick_rate) if def.authored_tick_rate > 0 else float(art_provider.tick_rate())
 	return clampf(float(def.reload_ticks) / rate, 0.4, 6.0)
 
 
@@ -579,14 +581,14 @@ func _rest() -> Transform3D:
 	if _art == null:
 		return Transform3D.IDENTITY
 	var rest := _art.world_transform()
-	return Transform3D(rest.basis.scaled(Vector3.ONE * ZeeWeaponArtTable.pose_world_factor(_art.pose)), rest.origin)
+	return Transform3D(rest.basis.scaled(Vector3.ONE * art_provider.pose_world_factor(_art.pose)), rest.origin)
 
 
 ## The sprint carry at the current blend: [offset, rotation basis], in the hand's frame, about the grip.
 func _sprint_carry() -> Array:
 	if _art == null or _sprint <= 0.0:
 		return [Vector3.ZERO, Basis.IDENTITY]
-	var base := ZeeWeaponArtTable.sprint_world(_art.pose)
+	var base := art_provider.sprint_world(_art.pose)
 	var offset: Vector3 = _art.sprint_world_offset if _art.sprint_world_offset.is_finite() else base[0]
 	var degrees: Vector3 = _art.sprint_world_rotation if _art.sprint_world_rotation.is_finite() else base[1]
 	degrees *= _sprint
@@ -603,7 +605,7 @@ func _follow_person() -> void:
 	if not person.has_method(&"set_support_grip"):
 		return
 	var two := _art != null and _weapon != null and visible and _weapon.visible and _support_local.is_finite() \
-		and (_art.hands == 2 or (_art.hands == 0 and ZeeWeaponArtTable.pose_two_handed(_art.pose)))
+		and (_art.hands == 2 or (_art.hands == 0 and art_provider.pose_two_handed(_art.pose)))
 	if two:
 		person.call(&"set_support_grip", _support_world())
 		_support_sent = true
