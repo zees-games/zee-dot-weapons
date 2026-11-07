@@ -31,6 +31,8 @@ signal model_ready(id: StringName, weapon: Node3D)
 ## A game's setting (a cvar) that beats the weapon's art and [member scope_arms_hide]; below 0 is off.
 const ChargeFx := preload("zee_charge_fx.gd")
 const BeltFeed := preload("zee_belt_feed.gd")
+## Where this view gets its meshes, pose tables and keys; a pack with its own art assigns a [ZeeArtProvider] subclass.
+var art_provider: ZeeArtProvider = ZeeArtProvider.new()
 var _belt: Node3D = null
 var _charge_fx: Node3D = null
 
@@ -214,10 +216,10 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 	_pose.tunables.draw_keys = art.draw_keys if not art.draw_keys.is_empty() \
 		else ZeeWeaponPose.DRAW_KEYS
 	_pose.tunables.reload_keys = _default_reload_keys()
-	var carry := ZeeWeaponArtTable.sprint_view(art.pose)
+	var carry := art_provider.sprint_view(art.pose)
 	_pose.tunables.sprint_offset = art.sprint_offset if art.sprint_offset.is_finite() else carry[0]
 	_pose.tunables.sprint_rotation = art.sprint_rotation if art.sprint_rotation.is_finite() else carry[1]
-	var bob := ZeeWeaponArtTable.sprint_bob(art.pose)
+	var bob := art_provider.sprint_bob(art.pose)
 	_pose.tunables.sprint_bob = bob.x
 	_pose.tunables.sprint_bob_roll = bob.y
 	_reload_fraction = 0.0
@@ -238,7 +240,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		model_ready.emit(_id, null)
 		return DotResult.success(null)
 
-	_weapon = ZeeModelCache.instantiate(art.model_path)
+	_weapon = art_provider.instantiate(art.model_path)
 
 	if _weapon == null:
 		return DotResult.fail(
@@ -505,7 +507,7 @@ func _end_sequence() -> void:
 
 
 func _default_reload_keys() -> Array:
-	return _art.reload_keys if not _art.reload_keys.is_empty() else ZeeWeaponArtTable.reload_keys(_art.pose)
+	return _art.reload_keys if not _art.reload_keys.is_empty() else art_provider.reload_keys(_art.pose)
 
 
 func _animate_sequence(f: float) -> void:
@@ -694,7 +696,7 @@ func _add_part(path: String, at: Transform3D) -> Node3D:
 	if path == "":
 		return null
 
-	var part := ZeeModelCache.instantiate(path)
+	var part := art_provider.instantiate(path)
 
 	if part == null:
 		return null
@@ -713,7 +715,7 @@ func _measure_muzzle(art: ZeeWeaponArt) -> Vector3:
 	var distance := art.muzzle_distance
 
 	if distance <= 0.0:
-		distance = ZeeModelCache.muzzle_distance(art.model_path, art.model_forward)
+		distance = art_provider.muzzle_distance(art.model_path, art.model_forward)
 
 	distance = maxf(distance, float(_dressed.get("reach", 0.0)))
 	return art.model_forward.normalized() * distance + art.muzzle_offset

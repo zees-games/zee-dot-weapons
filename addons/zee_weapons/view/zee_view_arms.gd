@@ -47,14 +47,16 @@ const ARM_RIGHT := "arm-right"
 ## The sleeve's colour (the forearms). A game hands in its team or the player's colour.
 @export var sleeve_color: Color = Color(0.16, 0.2, 0.15)
 
+## Where the arms get their meshes; a pack with its own art assigns a [ZeeArtProvider] subclass.
+var art_provider: ZeeArtProvider = ZeeArtProvider.new()
+
 ## Cloth and leather detail on the rigged arms (a triplanar bump, tone variation, a rim light). Off is the flat colour.
 @export var arm_detail: bool = true
 
 @export_group("Model")
 
 ## The character the arms come from, for [code]style = &"model"[/code].
-@export_file("*.glb", "*.gltf", "*.tscn", "*.scn") var model_path: String = \
-	ZeeWeaponArtTable.ARMS_MODEL
+@export_file("*.glb", "*.gltf", "*.tscn", "*.scn") var model_path: String = ZeeArtProvider.new().arms_model()
 
 ## The atlas painted onto them. Empty keeps whatever the model shipped with.
 ##
@@ -130,7 +132,7 @@ func build() -> DotResult:
 		# Not vendored, or not the arm this expects: the gloves, quietly (one WARN, once).
 		DotLog.warn(
 			CHANNEL, "no rigged arm model; using the code-built gloves",
-			{"model": ZeeWeaponArtTable.RIGGED_ARMS_MODEL}
+			{"model": art_provider.rigged_arms_model()}
 		)
 		_style_built = &"gloves"
 
@@ -142,7 +144,7 @@ func build() -> DotResult:
 		set_pose(_pose)
 		return DotResult.success(null)
 
-	var model := ZeeModelCache.instantiate(model_path)
+	var model := art_provider.instantiate(model_path)
 
 	if model == null:
 		return DotResult.fail(
@@ -412,12 +414,12 @@ func fit_glove_to(weapon: Node) -> Color:
 
 
 func _build_rigged() -> bool:
-	var path := ZeeWeaponArtTable.RIGGED_ARMS_MODEL
-	if not ResourceLoader.exists(ZeeModelCache.resolve(path)):
+	var path := art_provider.rigged_arms_model()
+	if not art_provider.model_exists(path):
 		return false
 	var parts: Array[ZeeRiggedArm] = []
 	for arm_name in ["arm-right", "arm-left"]:
-		var model := ZeeModelCache.instantiate(path)
+		var model := art_provider.instantiate(path)
 		if model == null:
 			return false
 		var arm := ZeeRiggedArm.new()
