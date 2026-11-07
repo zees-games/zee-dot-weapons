@@ -286,7 +286,8 @@ func _glove() -> void:
 	_check("a pale gun keeps the stock glove", arms.fit_glove_to(pale_gun) == arms.glove_color)
 	arms.glove_contrast = false
 	_check("with glove_contrast off a dark gun keeps the stock glove", arms.fit_glove_to(dark_gun) == arms.glove_color)
-	var mean := ZeeViewArms.mean_of(ZeeViewArms.surface_albedos(dark_gun))
+	var colour := preload("res://addons/zee_weapons/view/zee_glove_colour.gd")
+	var mean: Color = colour.mean_of(colour.surface_albedos(dark_gun))
 	_check("the mean albedo is the material's colour (%.2f)" % mean.r, absf(mean.r - 0.2) < 0.001)
 	_check("the glove contrasts with the dark gun it was picked for",
 		absf(light.get_luminance() - mean.get_luminance()) > absf(base.get_luminance() - mean.get_luminance()))
