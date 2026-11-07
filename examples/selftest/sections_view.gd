@@ -659,10 +659,41 @@ func _charge_ball() -> void:
 	var got := ZeeWeaponNet.apply(held, world, 0)
 	_check("a watcher's copy shows the ball from the snapshot", world.charge_fx() != null and absf(world._last_charge - 8.0 / ZeeWeaponNet.CHARGE_MAX) < 0.01)
 	_check("the charge fits its field (%d bits)" % ZeeWeaponNet.CHARGE_BITS, ZeeWeaponNet.charge_specs()[0]["bits"] == ZeeWeaponNet.CHARGE_BITS and got != null)
+	_check("without held fields the world model stays unheld", not world.held_guard and world.held_draw == 0.0 and world.held_swing_style == 0)
+	ZeeWeaponNet.apply(_HeldSource.new(), world, 0)
+	_check("a watcher's copy gets guard, draw and swing style from the snapshot", world.held_guard and absf(world.held_draw - 10.0 / ZeeWeaponNet.DRAW_MAX) < 0.01 and world.held_swing_style == 5)
+	var hs := ZeeWeaponNet.held_specs()
+	_check("held specs: guard 1, draw %d, style %d bits" % [ZeeWeaponNet.DRAW_BITS, ZeeWeaponNet.SWING_STYLE_BITS], hs.size() == 3 and hs[0]["bits"] == 1 and hs[1]["bits"] == ZeeWeaponNet.DRAW_BITS and hs[2]["bits"] == ZeeWeaponNet.SWING_STYLE_BITS)
+	var tgt := _HeldSource.new()
+	tgt.net_guard = false
+	tgt.net_draw = 0
+	tgt.net_swing_style = 0
+	ZeeWeaponNet.pull(_HeldRig.new(), tgt)
+	_check("pull copies guard, draw and swing style", tgt.net_guard and tgt.net_draw == ZeeWeaponNet.DRAW_MAX and tgt.net_swing_style == 3)
 	view.queue_free()
 	fx.queue_free()
 	world.queue_free()
 	_end()
+
+
+class _HeldSource:
+	var net_fire_seq := 0
+	var net_fire_kind := 0
+	var net_switching := false
+	var net_reloading := false
+	var net_guard := true
+	var net_draw := 10
+	var net_swing_style := 5
+
+
+class _HeldRig:
+	var arsenal = null
+	var fire_seq := 0
+	var fire_kind := 0
+	var charge_shown := 0.0
+	var guarding := true
+	var draw_shown := 1.0
+	var swing_style := 3
 
 
 class _ChargeSource:
