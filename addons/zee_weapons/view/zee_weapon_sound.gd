@@ -245,6 +245,9 @@ static var _overrides: Dictionary = {}
 ## Another pack's weapons, by id -> class ([method set_class]).
 static var _classes: Dictionary = {}
 
+## Where the built-in id -> class table comes from; a pack with its own art assigns a [ZeeArtProvider] subclass. Static, like the rest.
+static var art_provider: ZeeArtProvider = null
+
 
 ## Says which class [param id] sounds like: how a second pack's weapons get a report of
 ## their own instead of the fallback's.
@@ -294,8 +297,9 @@ static func class_for(id: StringName, kind: StringName) -> StringName:
 	if _classes.has(id):
 		return _classes[id]
 
-	if WEAPONS.has(id):
-		return WEAPONS[id]
+	var provided: StringName = (art_provider if art_provider != null else ZeeArtProvider.new()).sound_class(id)
+	if provided != &"":
+		return provided
 
 	return LAUNCHER if kind == DotWeaponOutcome.KIND_SPAWN else RIFLE
 
