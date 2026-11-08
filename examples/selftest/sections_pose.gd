@@ -313,6 +313,29 @@ func _hip_converge_any_forward() -> void:
 
 
 
+## Every thrown weapon the table ships is drawn at the rules' thrown_span; null rules leave the art alone.
+func _thrown_span_sized() -> void:
+	_begin("thrown weapons sized by span")
+	var Hold := preload("res://addons/zee_weapons/view/zee_hip_hold.gd")
+	var rules := ZeeAdsRules.load_config()
+	var seen := 0
+	for id in ZeeWeaponIds.all():
+		var art := ZeeWeaponArtTable.get_art(id)
+		if art == null or art.pose != ZeeWeaponArtTable.POSE_THROWN or art.model_path == "":
+			continue
+		seen += 1
+		var size := ZeeModelCache.bounds(art.model_path).size
+		var extent := maxf(size.x, maxf(size.y, size.z))
+		var drawn := Hold.sized(art, rules, 0.0)
+		_check("thrown %s: longest side drawn at the span" % id,
+			extent > 0.0 and is_equal_approx(extent * drawn.view_scale, rules.thrown_span_for(id)))
+	_check("the table ships thrown weapons", seen >= 1)
+	var gun := ZeeWeaponArt.make(&"probe")
+	gun.view_scale = 2.0
+	_check("null rules keep a thrown art as it is", Hold.sized_thrown(gun, null) == gun)
+	_end()
+
+
 ## What the player sees, measured through a camera, so a check cannot pass while the render is diagonal.
 
 func _view_screen() -> void:
