@@ -27,6 +27,11 @@ bloom_max = 2.0
 bloom_recovery = 0.0625
 recoil_pitch = 0.12
 recoil_yaw = 0.1
+muzzle_velocity = 850.0
+falloff_start = 30.0
+falloff_min = 0.5
+penetration = 0.3
+tracer_interval = 2
 
 [resource]
 script = ExtResource("1_pg8lc")

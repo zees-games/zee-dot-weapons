@@ -25,6 +25,11 @@ bloom = 0.2
 bloom_max = 2.0
 recoil_pitch = 0.55
 recoil_yaw = 0.12
+muzzle_velocity = 820.0
+falloff_start = 40.0
+falloff_min = 0.6
+penetration = 0.4
+tracer_interval = 3
 
 [resource]
 script = ExtResource("1_ap5hp")

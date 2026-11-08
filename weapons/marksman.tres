@@ -26,6 +26,13 @@ spread_crouched = 0.3
 bloom = 1.4
 bloom_max = 6.0
 recoil_pitch = 2.0
+muzzle_velocity = 900.0
+drag = 0.0003
+falloff_start = 120.0
+falloff_min = 0.75
+penetration = 0.8
+tracer_interval = 3
+bullet_mass = 0.0095
 
 [resource]
 script = ExtResource("1_rwo0m")

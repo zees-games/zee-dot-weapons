@@ -28,6 +28,13 @@ bloom_max = 4.5
 bloom_recovery = 0.140625
 recoil_pitch = 0.26
 recoil_yaw = 0.14
+muzzle_velocity = 400.0
+drag = 0.0008
+falloff_start = 20.0
+falloff_min = 0.5
+penetration = 0.15
+tracer_interval = 5
+bullet_mass = 0.006
 
 [resource]
 script = ExtResource("1_lvfa7")

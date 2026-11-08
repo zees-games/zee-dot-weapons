@@ -27,6 +27,11 @@ bloom_max = 4.2
 bloom_recovery = 0.140625
 recoil_pitch = 0.34
 recoil_yaw = 0.14
+muzzle_velocity = 800.0
+falloff_start = 40.0
+falloff_min = 0.6
+penetration = 0.35
+tracer_interval = 4
 
 [resource]
 script = ExtResource("1_4m5yp")

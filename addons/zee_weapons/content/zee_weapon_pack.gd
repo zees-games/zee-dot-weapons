@@ -290,6 +290,7 @@ static func pistol(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.16)
 
 	var b := _ballistics(t, 20.0)
+	flight(b, 380, 0.0009, 25, 0.6, 0.15, 0, 0.008)
 	b.spread = 0.35
 	b.spread_moving = 1.5
 	b.bloom = 0.3
@@ -317,6 +318,7 @@ static func revolver(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.22)
 
 	var b := _ballistics(t, 46.0)
+	flight(b, 430, 0.0008, 30, 0.55, 0.25, 0, 0.01)
 	b.spread = 0.2
 	b.spread_moving = 2.4
 	b.bloom = 1.1
@@ -348,6 +350,7 @@ static func machine_pistol(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.18)
 
 	var b := _ballistics(t, 13.0)
+	flight(b, 360, 0.0009, 15, 0.5, 0.1, 0, 0.006)
 	b.spread = 0.9
 	b.spread_moving = 3.2
 	b.spread_airborne = 6.0
@@ -405,6 +408,7 @@ static func smg(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.2)
 
 	var b := _ballistics(t, 16.0)
+	flight(b, 400, 0.0008, 20, 0.5, 0.15, 5, 0.006)
 	b.spread = 0.7
 	b.spread_moving = 2.4
 	b.spread_airborne = 5.0
@@ -435,6 +439,7 @@ static func carbine(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.22)
 
 	var b := _ballistics(t, 21.0)
+	flight(b, 800, 0.0005, 40, 0.6, 0.35, 4, 0.004)
 	b.spread = 0.5
 	b.spread_moving = 2.1
 	b.spread_airborne = 4.5
@@ -498,6 +503,7 @@ static func bullpup(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.26)
 
 	var b := _ballistics(t, 20.0)
+	flight(b, 850, 0.0005, 40, 0.6, 0.4, 4, 0.004)
 	b.spread = 0.5
 	# The whole weapon is in this line: barely wider moving than standing.
 	b.spread_moving = 1.0
@@ -527,6 +533,7 @@ static func battle_rifle(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.26)
 
 	var b := _ballistics(t, 36.0)
+	flight(b, 850, 0.0004, 60, 0.65, 0.6, 4, 0.0095)
 	b.spread = 0.25
 	b.spread_moving = 2.6
 	b.spread_crouched = 0.4
@@ -561,6 +568,7 @@ static func burst_rifle(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.22)
 
 	var b := _ballistics(t, 24.0)
+	flight(b, 820, 0.0005, 40, 0.6, 0.4, 3, 0.004)
 	b.spread = 0.3
 	b.spread_moving = 1.8
 	b.bloom = 0.2
@@ -654,6 +662,7 @@ static func marksman(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.3)
 
 	var b := _ballistics(t, 58.0)
+	flight(b, 900, 0.0003, 120, 0.75, 0.8, 3, 0.0095)
 	b.spread = 0.08
 	# Punished hard for moving, which is what separates it from the battle rifle.
 	b.spread_moving = 4.5
@@ -687,6 +696,7 @@ static func sniper(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.5)
 
 	var b := _ballistics(t, 118.0)
+	flight(b, 950, 0.00025, 250, 0.85, 1.2, 1, 0.0115)
 	b.spread = 0.0
 	b.spread_moving = 8.0
 	b.spread_airborne = 14.0
@@ -726,6 +736,7 @@ static func minigun(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.8)
 
 	var b := _ballistics(t, 11.0)
+	flight(b, 850, 0.0005, 30, 0.5, 0.3, 2, 0.004)
 	b.spread = 2.4
 	b.spread_moving = 4.5
 	b.spread_airborne = 7.0
@@ -846,6 +857,7 @@ static func charge_rifle(t: Dictionary = {}) -> DotWeaponDef:
 	def.holster_ticks = sec_ticks(0.36)
 
 	var b := _ballistics(t, 105.0, ZeeWeaponIds.DAMAGE_ENERGY)
+	flight(b, 1200, 0.0002, 150, 0.8, 1.0, 1, 0.005)
 	# A third of a charge is worth a third of the damage, so holding longer is always
 	# the better trade and the only question is whether there is time.
 	b.min_charge_damage = 0.33
