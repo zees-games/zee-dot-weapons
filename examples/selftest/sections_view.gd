@@ -171,6 +171,12 @@ func _effects() -> void:
 		fx != null and (int(fx.describe()["voices"]) >= 1 or bool(fx.describe()["layered"]))
 	)
 
+	if fx != null:
+		fx.prewarm_voices()
+		var warmed := int(fx.describe()["voices"])
+		fx.prewarm_voices()
+		_check("prewarm_voices builds every report voice once (%d)" % warmed, warmed == ZeeShotFx.MAX_VOICES and int(fx.describe()["voices"]) == warmed)
+
 	_check("a real gun's shot throws a case (%d)" % fx.shell_count(), fx.shell_count() >= 1)
 
 	_effects_budgets()
