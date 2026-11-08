@@ -39,7 +39,9 @@ ads:
     # the gun nears a wall: reach multiplies the drawn length (1 = the gun's real length), margin is the gap kept (m),
     # stiffness/damping the spring, push/nudge the back and up/sideways strength, max the deepest pull (m),
     # floor_look the degrees you must look down before the floor counts (0 = always), lean the strength of the tilt away from
-    # where the gun meets the wall, spread (m) how far around the muzzle that is sampled, lean_rate (1/s) how fast it eases
+    # where the gun meets the wall, spread (m) how far around the muzzle that is sampled, lean_rate (1/s) how fast it eases,
+    # cast (m) the radius of the sphere swept along the gun (0 = thin rays only), impulse how far walking into the wall and
+    # strafing along it shove the gun (0 none, 1 the shipped amount)
     wall_reach: 1.0
     wall_margin: 0.03
     wall_stiffness: 160.0
@@ -51,6 +53,8 @@ ads:
     wall_lean: 1.0
     wall_spread: 0.1
     wall_lean_rate: 10.0
+    wall_cast: 0.08
+    wall_impulse: 1.0
     # strafe sway per gun: tilt, yaw, aimed and response multipliers; -1 (the default) leaves the server's mp_vm_strafe_* value in charge
     strafe_tilt: -1
     strafe_yaw: -1
