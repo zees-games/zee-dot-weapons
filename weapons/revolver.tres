@@ -24,6 +24,12 @@ spread_moving = 2.4
 bloom = 1.1
 recoil_pitch = 2.4
 recoil_yaw = 0.5
+muzzle_velocity = 430.0
+drag = 0.0008
+falloff_start = 30.0
+falloff_min = 0.55
+penetration = 0.25
+bullet_mass = 0.01
 
 [resource]
 script = ExtResource("1_vjb0u")

@@ -150,3 +150,19 @@ static func _ballistics(
 		t if not t.is_empty() else ZeeWeaponDamage.table(), type
 	)
 	return b
+
+
+## Flight of a simulated bullet: muzzle velocity (m/s), drag, damage falloff start (m) and
+## floor, penetration (m of soft material), tracer interval and bullet mass (kg). A game that
+## leaves sv_ballistics off still sees hitscan; this only fills the profile fields.
+static func flight(
+	b: DotWeaponBallistics, velocity: float, drag: float, falloff_start: float,
+	falloff_min: float, penetration: float, tracer: int, mass: float
+) -> void:
+	b.muzzle_velocity = velocity
+	b.drag = drag
+	b.falloff_start = falloff_start
+	b.falloff_min = falloff_min
+	b.penetration = penetration
+	b.tracer_interval = tracer
+	b.bullet_mass = mass

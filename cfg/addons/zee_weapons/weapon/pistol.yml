@@ -63,15 +63,15 @@ extra:
     recoil_crouch: -1.0
     recoil_move: -1.0
     recoil_camera: -1.0
-    muzzle_velocity: 0.0
+    muzzle_velocity: 380.0
     bullet_gravity: 1.0
-    drag: 0.0005
-    falloff_start: 0.0
-    falloff_min: 1.0
-    penetration: 0.0
+    drag: 0.0009
+    falloff_start: 25.0
+    falloff_min: 0.6
+    penetration: 0.15
     ricochet_chance: 0.0
     tracer_interval: 0
-    bullet_mass: 0.004
+    bullet_mass: 0.008
     splash_radius: 0.0
     splash_damage: 0.0
     splash_hurts_owner: true

@@ -27,6 +27,12 @@ bloom_max = 5.5
 bloom_recovery = 0.15625
 recoil_pitch = 0.3
 recoil_yaw = 0.18
+muzzle_velocity = 360.0
+drag = 0.0009
+falloff_start = 15.0
+falloff_min = 0.5
+penetration = 0.1
+bullet_mass = 0.006
 
 [resource]
 script = ExtResource("1_lwh58")
