@@ -24,6 +24,13 @@ spread_moving = 8.0
 spread_airborne = 14.0
 spread_crouched = 0.0
 recoil_pitch = 4.0
+muzzle_velocity = 950.0
+drag = 0.00025
+falloff_start = 250.0
+falloff_min = 0.85
+penetration = 1.2
+tracer_interval = 1
+bullet_mass = 0.0115
 
 [resource]
 script = ExtResource("1_i7fen")

@@ -23,6 +23,12 @@ spread_moving = 1.5
 bloom = 0.3
 bloom_max = 2.6
 recoil_pitch = 0.5
+muzzle_velocity = 380.0
+drag = 0.0009
+falloff_start = 25.0
+falloff_min = 0.6
+penetration = 0.15
+bullet_mass = 0.008
 
 [resource]
 script = ExtResource("1_njcfc")

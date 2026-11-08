@@ -25,6 +25,13 @@ bloom = 0.7
 bloom_max = 4.0
 recoil_pitch = 1.1
 recoil_yaw = 0.2
+muzzle_velocity = 850.0
+drag = 0.0004
+falloff_start = 60.0
+falloff_min = 0.65
+penetration = 0.6
+tracer_interval = 4
+bullet_mass = 0.0095
 
 [resource]
 script = ExtResource("1_cq8e1")
