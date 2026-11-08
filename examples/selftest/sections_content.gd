@@ -695,3 +695,24 @@ func _bash() -> void:
 	)
 
 	_end()
+
+
+## Pack ballistics: rifle-class weapons carry a muzzle velocity and drop grows with range;
+## melee and the shotgun stay hitscan (velocity 0) until a game opts in.
+func _pack_ballistics() -> void:
+	_begin("pack ballistics")
+
+	var table := ZeeWeaponPack.table()
+	for id in [&"sniper", &"battle_rifle", &"pistol"]:
+		var b := table[id].tuning as DotWeaponBallistics
+		_check("%s is simulated" % id, DotWeaponTrajectory.is_simulated(b))
+		var d100 := float(DotWeaponTrajectory.drop_at(b, 100.0)["drop"])
+		var d300 := float(DotWeaponTrajectory.drop_at(b, 300.0)["drop"])
+		_check("%s drops more at 300 m than 100 m" % id, d100 > 0.0 and d300 > d100 * 3.0)
+		_check("%s 100 m drop is under 2 m" % id, d100 < 2.0)
+
+	for id in [&"shotgun", &"knife", &"fists"]:
+		var t: Variant = table[id].tuning
+		_check("%s stays hitscan" % id, not (t is DotWeaponBallistics) or not DotWeaponTrajectory.is_simulated(t))
+
+	_end()

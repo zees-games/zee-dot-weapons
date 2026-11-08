@@ -24,6 +24,11 @@ bloom = 0.3
 bloom_max = 4.0
 recoil_pitch = 0.32
 recoil_yaw = 0.2
+muzzle_velocity = 850.0
+falloff_start = 40.0
+falloff_min = 0.6
+penetration = 0.4
+tracer_interval = 4
 
 [resource]
 script = ExtResource("1_hf61x")
