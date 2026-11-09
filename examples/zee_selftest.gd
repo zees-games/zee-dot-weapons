@@ -233,6 +233,7 @@ func _view_models() -> void:
 func _aim() -> void:
 	_begin("aiming down")
 	_aim_lens()
+	_scope_modes()
 	var aimable := 0
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
 		if art.aim_enabled:
@@ -258,6 +259,8 @@ func _aim() -> void:
 	_check("and zooms to x0.3 (%.3f)" % view.aim_fov_scale(),
 		absf(view.aim_fov_scale() - 0.3) < 0.001)
 	_check("and looks through its scope", view.is_scoped())
+	view.scope_mode = ZeeViewModel.SCOPE_FULL
+	view._process(0.02)
 	_check("which hides the weapon: the scope is the view", not animated.visible)
 
 	view.aim(false)
@@ -340,6 +343,44 @@ func _aim() -> void:
 	overlay.queue_free()
 	view.queue_free()
 	_end()
+
+
+func _scope_modes() -> void:
+	var view := ZeeViewModel.new()
+	view.show_arms = false
+	add_child(view)
+	view.equip(ZeeWeaponArtTable.get_art(&"sniper"))
+	_check("the scope lens is the default view", view.scope_mode == ZeeViewModel.SCOPE_LENS)
+	view.aim(true)
+	for _i in 80:
+		view.drive(Vector2.ZERO, 0.0, true)
+		view._process(0.02)
+	_check("lens: the camera keeps the hip field of view", is_equal_approx(view.view_fov_scale(), 1.0))
+	_check("lens: the scope still zooms", view.aim_fov_scale() < 0.9)
+	_check("lens: the gun stays drawn behind the lens", view._animated.visible)
+	_check("standing, the picture is solid", view.scope_clear() < 0.01)
+	view.drive(Vector2.ZERO, 6.0, true)
+	view._process(0.02)
+	_check("running, the picture goes part clear", view.scope_clear() > 0.4 and view.scope_clear() < 1.0)
+	view.scope_mode = ZeeViewModel.SCOPE_FULL
+	view._process(0.02)
+	_check("full: the camera takes the whole zoom", is_equal_approx(view.view_fov_scale(), view.aim_fov_scale()))
+	_check("full: the gun is hidden behind the scope", not view._animated.visible)
+	var rules := ZeeAdsRules.new()
+	_check("no server rule: the client chooses, a wild value is clamped",
+		rules.resolve_scope_mode(&"sniper", 1) == 1 and rules.resolve_scope_mode(&"sniper", 9) == 2)
+	var _ok := rules.set_value(&"", "scope_mode", 2)
+	var client := ZeeAdsRules.new()
+	_check("the server's pin travels on the wire and wins",
+		client.adopt_wire(rules.to_wire()) and client.resolve_scope_mode(&"sniper", 1) == 2)
+	view.ads_rules = rules
+	_check("the view model applies the server's pin", view.resolve_scope_mode(1) == 2)
+	var overlay := ZeeScopeOverlay.new()
+	add_child(overlay)
+	overlay.follow(view)
+	_check("the shared overlay takes mode from the view", overlay.mode == ZeeViewModel.SCOPE_FULL)
+	overlay.queue_free()
+	view.queue_free()
 
 
 func _aim_lens() -> void:

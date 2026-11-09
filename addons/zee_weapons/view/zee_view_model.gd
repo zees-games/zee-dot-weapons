@@ -598,9 +598,9 @@ func advance(delta: float) -> void:
 	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
 	# a game's own arms (arms_ref) may live anywhere, so they are hidden by name too.
 	var scoped := is_scoped()
-	_animated.visible = not scoped
+	_animated.visible = scope_is_lens() or not scoped
 	if _arms != null:
-		_arms.visible = not (scoped or arms_hidden_by_scope())
+		_arms.visible = scope_is_lens() or not (scoped or arms_hidden_by_scope())
 
 
 ## The scale that draws the hands at [member hands_fov]. See there.
@@ -622,7 +622,7 @@ func scope_arms_hide_at() -> float:
 
 ## Whether a scoped weapon's arms are hidden: from [method scope_arms_hide_at] of the aim-in on.
 func arms_hidden_by_scope() -> bool:
-	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide_at()
+	return not scope_is_lens() and _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide_at()
 
 
 # --- Internals --------------------------------------------------------------
