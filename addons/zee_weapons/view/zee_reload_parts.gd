@@ -9,7 +9,7 @@ extends RefCounted
 ## in the hand. A part built in code arrives with the addon. The shapes and sizes were drawn and
 ## looked at in Blender first (the model-3d workflow); these are the same primitives.
 ##
-## Preloaded by path (no `class_name`), as `zee_iron_sight.gd` is: a new global name would need a
+## Preloaded by path (no `class_name`), as dot-weapon's `dot_weapon_iron_sight.gd` is: a new global name would need a
 ## re-import in every consumer before any of them parsed.
 ##
 ## Both stand on their base, origin at the middle of the bottom face, +Y up, the way the kit's

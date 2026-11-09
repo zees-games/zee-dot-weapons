@@ -19,8 +19,6 @@ addons/zee_weapons/runtime/zee_weapon_input.gd::banner	3
 addons/zee_weapons/runtime/zee_weapon_input.gd::long_block	6
 addons/zee_weapons/tools/zee_art_sync.gd::long_block	1
 addons/zee_weapons/tools/zee_def_export.gd::long_block	1
-addons/zee_weapons/view/zee_iron_sight.gd::banner	2
-addons/zee_weapons/view/zee_iron_sight.gd::long_block	6
 addons/zee_weapons/view/zee_reload_parts.gd::long_block	2
 addons/zee_weapons/view/zee_rigged_arm.gd::long_block	2
 addons/zee_weapons/view/zee_scope_overlay.gd::long_block	1

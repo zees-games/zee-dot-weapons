@@ -2,7 +2,7 @@ extends RefCounted
 
 ## Where a weapon's hands go, measured from its own mesh. No `class_name`: [ZeeViewModel] preloads it by path.
 
-const IronSight := preload("zee_iron_sight.gd")
+const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
 
 ## How far above the body's underside a hand's centre may sit, as a fraction of the gun's length.
 const REACH := 0.06

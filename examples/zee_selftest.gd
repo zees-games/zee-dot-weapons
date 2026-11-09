@@ -367,7 +367,7 @@ func _aim_lens() -> void:
 func _aim_marked_sights() -> void:
 	# A model with real sights marks their line with two nodes, and is aimed along those
 	# instead of a measured line with a ring and a notch built over its own sights.
-	var sight_script := load("res://addons/zee_weapons/view/zee_iron_sight.gd")
+	var sight_script := load("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
 	var marked_gun := Node3D.new()
 	var body := MeshInstance3D.new()
 	var box := BoxMesh.new()
@@ -523,7 +523,7 @@ func _aim_cut() -> void:
 
 
 func _hits(node: Node3D, from: Vector3, to: Vector3) -> bool:
-	for tri: Dictionary in load("res://addons/zee_weapons/view/zee_iron_sight.gd").triangles_of(node, node):
+	for tri: Dictionary in load("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd").triangles_of(node, node):
 		if Geometry3D.segment_intersects_triangle(from, to, tri.a, tri.b, tri.c) != null:
 			return true
 	return false
