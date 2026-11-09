@@ -21,7 +21,7 @@ var _fitting: DotWeaponFitting = null
 var _dressed: Dictionary = {}
 
 ## The iron sight's line, measured at equip in the holder's (model) space: `rear` and `front`
-## on the line, or empty when the weapon aims at its written aim_offset. See zee_iron_sight.gd.
+## on the line, or empty when the weapon aims at its written aim_offset. See dot_weapon_iron_sight.gd.
 var _sight_line: Dictionary = {}
 
 ## The holder's transform at full aim when there is a sight line: the line through the eye.

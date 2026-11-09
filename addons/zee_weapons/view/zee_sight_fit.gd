@@ -3,7 +3,7 @@ extends RefCounted
 ## Which sight a weapon aims down and the aim hold that puts it through the eye: the model's own (read off its mesh),
 ## its marked one, or the built ring and post. No `class_name`: [ZeeViewModel] preloads it by path.
 
-const IronSight := preload("zee_iron_sight.gd")
+const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
 const OwnSight := preload("zee_own_sight.gd")
 const Cut := preload("zee_sight_cut.gd")
 

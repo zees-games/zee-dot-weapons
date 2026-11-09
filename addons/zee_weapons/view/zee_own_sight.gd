@@ -1,9 +1,9 @@
 extends RefCounted
 
 ## The sight a model was made with, read off its mesh, so the eye looks over the model's own notch or through its own aperture onto its own post.
-## No `class_name`: preloaded by path, as zee_iron_sight.gd is. The mesh is sliced along its centre line and swept from the top down.
+## No `class_name`: preloaded by path, as dot_weapon_iron_sight.gd is. The mesh is sliced along its centre line and swept from the top down.
 
-const IronSight := preload("zee_iron_sight.gd")
+const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
 
 ## Where the gun's front part starts, as a fraction of its length: the first thing hit from behind past it is a front post.
 const FRONT_FROM := 0.55

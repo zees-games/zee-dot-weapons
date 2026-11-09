@@ -9,7 +9,7 @@ const SIDES := 16
 ## How far short of the front post's back face the cut stops, as a share of its distance from the eye.
 const POST_CLEAR := 0.03
 
-const IronSight := preload("zee_iron_sight.gd")
+const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
 
 const CHANNEL := "zee.sightcut"
 

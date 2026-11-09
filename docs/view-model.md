@@ -97,7 +97,7 @@ Server side the rig scales spread and bloom while the command holds `ads_button`
 
 **The picture is a sight on the crosshair with the gun's top running away below it.** Aim was one written place for every blaster (`aim_offset` 0 / -0.135 / -0.46, straight): the eye level with the middle of the gun's back, so the screen showed the pale rear face of the gun as a block under the crosshair. No single place can be right for eighteen shapes, and no blaster in the kit has a readable iron sight (they are toys: fins and drums).
 
-So `view/zee_iron_sight.gd` measures and builds one per gun at equip, for every weapon with `aim_enabled`, `iron_sight` and not `aim_scoped`:
+So dot-weapon `view/dot_weapon_iron_sight.gd` measures and builds one per gun at equip, for every weapon with `aim_enabled`, `iron_sight` and not `aim_scoped`:
 
 - **Measured by casting straight down onto the mesh** at two stations along the barrel, 35% from the back (behind the grip) and 88% (short of a brake), on the centre line, or a little either side when the middle is a gap (the flamethrower's tank and barrel). Not from the bounds, whose top is a fin or a drum somewhere else, and not from a slice of vertices, which on these long low-poly faces is often empty. The line's height clears the highest top between the stations.
 - **Built from boxes in the gun's own colours**: each vertex carries the UV of the face the part stands on, with that face's material, so a sight is the colour of the metal under it and lit like it. A ring of sixteen segments round a post at the front, its centre on the line; a notch at the rear.

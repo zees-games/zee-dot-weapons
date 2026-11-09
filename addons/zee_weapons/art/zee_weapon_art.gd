@@ -107,7 +107,7 @@ extends Resource
 @export var aim_rotation: Vector3 = Vector3.ZERO
 
 ## Whether aiming looks along an iron sight measured from the mesh and built on it (a notch
-## at the rear, a ring round a post at the front; see `view/zee_iron_sight.gd`). When the
+## at the rear, a ring round a post at the front; see dot-weapon `view/dot_weapon_iron_sight.gd`). When the
 ## view model can measure one, it replaces [member aim_offset] and [member aim_rotation]:
 ## the line through the two sights goes through the eye, so the front sight sits on the
 ## crosshair and the gun's top runs away below it. Off, or on a scoped weapon, or with no
