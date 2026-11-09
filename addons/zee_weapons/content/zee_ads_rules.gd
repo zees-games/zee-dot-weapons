@@ -5,6 +5,8 @@ extends Resource
 ## Spread and move speed apply in [ZeeWeaponRig] from the command's aim bit (server and prediction alike); time, zoom, sway and toggle are the view model's.
 ## Layered through [DotAddonConfig] (`cfg/addons/zee_weapons/*.yml`, env, argv); shape: `ads: {default: {zoom: 0.0}, weapons: {sniper: {zoom: 0.25}}}`.
 
+const ScopeView := preload("res://addons/dot_weapon/view/dot_weapon_scope_view.gd")
+
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
 const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "recoil_multiplier", "quickscope_fire_min", "scope_mode"]
@@ -219,7 +221,7 @@ func scope_mode_for(id: StringName) -> int:
 ## The mode a client gets: the server's when it sets one, else [param wanted], clamped to 1 or 2.
 func resolve_scope_mode(id: StringName, wanted: int) -> int:
 	var forced := scope_mode_for(id)
-	return forced if forced > 0 else clampi(wanted, 1, 2)
+	return ScopeView.resolve(wanted, forced)
 
 
 ## Aim-in progress at which a scope's black surround starts to fade in; it is full at 1.
