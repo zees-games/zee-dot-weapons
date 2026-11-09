@@ -7,7 +7,7 @@ extends Resource
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
-const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "recoil_multiplier", "quickscope_fire_min"]
+const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_multiplier", "recoil_multiplier", "quickscope_fire_min", "scope_mode"]
 
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
@@ -29,6 +29,7 @@ const SPECS := {
 	"sway_multiplier": {"default": 0.5, "min": 0.0, "max": 1.0},
 	"toggle": {"default": false},
 	"quickscope_fire_min": {"default": 0.0, "min": 0.0, "max": 1.0},
+	"scope_mode": {"default": 0.0, "min": 0.0, "max": 2.0},
 	"scope_fade_start": {"default": 0.6, "min": 0.0, "max": 0.99},
 	"scope_lens_min": {"default": 0.3, "min": 0.05, "max": 1.0},
 	"view_scale": {"default": 2.0, "min": 0.5, "max": 4.0},
@@ -208,6 +209,17 @@ func view_scale_for(id: StringName) -> float:
 ## How far into the aim-in (0 to 1) the weapon may fire: 0 fires at any moment (a quick scope), 1 only once fully aimed.
 func quickscope_fire_min_for(id: StringName) -> float:
 	return float(value_for(id, "quickscope_fire_min"))
+
+
+## The scope view the server restricts clients to: 0 their own choice, 1 the lens on screen, 2 the full-screen scope.
+func scope_mode_for(id: StringName) -> int:
+	return int(value_for(id, "scope_mode"))
+
+
+## The mode a client gets: the server's when it sets one, else [param wanted], clamped to 1 or 2.
+func resolve_scope_mode(id: StringName, wanted: int) -> int:
+	var forced := scope_mode_for(id)
+	return forced if forced > 0 else clampi(wanted, 1, 2)
 
 
 ## Aim-in progress at which a scope's black surround starts to fade in; it is full at 1.

@@ -44,6 +44,42 @@ func flash_scale() -> float:
 	return clampf(aim_fov_scale(), 0.1, 1.0) if is_scoped() else 1.0
 
 
+## The scope views: the scope as a lens on a normal screen, and the scope filling it.
+const SCOPE_LENS := 1
+const SCOPE_FULL := 2
+
+## The scope view the player chose (a game sets it from its cvar, through [method resolve_scope_mode]).
+var scope_mode: int = SCOPE_LENS
+
+## How much of the scope's picture goes clear at a walk (0 keeps it solid at any speed), and the speed in m/s that clears all of it.
+var scope_walk_clear: float = 0.55
+var scope_walk_speed: float = 5.0
+
+
+## The scope view the player [param wanted], or the one the server's ADS rules pin for this weapon.
+func resolve_scope_mode(wanted: int) -> int:
+	if ads_rules == null or _art == null:
+		return clampi(wanted, 1, 2)
+	return ads_rules.resolve_scope_mode(_art.id, wanted)
+
+
+## The scope as a lens: the camera stays at the hip's field of view and the overlay's own camera shows the zoom.
+func scope_is_lens() -> bool:
+	return scope_mode == SCOPE_LENS and has_scope()
+
+
+## The field-of-view multiplier the main camera takes: [method aim_fov_scale], or 1 with the scope as a lens, which zooms itself.
+func view_fov_scale() -> float:
+	return 1.0 if scope_is_lens() else aim_fov_scale()
+
+
+## How much of the scope's picture is clear because the player is moving: 0 standing, up to [member scope_walk_clear].
+func scope_clear() -> float:
+	if not has_scope() or scope_walk_speed <= 0.0:
+		return 0.0
+	return scope_walk_clear * smoothstep(0.3, scope_walk_speed, _speed)
+
+
 ## The field-of-view multiplier this frame: 1 at the hip, the zoom at full aim; the game applies it (`DotFpsView.external_fov_scale`).
 func aim_fov_scale() -> float:
 	if _art == null:
