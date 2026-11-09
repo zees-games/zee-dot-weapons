@@ -625,6 +625,11 @@ func _sheet_wall(share: float, kind: String) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.55, 0.5, 0.42)
 	mesh.material_override = mat
+	# `--wall-unseen`: the wall still pushes the gun, but is not drawn. A sheet is read back from the
+	# root viewport, where the wall overlay's SubViewport lags or is missing on the software
+	# renderer, so the drawn wall hides gun the player would see over it; unseen, the frame
+	# shows the whole pose and any part cut by the near plane.
+	mesh.visible = not OS.get_cmdline_user_args().has("--wall-unseen")
 	_sheet_wall_body.add_child(mesh)
 	cam.add_child(_sheet_wall_body)
 	_sheet_wall_body.position = at

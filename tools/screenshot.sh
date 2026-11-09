@@ -74,6 +74,10 @@ while [ $# -gt 0 ]; do
         --reloads) # optional comma list of fractions; a leading digit tells it from a weapon id
             if [[ "${2:-}" =~ ^[0-9] ]]; then EXTRA="$EXTRA --reloads $2"; shift 2
             else EXTRA="$EXTRA --reloads 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"; shift; fi ;;
+        --wallsheet) EXTRA="$EXTRA --wallsheet"; shift ;;
+        --wall-unseen) EXTRA="$EXTRA --wall-unseen"; shift ;;   # wall sheet with the wall not drawn (the overlay is not in a sheet)
+        --wall) EXTRA="$EXTRA --wall"; shift ;;   # pressed against the back wall (a flag, because `heavy` drops EXTRA)
+        --wall-yaw) EXTRA="$EXTRA --wall --wall-yaw $2"; shift 2 ;;
         --aim) AIM=1; EXTRA="$EXTRA --aim"; shift ;;
         --pack) EXTRA="$EXTRA --pack $2"; shift 2 ;;
         --wait) WAIT="$2"; shift 2 ;;
@@ -159,6 +163,8 @@ sheet() {
     # --moves (via EXTRA) is fourteen frames, five rows; the default sheet is eighteen, six.
     local last=17 rows=6
     case "${EXTRA:-}" in *--moves*) last=13; rows=5 ;; esac
+    # --wallsheet is twenty: five distances in four directions.
+    case "${EXTRA:-}" in *--wallsheet*) last=19; rows=7 ;; esac
     # --reloads / --charges write their own frame count: the last frame on disk is the last.
     case "${EXTRA:-}" in *--reloads*|*--charges*)
         local n; n=$(ls "$tmp"/f_*.png 2>/dev/null | wc -l); last=$((n - 1)); rows=$(( (n + 2) / 3 )) ;; esac

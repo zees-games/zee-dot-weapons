@@ -589,8 +589,10 @@ func advance(delta: float) -> void:
 	if _overlay != null:
 		# Hysteresis: the pass must not flicker at the edge of contact.
 		_overlay.update(_wall.amount > (0.002 if _overlay.is_active() else 0.02), get_parent() as Camera3D)
-	_place_hands()
+	# The lens first: the hands are handed out in world space, and a frame that runs before any _process has drawn one must not
+	# hand out a grip at the unscaled size (the selftest's first frame after equip did).
 	_apply_hands_lens()
+	_place_hands()
 	if _sight != null:
 		SightFit.track(_sight, (transform * _animated.transform * _aim_node.transform * _holder.transform).affine_inverse() * Vector3.ZERO)
 	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
