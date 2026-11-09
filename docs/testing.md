@@ -20,7 +20,7 @@ EXTRA="--aim" tools/screenshot.sh sniper     # aimed, through the scope
 EXTRA="--no-arms 1" tools/screenshot.sh rifle  # the weapon alone
 tools/screenshot.sh --sheet rifle pistol knife  # contact sheets: screenshots/sheet_<id>.png
 tools/screenshot.sh --sheet --all               # one sheet per weapon
-EXTRA="--reloads 0.04,0.10,…" tools/screenshot.sh --sheet sniper   # 18 reload frames at those fractions (exactly 18)
+EXTRA="--reloads 0.04,0.10,…" tools/screenshot.sh --sheet sniper   # 18 reload frames at those fractions (exactly 18); `--reloads 9` is nine spread by dot-weapon's DotWeaponReloadShots, which also builds the sheet
 EXTRA="--dummy" tools/screenshot.sh --sheet smg   # a character in the line of fire: the hit on a body
 tools/screenshot.sh --world knife hatchet frag  # somebody else using it: screenshots/world_<id>.png
 ```
