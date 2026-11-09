@@ -40,10 +40,11 @@ func _advance_wall(delta: float) -> void:
 		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction(), w["impulse"]) * _animated.transform
 		_keep_off_near_plane(rest)
 
-## Slides the view model away from the eye until no part of the hands or the weapon is nearer than the camera's near plane plus a margin:
-## a hand or a stock through the lens is sliced open and shows its inside as flat white or blue-grey faces (viewmodel-white-blue-1).
-## The weapon's share of the slide is capped at what the wall pulled it back toward the eye ([param rest] is where it was before),
-## so the clamp only undoes retraction and never shoves the gun further forward than its free pose; the overlay draws it over the wall.
+## Slides the view model away from the eye until no part of the hands is nearer than the camera's near plane plus a margin, and
+## no part of the weapon is cut by that plane where it shows: a hand or a shroud through the lens is sliced open and shows its
+## inside as flat white or blue-grey faces (viewmodel-white-blue-1). A stock that passes the plane outside the view is not seen and
+## does not count. The weapon's share of the slide is capped at what the wall pulled it back toward the eye ([param rest] is where it
+## was before), so the clamp only undoes retraction and never shoves the gun past its free pose; the overlay draws it over the wall.
 func _keep_off_near_plane(rest: Vector3 = Vector3.INF) -> void:
 	var camera := get_parent() as Camera3D
 	if camera == null:
@@ -57,25 +58,55 @@ func _keep_off_near_plane(rest: Vector3 = Vector3.INF) -> void:
 			deficit = hand
 	if rest != Vector3.INF:
 		var pulled := (eye.affine_inverse() * rest).z - (eye.affine_inverse() * _animated.global_position).z
-		var gun := minf(clear - nearest_weapon_depth(eye), -pulled)
+		var gun := minf(weapon_cut_depth(camera, clear), -pulled)
 		deficit = maxf(deficit, gun)
 	if deficit > 0.0:
 		_animated.global_position -= camera.global_basis.z * deficit
 
-## Depth in front of [param eye] (metres) of the nearest corner of any drawn part of the weapon (each mesh's own bounds); INF with none.
-func nearest_weapon_depth(eye: Transform3D) -> float:
-	var best := INF
+## How far (metres) the weapon must move away from [param camera] so no drawn mesh's bounds cross the plane [param clear] in front of
+## the eye inside the view (with a margin); 0 when none does.
+func weapon_cut_depth(camera: Camera3D, clear: float) -> float:
 	if _holder == null:
-		return best
-	var inverse := eye.affine_inverse()
+		return 0.0
+	var half_h := clear * tan(deg_to_rad(camera.fov) * 0.5) * 1.25
+	var size := camera.get_viewport().get_visible_rect().size if camera.get_viewport() != null else Vector2(16.0, 9.0)
+	var half := Vector2(half_h * size.x / maxf(size.y, 1.0), half_h)
+	var view_rect := PackedVector2Array([-half, Vector2(half.x, -half.y), half, Vector2(-half.x, half.y)])
+	var inverse := camera.global_transform.affine_inverse()
+	var worst := 0.0
 	for mesh in HandReach.meshes(_holder):
 		if mesh.mesh == null or not mesh.is_visible_in_tree():
 			continue
 		var to_eye := inverse * mesh.global_transform
 		var box := mesh.get_aabb()
+		var corners: Array[Vector3] = []
+		var nearest := INF
 		for i in 8:
-			best = minf(best, -(to_eye * box.get_endpoint(i)).z)
-	return best
+			corners.append(to_eye * box.get_endpoint(i))
+			nearest = minf(nearest, -corners[i].z)
+		if nearest < clear and _section_meets(corners, clear, view_rect):
+			worst = maxf(worst, clear - nearest)
+	return worst
+
+## Whether the box with view-space [param corners] (AABB.get_endpoint order: bit 0 z, bit 1 y, bit 2 x) cuts the plane [param depth]
+## in front of the eye in a section that overlaps [param view_rect] (x, y on that plane).
+static func _section_meets(corners: Array[Vector3], depth: float, view_rect: PackedVector2Array) -> bool:
+	var section := PackedVector2Array()
+	for i in 8:
+		for bit: int in [1, 2, 4]:
+			var j: int = i | bit
+			if j == i:
+				continue
+			var da := -corners[i].z - depth
+			var db := -corners[j].z - depth
+			if (da < 0.0) == (db < 0.0):
+				continue
+			var p := corners[i].lerp(corners[j], da / (da - db))
+			section.append(Vector2(p.x, p.y))
+	var hull := Geometry2D.convex_hull(section) if section.size() >= 3 else PackedVector2Array()
+	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
+		hull.remove_at(hull.size() - 1)
+	return hull.size() >= 3 and not Geometry2D.intersect_polygons(hull, view_rect).is_empty()
 
 ## Where the muzzle sits on the screen relative to the crosshair, as a view-space slope (x right, y up).
 func _screen_offset(to_muzzle: Vector3, cam: Node3D) -> Vector2:
