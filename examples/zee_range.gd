@@ -6,6 +6,7 @@ extends "res://examples/zee_range_world.gd"
 
 const CHANNEL := "zee.range"
 const Frames := preload("res://examples/zee_range_frames.gd")
+const ReloadShots := preload("res://addons/dot_weapon/view/dot_weapon_reload_shots.gd")
 
 ## Where the player stands, far enough back that a target is a shot rather than a poke.
 const SPAWN := Vector3(0.0, 0.2, 14.0)
@@ -37,6 +38,9 @@ var _capturing: bool = false
 ## Whether `--sheet` is running: the range stops simulating and driving the view itself,
 ## and [method _run_sheet] steps the view model by hand.
 var _sheet: bool = false
+
+## The frames the `--reloads` sheet is made of.
+var _reload_tiles: Array[Image] = []
 
 ## The simulation tick the sheet's own shots are fired on, clear of the range's.
 var _sheet_tick: int = 100000
@@ -476,7 +480,9 @@ func _run_sheet(prefix: String) -> void:
 		await RenderingServer.frame_post_draw
 		await RenderingServer.frame_post_draw
 		var path := "%s_%02d.png" % [prefix, n]
-		var err := get_viewport().get_texture().get_image().save_png(path)
+		var shot := get_viewport().get_texture().get_image()
+		_reload_tiles.append(shot)
+		var err := shot.save_png(path)
 		if err != OK:
 			printerr("could not save %s: %s" % [path, error_string(err)])
 		if roof != null:
@@ -486,6 +492,11 @@ func _run_sheet(prefix: String) -> void:
 			_sheet_wall_body.queue_free()
 			_sheet_wall_body = null
 
+	# A reload sheet is dot-weapon's contact sheet (three across), which the shell script uses in place of its own tiling.
+	if _argument("--reloads") != "":
+		var sheet := ReloadShots.sheet(_reload_tiles, 3, Vector2i(640, 360))
+		if sheet != null:
+			var _saved := sheet.save_png("%s_sheet.png" % prefix)
 	print("sheet: %d frames at %s_NN.png" % [frames.size(), prefix])
 	get_tree().quit()
 

@@ -71,9 +71,9 @@ while [ $# -gt 0 ]; do
         --rack) RACK=1; shift ;;
         --sheet) SHEET=1; shift ;;
         --world) WORLD=1; shift ;;
-        --reloads) # optional comma list of fractions; a leading digit tells it from a weapon id
+        --reloads) # optional comma list of fractions, or a count; a leading digit tells it from a weapon id
             if [[ "${2:-}" =~ ^[0-9] ]]; then EXTRA="$EXTRA --reloads $2"; shift 2
-            else EXTRA="$EXTRA --reloads 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"; shift; fi ;;
+            else EXTRA="$EXTRA --reloads 9"; shift; fi ;;  # a bare count: dot-weapon's fractions(9)
         --wallsheet) EXTRA="$EXTRA --wallsheet"; shift ;;
         --wall-unseen) EXTRA="$EXTRA --wall-unseen"; shift ;;   # wall sheet with the wall not drawn (the overlay is not in a sheet)
         --wall) EXTRA="$EXTRA --wall"; shift ;;   # pressed against the back wall (a flag, because `heavy` drops EXTRA)
@@ -167,7 +167,7 @@ sheet() {
     case "${EXTRA:-}" in *--wallsheet*) last=19; rows=7 ;; esac
     # --reloads / --charges write their own frame count: the last frame on disk is the last.
     case "${EXTRA:-}" in *--reloads*|*--charges*)
-        local n; n=$(ls "$tmp"/f_*.png 2>/dev/null | wc -l); last=$((n - 1)); rows=$(( (n + 2) / 3 )) ;; esac
+        local n; n=$(ls "$tmp"/f_[0-9][0-9].png 2>/dev/null | wc -l); last=$((n - 1)); rows=$(( (n + 2) / 3 )) ;; esac
     if [ "$last" -lt 0 ] || [ ! -s "$tmp/f_$(printf %02d $last).png" ]; then
         echo "sheet failed for $weapon:" >&2
         tail -20 "$tmp/log" >&2
@@ -176,9 +176,14 @@ sheet() {
     fi
     grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
 
-    ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \
-        -vf "scale=640:-1,tile=3x$rows:padding=4:color=black" -frames:v 1 \
-        "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
+    if [ -s "$tmp/f_sheet.png" ]; then
+        # A reload sheet: the range built it with dot-weapon's DotWeaponReloadShots.
+        cp "$tmp/f_sheet.png" "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
+    else
+        ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \
+            -vf "scale=640:-1,tile=3x$rows:padding=4:color=black" -frames:v 1 \
+            "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
+    fi
     rm -rf "$tmp"
 }
 
