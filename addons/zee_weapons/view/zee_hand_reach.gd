@@ -109,6 +109,5 @@ static func spans_for(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, forward
 	# Not the art's instance id: `HipHold.sized` makes a new art per equip, and that id is reused.
 	var key := "%s|%s|%s|%s|%s" % [art.id, art.model_path, holder.transform, forward, art.fore_along]
 	if not _span_cache.has(key):
-		var tris := IronSight.triangles_of(weapon, holder)
-		_span_cache[key] = [IronSight.span(weapon, holder, forward, art.fore_along, tris), IronSight.span(weapon, holder, forward, 0.30, tris)]
+		_span_cache[key] = IronSight.spans(IronSight.faces_of(weapon, holder), forward, [art.fore_along, 0.30])
 	return _span_cache[key]
