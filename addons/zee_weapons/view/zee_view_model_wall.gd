@@ -36,17 +36,46 @@ func _advance_wall(delta: float) -> void:
 			_wall.set_lean(hit["sides"], _screen_offset(to_muzzle, cam), w["lean"])
 	_wall.step(target, delta, w["stiffness"], w["damping"], w["lean_rate"])
 	if _wall.amount > 0.0:
+		var rest := _animated.global_position
 		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction(), w["impulse"]) * _animated.transform
-		_keep_off_near_plane()
+		_keep_off_near_plane(rest)
 
-## Slides the view model away from the eye until no part of the hands is nearer than the camera's near plane plus a margin: a hand through the lens shows its inside as flat colour filling the view.
-func _keep_off_near_plane() -> void:
+## Slides the view model away from the eye until no part of the hands or the weapon is nearer than the camera's near plane plus a margin:
+## a hand or a stock through the lens is sliced open and shows its inside as flat white or blue-grey faces (viewmodel-white-blue-1).
+## The weapon's share of the slide is capped at what the wall pulled it back toward the eye ([param rest] is where it was before),
+## so the clamp only undoes retraction and never shoves the gun further forward than its free pose; the overlay draws it over the wall.
+func _keep_off_near_plane(rest: Vector3 = Vector3.INF) -> void:
 	var camera := get_parent() as Camera3D
-	if camera == null or _arms == null or not _arms.has_method(&"nearest_hand_depth"):
+	if camera == null:
 		return
-	var deficit := camera.near + NEAR_CLEAR - _arms.nearest_hand_depth(camera.global_transform)
-	if deficit > 0.0 and deficit < 1.0:
+	var eye := camera.global_transform
+	var clear := camera.near + NEAR_CLEAR
+	var deficit := 0.0
+	if _arms != null and _arms.has_method(&"nearest_hand_depth"):
+		var hand: float = clear - _arms.nearest_hand_depth(eye)
+		if hand < 1.0:
+			deficit = hand
+	if rest != Vector3.INF:
+		var pulled := (eye.affine_inverse() * rest).z - (eye.affine_inverse() * _animated.global_position).z
+		var gun := minf(clear - nearest_weapon_depth(eye), -pulled)
+		deficit = maxf(deficit, gun)
+	if deficit > 0.0:
 		_animated.global_position -= camera.global_basis.z * deficit
+
+## Depth in front of [param eye] (metres) of the nearest corner of any drawn part of the weapon (each mesh's own bounds); INF with none.
+func nearest_weapon_depth(eye: Transform3D) -> float:
+	var best := INF
+	if _holder == null:
+		return best
+	var inverse := eye.affine_inverse()
+	for mesh in HandReach.meshes(_holder):
+		if mesh.mesh == null or not mesh.is_visible_in_tree():
+			continue
+		var to_eye := inverse * mesh.global_transform
+		var box := mesh.get_aabb()
+		for i in 8:
+			best = minf(best, -(to_eye * box.get_endpoint(i)).z)
+	return best
 
 ## Where the muzzle sits on the screen relative to the crosshair, as a view-space slope (x right, y up).
 func _screen_offset(to_muzzle: Vector3, cam: Node3D) -> Vector2:
