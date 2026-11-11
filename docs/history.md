@@ -42,6 +42,6 @@ Every aimed frame on the contact sheet showed a pale block under the crosshair: 
 
 ## Found in a game
 
-- **Every weapon in a delivered game loaded invisible**, one WARN each: the art was under the pack's mount and the table named `res://assets/`. Found by game-playground; `set_asset_root` is the fix.
+- **Every weapon in a delivered game loaded invisible**, one WARN each: the art was under the pack's mount and the table named `res://assets/`. Found by game-playlot; `set_asset_root` is the fix.
 - **A lambda source aborted the process at exit (134)** after every check passed. Found by zed-dot-weapons through dot-server-deploy's zombiezone client.
 - **A restored rig refused the next alt-fire press, once**: the previous command's buttons were not in the snapshot. Found by the suite's rollback section.
