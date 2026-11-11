@@ -57,7 +57,7 @@ class Tunables extends RefCounted:
 	## [b]Without it the bob became a buzz.[/b] Per metre alone, a carrier at 9 m/s (a fast
 	## shooter's run) bobbed 10 footfalls a second, 1.1 cm up and down: a weapon vibrating
 	## rather than carried, 2.3 mm of change in each frame's movement at 144 fps where a
-	## walk's is a tenth of that (game-arena's `headless_feel`). A runner's legs speed up
+	## walk's is a tenth of that (game-fatal-contact's `headless_feel`). A runner's legs speed up
 	## to about three steps a second and then take longer strides, so the distance a cycle
 	## covers grows past this rate instead. 1.5 cycles is three footfalls a second.
 	var bob_max_rate: float = 1.5
