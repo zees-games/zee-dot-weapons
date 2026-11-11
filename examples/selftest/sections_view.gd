@@ -99,7 +99,7 @@ func _pose_swing() -> void:
 
 func _pose_cadence() -> void:
 	# [b]A run bobs at a cadence, a walk per metre.[/b] Per metre alone, a 9 m/s run bobbed
-	# ten footfalls a second and the weapon buzzed (game-arena's `headless_feel`, 2.3 mm of
+	# ten footfalls a second and the weapon buzzed (game-fatal-contact's `headless_feel`, 2.3 mm of
 	# change in a frame's movement at 144 fps). Footfalls are the bob's high points.
 	var cadence := func(speed: float) -> float:
 		var walker := ZeeWeaponPose.make(1.0)
@@ -392,7 +392,7 @@ func _lit_lights(root: Node) -> int:
 ## The carrier's own world model and somebody else's; returns the stranger it made.
 func _effects_world(carrier: Node3D) -> Node3D:
 	# The local player's own world model, driven by the replicated counter the way
-	# game-playground drives every player's: it must not play the shot a second time.
+	# game-playlot drives every player's: it must not play the shot a second time.
 	var own := ZeeWorldModel.new()
 	carrier.add_child(own)
 	own.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.SHOTGUN))
