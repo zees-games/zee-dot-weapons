@@ -30,4 +30,5 @@ jobs:
             contents: write
         with:
             pack: true
+            pack-owned-addons: true
             pack-exclude-dirs: reports art-src
