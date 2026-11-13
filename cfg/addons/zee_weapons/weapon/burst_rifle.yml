@@ -27,7 +27,7 @@ reload_start_ticks: 22
 auto_reload: true
 weight: 4.0
 crosshair_scale: 0.0
-mounts: []
+mounts: ["optic", "muzzle", "magazine"]
 extra:
   tuning:
     damage: 24.0

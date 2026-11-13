@@ -165,6 +165,10 @@ extends Resource
 @export var grip_socket: Vector3 = Vector3.INF
 @export var muzzle_socket: Vector3 = Vector3.INF
 
+## Where a fitted attachment sits, per mount ([constant DotWeaponAttachment.MOUNT_OPTIC] and the rest -> Transform3D in the model's
+## own space, its basis sizing a kit part to this gun). The dress adds each as a `socket_<mount>` node the model lacks.
+@export var sockets: Dictionary = {}
+
 ## Size of the first-person hands on this weapon (a small gun wants smaller hands); 0 keeps the arms' own.
 @export var hand_scale: float = 0.0
 ## Aim fraction at which this weapon's arms hide behind a scope; below 0 keeps [member ZeeViewModel.scope_arms_hide].

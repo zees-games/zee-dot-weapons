@@ -54,6 +54,7 @@ params = {
 &"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_kvlku")
+mounts = Array[StringName]([&"muzzle", &"magazine"])
 weight = 1.0
 authored_tick_rate = 64
 slot = 2

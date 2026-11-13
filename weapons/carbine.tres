@@ -57,6 +57,7 @@ params = {
 &"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_o7bib")
+mounts = Array[StringName]([&"optic", &"muzzle", &"magazine"])
 weight = 4.0
 authored_tick_rate = 64
 slot = 3

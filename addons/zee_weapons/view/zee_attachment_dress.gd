@@ -19,6 +19,20 @@ static func art_parts(art: ZeeWeaponArt, parent: Node3D) -> Array[Node3D]:
 	return out
 
 
+## Adds a `socket_<mount>` node to [param weapon] for each of [param art]'s `sockets` the model does not carry itself.
+static func ensure_sockets(weapon: Node3D, art: ZeeWeaponArt) -> void:
+	if weapon == null or art == null:
+		return
+	for mount: StringName in art.sockets:
+		var name := String(ZeeAttachmentArt.socket_name(mount))
+		if weapon.find_child(name, true, false) != null:
+			continue
+		var socket := Node3D.new()
+		socket.name = name
+		socket.transform = art.sockets[mount]
+		weapon.add_child(socket)
+
+
 ## Replaces [param before] with [param fitting]'s models on [param weapon]'s sockets; a mount with no socket or no art draws nothing.
 static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, before: Dictionary) -> Dictionary:
 	clear(before)
@@ -42,8 +56,11 @@ static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, b
 		if mount == DotWeaponAttachment.MOUNT_MUZZLE:
 			out.reach = muzzle_reach_in(weapon, part, f)
 		var aim: StringName = entry.get("aim", &"")
-		var glass := _glass_of(part)
-		if aim != &"" and glass != null:
+		# A kit optic has no `*_glass` mesh: its own bounds are the tube to look through.
+		var glass: Node3D = _glass_of(part)
+		if glass == null:
+			glass = part
+		if aim != &"":
 			var box := _bounds(glass, weapon)
 			var middle := box.get_center()
 			middle -= f * middle.dot(f)
@@ -73,6 +90,7 @@ static func muzzle_reach(art: ZeeWeaponArt, fitting: DotWeaponFitting) -> float:
 	var reach := 0.0
 	var measured := false
 	var weapon := ZeeModelCache.instantiate(art.model_path)
+	ensure_sockets(weapon as Node3D, art)
 	var socket := weapon.find_child(String(ZeeAttachmentArt.socket_name(DotWeaponAttachment.MOUNT_MUZZLE)), true, false) as Node3D if weapon != null else null
 	var part := ZeeModelCache.instantiate(path) if socket != null else null
 	if part != null:

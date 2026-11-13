@@ -51,6 +51,7 @@ params = {
 &"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_nvxnf")
+mounts = Array[StringName]([&"optic", &"muzzle", &"magazine"])
 authored_tick_rate = 64
 slot = 3
 deploy_ticks = 20

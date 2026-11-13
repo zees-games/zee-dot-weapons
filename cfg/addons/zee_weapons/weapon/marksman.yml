@@ -27,7 +27,7 @@ reload_start_ticks: 22
 auto_reload: true
 weight: 5.0
 crosshair_scale: 0.0
-mounts: []
+mounts: ["muzzle"]
 extra:
   tuning:
     damage: 58.0

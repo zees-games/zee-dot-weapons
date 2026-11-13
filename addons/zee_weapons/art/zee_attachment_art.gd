@@ -17,7 +17,7 @@ static func remove_source(name: StringName) -> void:
 	_sources.erase(name)
 
 
-## The first pack's entry for [param id], or empty when no pack draws it.
+## The first pack's entry for [param id], then this pack's own ([method ZeeWeaponArtTable.attachment_art]), or empty when none draws it.
 static func of(id: StringName) -> Dictionary:
 	for name: StringName in _sources:
 		var source: Callable = _sources[name]
@@ -25,7 +25,7 @@ static func of(id: StringName) -> Dictionary:
 			var entry: Dictionary = source.call(id)
 			if not entry.is_empty():
 				return entry
-	return {}
+	return ZeeWeaponArtTable.attachment_art(id)
 
 
 ## The node of a gun's model an attachment on [param mount] is parented to.

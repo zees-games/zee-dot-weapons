@@ -266,6 +266,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		)
 
 	_weapon.name = "Weapon"
+	Dress.ensure_sockets(_weapon, art)
 	_holder.add_child(_weapon)
 
 	# Attachments come across, magazines do not: a watcher cannot see a magazine fall

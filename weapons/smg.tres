@@ -60,6 +60,7 @@ params = {
 &"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_q27mu")
+mounts = Array[StringName]([&"optic", &"muzzle", &"magazine"])
 weight = 2.8
 authored_tick_rate = 64
 slot = 3

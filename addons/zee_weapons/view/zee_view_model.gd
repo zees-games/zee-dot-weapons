@@ -248,6 +248,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		)
 
 	_weapon.name = "Weapon"
+	Dress.ensure_sockets(_weapon, art)
 	_holder.add_child(_weapon)
 	_set_on_top(_weapon)
 
