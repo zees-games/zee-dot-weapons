@@ -596,11 +596,12 @@ func advance(delta: float) -> void:
 	if _sight != null:
 		SightFit.track(_sight, (transform * _animated.transform * _aim_node.transform * _holder.transform).affine_inverse() * Vector3.ZERO)
 	# Through a scope the weapon is not drawn: the scope is the view. The built arms go with Animated;
-	# a game's own arms (arms_ref) may live anywhere, so they are hidden by name too.
-	var scoped := is_scoped()
-	_animated.visible = scope_is_lens() or not scoped
+	# a game's own arms (arms_ref) may live anywhere, so they are hidden by name too. In the lens view too:
+	# the view model draws over the HUD, so a gun kept there covers the glass.
+	var scoped := is_scoped() or scope_picture_up()
+	_animated.visible = not scoped
 	if _arms != null:
-		_arms.visible = scope_is_lens() or not (scoped or arms_hidden_by_scope())
+		_arms.visible = not (scoped or arms_hidden_by_scope())
 
 
 ## The scale that draws the hands at [member hands_fov]. See there.
@@ -622,7 +623,7 @@ func scope_arms_hide_at() -> float:
 
 ## Whether a scoped weapon's arms are hidden: from [method scope_arms_hide_at] of the aim-in on.
 func arms_hidden_by_scope() -> bool:
-	return not scope_is_lens() and _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide_at()
+	return _art != null and (_art.aim_scoped or _dressed.get("scoped", false)) and _aim_fraction >= scope_arms_hide_at()
 
 
 # --- Internals --------------------------------------------------------------

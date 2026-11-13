@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_wall.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 866
+const CHECKS := 870
 
 
 func _ready() -> void:
@@ -357,7 +357,7 @@ func _scope_modes() -> void:
 		view._process(0.02)
 	_check("lens: the camera keeps the hip field of view", is_equal_approx(view.view_fov_scale(), 1.0))
 	_check("lens: the scope still zooms", view.aim_fov_scale() < 0.9)
-	_check("lens: the gun stays drawn behind the lens", view._animated.visible)
+	_check("lens: the gun is hidden so it does not cover the glass", not view._animated.visible)
 	_check("standing, the picture is solid", view.scope_clear() < 0.01)
 	view.drive(Vector2.ZERO, 6.0, true)
 	view._process(0.02)
@@ -379,6 +379,23 @@ func _scope_modes() -> void:
 	add_child(overlay)
 	overlay.follow(view)
 	_check("the shared overlay takes mode from the view", overlay.mode == ZeeViewModel.SCOPE_FULL)
+	_check("the sniper brings its own lens size", is_equal_approx(overlay.lens_circle, 0.62))
+	var share := 0.62
+	var lens_fov := 75.0 * ZeeScopeOverlay.lens_fov_share(75.0, 0.3, share)
+	_check("the lens magnifies by the zoom over the hip view",
+		absf(tan(deg_to_rad(lens_fov) * 0.5) / (tan(deg_to_rad(37.5)) * share) - 0.3) < 0.001)
+	var camera := Camera3D.new()
+	camera.fov = 75.0
+	add_child(camera)
+	overlay.bind_camera(camera)
+	overlay.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	overlay.size = Vector2(1920.0, 1080.0)
+	overlay.follow(view)
+	_check("a bound lens narrows past the camera's zoom", overlay.lens_zoom < view.aim_fov_scale() * 0.75)
+	view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
+	overlay.follow(view)
+	_check("the next gun does not keep the last gun's lens", is_equal_approx(overlay.lens_circle, 0.46))
+	camera.queue_free()
 	overlay.queue_free()
 	view.queue_free()
 

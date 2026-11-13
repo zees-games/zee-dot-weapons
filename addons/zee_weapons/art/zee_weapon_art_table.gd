@@ -509,6 +509,8 @@ static func sniper() -> ZeeWeaponArt:
 	art.fore_up = 0.28
 	art.aim_scoped = true
 	art.aim_zoom = 0.3
+	# A bigger glass than the overlay's 0.46, so the magnified picture reads (fc-weapons' sniper row has the same).
+	art.scope_style = {"lens_circle": 0.62}
 	# Near-instant, so a quick scope works; ads.yml `aim_time` overrides.
 	art.aim_time = 0.08
 	# A bolt gun: the bolt drawn back, two rounds pressed down into the top of the receiver from

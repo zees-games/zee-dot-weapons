@@ -113,6 +113,15 @@ func scope_fraction() -> float:
 	return smoothstep(start, 1.0, _aim_fraction)
 
 
+## The scope's fraction from which the gun and arms are hidden: from there the lens already shows the zoomed world.
+const SCOPE_GUN_HIDE_FRACTION := 0.5
+
+
+## Whether the scope's picture is far enough up that the gun would be seen through the glass.
+func scope_picture_up() -> bool:
+	return has_scope() and scope_fraction() >= SCOPE_GUN_HIDE_FRACTION
+
+
 ## The scope lens's size, a share of its full size: small at the start of the aim-in, growing toward the eye.
 func scope_lens_scale() -> float:
 	if not has_scope():
