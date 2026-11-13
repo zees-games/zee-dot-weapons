@@ -600,6 +600,75 @@ func _muzzles() -> void:
 	_end()
 
 
+## The pack's attachments: offered where a gun has the mount, drawn on a socket, and an optic's glass is the aim line.
+func _attachments() -> void:
+	_begin("attachments")
+	var dress := preload("res://addons/zee_weapons/view/zee_attachment_dress.gd")
+	var catalogue := ZeeAttachmentPack.attachments()
+	_check("the pack's catalogue holds its four attachments", catalogue.ids().size() == 4)
+	var unsocketed: Array[String] = []
+	for def in ZeeWeaponPack.weapons():
+		var art := ZeeWeaponArtTable.get_art(def.id)
+		var choices := catalogue.choices_for(def)
+		for mount: StringName in choices:
+			for id: StringName in choices[mount]:
+				if not ZeeAttachmentArt.of(id).is_empty() and (art == null or not art.sockets.has(mount)):
+					unsocketed.append("%s/%s" % [def.id, id])
+	_check("every drawn attachment a gun is offered has a socket on it: %s" % ", ".join(unsocketed), unsocketed.is_empty())
+
+	var rifle_def: DotWeaponDef = null
+	for def in ZeeWeaponPack.weapons():
+		if def.id == ZeeWeaponIds.RIFLE:
+			rifle_def = def
+	var offered := catalogue.choices_for(rifle_def) if rifle_def != null else {}
+	_check("the rifle is offered two optics, a suppressor and a magazine: %s" % [offered],
+		(offered.get(DotWeaponAttachment.MOUNT_OPTIC, []) as Array).size() == 2
+		and (offered.get(DotWeaponAttachment.MOUNT_MUZZLE, []) as Array).size() == 1
+		and (offered.get(DotWeaponAttachment.MOUNT_MAGAZINE, []) as Array).size() == 1)
+	var mag := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	mag.fit(DotWeaponAttachment.MOUNT_MAGAZINE, ZeeWeaponIds.ATT_EXTENDED_MAG)
+	var fed := catalogue.apply(rifle_def, mag) if rifle_def != null else DotResult.fail(DotError.CODE_INVALID, "no rifle")
+	_check("the extended magazine adds ten rounds: %s" % _why(fed),
+		fed.ok and (fed.value as DotWeaponDef).magazine == rifle_def.magazine + 10)
+
+	var art := ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE)
+	var weapon := ZeeModelCache.instantiate(art.model_path) as Node3D
+	dress.ensure_sockets(weapon, art)
+	dress.ensure_sockets(weapon, art)
+	_check("a gun's sockets are added once", weapon != null and weapon.find_children("socket_*", "Node3D", true, false).size() == art.sockets.size())
+	var fitting := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	fitting.fit(DotWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_SCOPE)
+	fitting.fit(DotWeaponAttachment.MOUNT_MUZZLE, ZeeWeaponIds.ATT_SUPPRESSOR)
+	var state := dress.apply(weapon, fitting, art.model_forward, {})
+	_check("a scope and a suppressor draw two parts", (state.parts as Array).size() == 2)
+	_check("the scope sets the scoped look and its zoom", state.scoped and is_equal_approx(float(state.zoom), 0.4))
+	var line: Dictionary = state.line
+	var f := art.model_forward.normalized()
+	_check("its glass runs forward above the barrel: %s" % [line],
+		not line.is_empty() and (line.front - line.rear).dot(f) > 0.0 and (line.rear as Vector3).y > 0.05)
+	var bare := ZeeModelCache.muzzle_distance(art.model_path, art.model_forward)
+	_check("the suppressor carries the muzzle past the bare barrel (%.3f > %.3f)" % [float(state.reach), bare], float(state.reach) > bare)
+	_check("the server's reach is the drawn one", is_equal_approx(dress.muzzle_reach(art, fitting), float(state.reach)))
+	var dot := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	dot.fit(DotWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_RED_DOT)
+	state = dress.apply(weapon, dot, art.model_forward, state)
+	_check("a red dot is looked through, not scoped", not state.scoped and not (state.line as Dictionary).is_empty())
+	if weapon != null:
+		weapon.free()
+
+	var view := ZeeViewModel.new()
+	add_child(view)
+	var _e := view.equip(art)
+	view.set_fitting(dot)
+	var sight: Dictionary = view._sight_line
+	_check("the view model aims through the fitted dot: %s" % [sight],
+		not sight.is_empty() and (sight.rear as Vector3).is_equal_approx((view._dressed.line as Dictionary).rear))
+	view.set_fitting(fitting)
+	_check("a fitted scope makes the view model scoped", view.has_scope())
+	view.queue_free()
+	_end()
+
+
 func _arsenal() -> void:
 	_begin("the arsenal")
 

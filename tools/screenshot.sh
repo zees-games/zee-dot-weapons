@@ -22,6 +22,7 @@
 #   EXTRA="--moves" tools/screenshot.sh --sheet rifle   # 14 frames: strafe, turn, walk, landing, sprint, hip and aimed
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
 #   tools/screenshot.sh --aim --all                # every weapon aimed down its sight, tiled into screenshots/all_aim.png
+#   tools/screenshot.sh --aim --fit zee_scope,zee_suppressor rifle   # aimed through a fitted optic
 #   tools/screenshot.sh --aim --pack res://addons/arena_weapons/spawn_provider.gd aw_rifle aw_pistol
 #   (--aim and --pack also reach a GPU box, which carries only SHOT_* variables: SHOT_EXTRA is added to EXTRA)
 #
@@ -80,6 +81,7 @@ while [ $# -gt 0 ]; do
         --wall-yaw) EXTRA="$EXTRA --wall --wall-yaw $2"; shift 2 ;;
         --aim) AIM=1; EXTRA="$EXTRA --aim"; shift ;;
         --pack) EXTRA="$EXTRA --pack $2"; shift 2 ;;
+        --fit) EXTRA="$EXTRA --fit $2"; shift 2 ;;   # the pack's attachments, comma-separated (a flag, because `heavy` drops EXTRA)
         --wait) WAIT="$2"; shift 2 ;;
         --size) SIZE="$2"; shift 2 ;;
         -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;

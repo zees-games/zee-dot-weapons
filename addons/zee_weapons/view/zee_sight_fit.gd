@@ -31,6 +31,11 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 	var line := IronSight.from_marks(weapon, holder, art.model_forward)
 	if not line.is_empty():
 		line.merge(dressed_line, true)
+	elif not dressed_line.is_empty():
+		# A fitted optic with no marks: look through it, the eye kept back past the gun's own back end.
+		var measured := IronSight.measure(weapon, holder, art.model_forward)
+		line = {"back": measured.get("back", dressed_line.rear)}
+		line.merge(dressed_line, true)
 	elif art.sight_own:
 		# The rear point stays where the written hold had it, so the eye keeps its distance from the gun.
 		var written := basis.inverse() * (Vector3(0.0, 0.0, -art.aim_eye_relief) - art.aim_offset)

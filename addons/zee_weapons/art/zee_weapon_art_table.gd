@@ -384,7 +384,7 @@ static func pistol() -> ZeeWeaponArt:
 		GUNS + "pistol_magazine.glb", Vector3(0.0, -0.0504, 0.1522)
 	)
 	art.ejects = false  # the foam sidearm throws no brass
-	return art
+	return _mounted(art, Vector3.INF, Vector3(0.0, 0.075, -0.23))
 
 
 ## A full-lug revolver: the round goes into the cylinder, a third of the way from the back.
@@ -416,14 +416,14 @@ static func smg() -> ZeeWeaponArt:
 		GUNS + "smg_magazine.glb", Vector3(0.0, -0.068, -0.044)
 	)
 	art.reload_keys = ZeeWeaponPose.RELOAD_KEYS_SMG
-	return art
+	return _mounted(art, Vector3(0.0, 0.082, -0.06), Vector3(0.0, 0.053, -0.30))
 
 
 static func carbine() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.CARBINE, "carbine", POSE_RIFLE).with_magazine(
 		GUNS + "carbine_magazine.glb", Vector3(0.001, -0.057, -0.069)
 	)
-	return art
+	return _mounted(art, Vector3(0.0, 0.069, -0.04), Vector3(0.0, 0.033, -0.33))
 
 
 static func rifle() -> ZeeWeaponArt:
@@ -432,7 +432,7 @@ static func rifle() -> ZeeWeaponArt:
 	)
 	art.fore_along = 0.56
 	art.fore_up = 0.32
-	return art
+	return _mounted(art, Vector3(0.0, 0.068, -0.08), Vector3(0.0, 0.037, -0.40))
 
 
 ## Rear-heavy: this is the one model whose bulk sits behind the grip.
@@ -447,21 +447,21 @@ static func battle_rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.BATTLE_RIFLE, "battle_rifle", POSE_RIFLE).with_magazine(
 		GUNS + "battle_rifle_magazine.glb", Vector3(0.0, -0.078, 0.035)
 	)
-	return art
+	return _mounted(art, Vector3(0.0, 0.081, -0.06), Vector3(0.0, 0.034, -0.43))
 
 
 static func burst_rifle() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.BURST_RIFLE, "burst_rifle", POSE_RIFLE).with_magazine(
 		GUNS + "burst_rifle_magazine.glb", Vector3(0.0, -0.073, 0.026)
 	)
-	return art
+	return _mounted(art, Vector3(0.0, 0.097, -0.06), Vector3(0.0, 0.046, -0.40))
 
 
 static func shotgun() -> ZeeWeaponArt:
 	var art := _tube(_gun(ZeeWeaponIds.SHOTGUN, "shotgun", POSE_RIFLE))
 	art.fore_along = 0.56
 	art.fore_up = 0.32
-	return art
+	return _mounted(art, Vector3(0.0, 0.075, -0.10), Vector3.INF)
 
 
 ## A long barrel over a fore-end, a drum under it and a full stock.
@@ -486,7 +486,7 @@ static func marksman() -> ZeeWeaponArt:
 	art.grip_up = 0.28
 	art.fore_along = 0.64
 	art.fore_up = 0.26
-	return art
+	return _mounted(art, Vector3.INF, Vector3(0.0, 0.036, -0.50))
 
 
 # --- Heavies ----------------------------------------------------------------
@@ -595,6 +595,36 @@ static func frag() -> ZeeWeaponArt:
 
 static func sticky() -> ZeeWeaponArt:
 	return _thrown(ZeeWeaponIds.STICKY, BLASTERS + "grenade-b.glb")
+
+
+# --- Attachments ------------------------------------------------------------
+
+## Kit parts are sized for the toy blasters; on a real gun's receiver they draw at these scales.
+const OPTIC_SIZE := Vector3(0.5, 0.5, 0.5)
+const MUZZLE_SIZE := Vector3(0.3, 0.3, 0.5)
+
+
+## How [ZeeAttachmentPack]'s attachment [param id] is drawn, for [method ZeeAttachmentArt.of]; {} for one with
+## no model (the extended magazine changes numbers only).
+static func attachment_art(id: StringName) -> Dictionary:
+	match id:
+		ZeeWeaponIds.ATT_RED_DOT:
+			return {"path": SCOPE_SMALL, "hides": [], "aim": &"glass"}
+		ZeeWeaponIds.ATT_SCOPE:
+			return {"path": SCOPE_LARGE, "hides": [], "aim": &"scoped", "zoom": 0.4}
+		ZeeWeaponIds.ATT_SUPPRESSOR:
+			return {"path": SILENCER_SMALL, "hides": []}
+	return {}
+
+
+## Gives [param art] an optic socket at [param optic] and a muzzle socket at [param muzzle] (model space,
+## measured off each mesh's top rail and barrel end); [constant Vector3.INF] leaves that mount without one.
+static func _mounted(art: ZeeWeaponArt, optic: Vector3, muzzle: Vector3) -> ZeeWeaponArt:
+	if optic != Vector3.INF:
+		art.sockets[DotWeaponAttachment.MOUNT_OPTIC] = Transform3D(Basis.from_scale(OPTIC_SIZE), optic)
+	if muzzle != Vector3.INF:
+		art.sockets[DotWeaponAttachment.MOUNT_MUZZLE] = Transform3D(Basis.from_scale(MUZZLE_SIZE), muzzle)
+	return art
 
 
 # --- Builders ---------------------------------------------------------------

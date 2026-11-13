@@ -281,6 +281,7 @@ static func pistol(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.SEMI, rpm_ticks(400.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_SIDEARM]
+	def.mounts = [DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_LIGHT
 	def.magazine = 15
 	def.reserve = 60
@@ -399,6 +400,7 @@ static func smg(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.AUTO, rpm_ticks(820.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY, ZeeWeaponIds.TAG_AUTOMATIC]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC, DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_LIGHT
 	def.magazine = 30
 	def.reserve = 120
@@ -430,6 +432,7 @@ static func carbine(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.AUTO, rpm_ticks(660.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY, ZeeWeaponIds.TAG_AUTOMATIC]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC, DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_HEAVY
 	def.magazine = 24
 	def.reserve = 96
@@ -461,6 +464,7 @@ static func rifle(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.AUTO, rpm_ticks(600.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY, ZeeWeaponIds.TAG_AUTOMATIC]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC, DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_HEAVY
 	def.magazine = 30
 	def.reserve = 120
@@ -524,6 +528,7 @@ static func battle_rifle(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.SEMI, rpm_ticks(300.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC, DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_HEAVY
 	def.magazine = 20
 	def.reserve = 80
@@ -557,6 +562,7 @@ static func burst_rifle(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.BURST, rpm_ticks(240.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC, DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_HEAVY
 	def.burst_count = 3
 	def.burst_interval_ticks = 3
@@ -591,6 +597,7 @@ static func shotgun(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.SEMI, rpm_ticks(75.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY]
+	def.mounts = [DotWeaponAttachment.MOUNT_OPTIC]
 	def.ammo_type = ZeeWeaponIds.AMMO_SHELL
 	def.magazine = 8
 	def.reserve = 32
@@ -653,6 +660,7 @@ static func marksman(t: Dictionary = {}) -> DotWeaponDef:
 		DotWeaponDef.Fire.SEMI, rpm_ticks(180.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_PRIMARY, ZeeWeaponIds.TAG_SCOPED]
+	def.mounts = [DotWeaponAttachment.MOUNT_MUZZLE]
 	def.ammo_type = ZeeWeaponIds.AMMO_HEAVY
 	def.magazine = 10
 	def.reserve = 40

@@ -98,6 +98,16 @@ const SLOT_PRIMARY := 3
 const SLOT_HEAVY := 4
 const SLOT_THROWN := 5
 
+# --- Attachments ------------------------------------------------------------
+#
+# Prefixed, unlike the weapons: ZeeAttachmentArt asks every installed pack for an id's art
+# and the first answer wins, so a pack's `red_dot` must not come out wearing this one's.
+
+const ATT_RED_DOT := &"zee_red_dot"
+const ATT_SCOPE := &"zee_scope"
+const ATT_SUPPRESSOR := &"zee_suppressor"
+const ATT_EXTENDED_MAG := &"zee_extended_mag"
+
 # --- Weapons ----------------------------------------------------------------
 
 ## Melee. Always carried, never runs out, and always loses to anything with a barrel.

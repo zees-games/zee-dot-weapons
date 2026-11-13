@@ -180,9 +180,26 @@ func _equip_requested() -> void:
 	# of the bottom of the screen.
 	_rig.arsenal.give(def.id)
 	_rig.arsenal.select(def.slot, 0)
+	_fit_requested(def)
 
 	for i in range(200):
 		_rig.simulate_tick(DotWeaponCommand.new(), i)
+
+
+## Honours `--fit zee_scope,zee_suppressor`: the pack's attachments on the weapon asked for, for an aimed-in look at an optic.
+func _fit_requested(def: DotWeaponDef) -> void:
+	var wanted := _argument("--fit")
+	if wanted == "":
+		return
+	_rig.arsenal.attachments = ZeeAttachmentPack.attachments()
+	var fitting := DotWeaponFitting.make(def.id)
+	for id in wanted.split(",", false):
+		var att := _rig.arsenal.attachments.get_attachment(StringName(id))
+		if att != null:
+			fitting.fit(att.mount, att.id)
+	var fitted := _rig.arsenal.fit(def.slot, fitting)
+	if not fitted.ok:
+		DotLog.warn(CHANNEL, "the fitting was refused", {"why": fitted.error.message})
 
 
 func _process(_delta: float) -> void:

@@ -58,6 +58,7 @@ params = {
 &"view_kick_yaw": 3.0
 }
 tuning = SubResource("Resource_4yi2a")
+mounts = Array[StringName]([&"muzzle"])
 weight = 5.0
 authored_tick_rate = 64
 slot = 3
