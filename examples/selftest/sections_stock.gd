@@ -178,7 +178,12 @@ func _stock_sounds() -> void:
 	fx.play_use(_fake_shot(), Transform3D.IDENTITY, ZeeWeaponIds.RIFLE)
 	_check("indoors the report is alone until the delay", heard.size() == before + 2)
 	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY + 0.1).timeout
-	_check("indoors the _far tail follows the report", heard.size() == before + 3 and _stock_path(heard[-1], "rifle_far"))
+	# The first shot's case lands during this wait too (its casing sound arrives about a quarter second after
+	# the shot), so the sounds after the report are counted by kind: exactly one _far tail, whatever lands beside it.
+	var tails := 0
+	for stream: AudioStream in heard.slice(before + 2):
+		tails += 1 if _stock_path(stream, "rifle_far") else 0
+	_check("indoors the _far tail follows the report", heard.size() > before + 2 and tails == 1)
 	fx.roof = null
 	var calls: Array = []
 	fx.shot_sound = func(id: StringName, kind: StringName, _at: Vector3, indoors: bool) -> bool:
