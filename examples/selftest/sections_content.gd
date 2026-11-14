@@ -52,6 +52,30 @@ func _cards() -> void:
 	_end()
 
 
+## keep_only filters before building: the same arts as filtering the full list, in the same order, and never more builders run.
+func _art_lazy() -> void:
+	_begin("art table filters before building")
+
+	var full := ZeeWeaponArtTable.all()
+	var ids := ZeeWeaponIds.all()
+	_check("every built-in's builder is named after its id, in ids order", full.size() == ids.size() and full.map(func(a: ZeeWeaponArt) -> StringName: return a.id) == ids)
+
+	ZeeWeaponPack.keep_only([&"fists"])
+	var kept := ZeeWeaponArtTable.all()
+	_check("keep_only fists builds exactly the fists art", kept.size() == 1 and kept[0].id == ZeeWeaponIds.FISTS)
+	_check("the fists art is identical to the unfiltered one", kept[0].pose == full[0].pose and kept[0].weight == full[0].weight and kept[0].model_path == full[0].model_path)
+
+	ZeeWeaponPack.keep_only([&"rifle", &"fists"])
+	var two := ZeeWeaponArtTable.all()
+	_check("a kept set keeps the table order", two.size() == 2 and two[0].id == ZeeWeaponIds.FISTS and two[1].id == ZeeWeaponIds.RIFLE)
+	_check("the cached table holds only the kept arts", ZeeWeaponArtTable.table().size() == 2)
+
+	ZeeWeaponPack.keep_only(null)
+	_check("null brings every art back", ZeeWeaponArtTable.all().size() == ids.size() and ZeeWeaponArtTable.table().size() == ids.size())
+
+	_end()
+
+
 ## A second pack adds weapons, art and a sound class without this one changing, and cannot
 ## take an id this one has.
 func _other_packs() -> void:

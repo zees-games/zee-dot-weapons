@@ -249,18 +249,16 @@ static func drop_cache() -> void:
 	_table = {}
 
 
+## Builds only the built-in arts [method ZeeWeaponPack.keep_only] keeps (every one when it is null), in [method ZeeWeaponIds.all] order.
+## A built-in's builder is the static method named after its id, so a filtered game (zombie zone keeps fists) never builds the other 26.
 static func all() -> Array[ZeeWeaponArt]:
-	var out: Array[ZeeWeaponArt] = [
-		fists(), knife(), shiv(), hatchet(), mallet(), pickaxe(), spade(),
-		pistol(), revolver(), machine_pistol(), derringer(),
-		smg(), carbine(), rifle(), bullpup(), battle_rifle(), burst_rifle(),
-		shotgun(), drum_shotgun(), marksman(),
-		sniper(), minigun(), launcher(), beamer(), charge_rifle(),
-		frag(), sticky(),
-	]
+	var out: Array[ZeeWeaponArt] = []
 
-	if ZeeWeaponPack._keep != null:
-		out = out.filter(func(art: ZeeWeaponArt) -> bool: return (ZeeWeaponPack._keep as Array).has(art.id))
+	for id in ZeeWeaponIds.all():
+		if ZeeWeaponPack._keep != null and not (ZeeWeaponPack._keep as Array).has(id):
+			continue
+
+		out.append(Callable(ZeeWeaponArtTable, id).call())
 
 	var taken := {}
 
