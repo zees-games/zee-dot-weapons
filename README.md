@@ -1,4 +1,4 @@
-Twenty-seven ready-made weapons for [dot-weapon](https://github.com/modcommunity/dot-weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [Dot collection](https://moddingcommunity.com/co/4-dot-assets), such as [game-fatal-contact](https://github.com/zees-games/game-fatal-contact), use it.
+Twenty-seven ready-made weapons for [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [Dot collection](https://moddingcommunity.com/co/4-dot-assets), such as [game-fatal-contact](https://github.com/zees-games/game-fatal-contact), use it.
 
 The pack has its own headless test suite, but little of it has been in front of real players. Please report anything you run into.
 
@@ -101,11 +101,11 @@ Pass static methods as above, not lambdas: a lambda kept by zee outlives its scr
 
 ## Requirements
 
-Godot 4.7, plus [dot-core](https://github.com/modcommunity/dot-core), [dot-combat](https://github.com/modcommunity/dot-combat) and [dot-weapon](https://github.com/modcommunity/dot-weapon). dot-net, dot-player, dot-player-controller and dot-player-char are used if present. It runs on desktop, mobile and the browser from one build.
+Godot 4.7, plus [dot-core](https://github.com/gamespice-platform/core), [dot-combat](https://github.com/gamespice-platform/combat) and [dot-weapon](https://github.com/gamespice-platform/weapon). dot-net, dot-player, dot-player-controller and dot-player-char are used if present. It runs on desktop, mobile and the browser from one build.
 
 ## Running it
 
-The easiest way to get the pack and its addons is [dot-bootstrap](https://github.com/modcommunity/dot-bootstrap) (`./bootstrap.sh`, then `cd projects/zee-dot-weapons`).
+The easiest way to get the pack and its addons is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap) (`./bootstrap.sh`, then `cd projects/zee-dot-weapons`).
 
 | Command | What it does |
 | --- | --- |
