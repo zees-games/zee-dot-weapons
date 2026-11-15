@@ -1,4 +1,4 @@
-Twenty-seven ready-made weapons for [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [Dot collection](https://moddingcommunity.com/co/4-dot-assets), such as [game-fatal-contact](https://github.com/zees-games/game-fatal-contact), use it.
+Twenty-seven ready-made weapons for [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [Gamespice collection](https://gamespice.net), such as [game-fatal-contact](https://github.com/zees-games/game-fatal-contact), use it.
 
 The pack has its own headless test suite, but little of it has been in front of real players. Please report anything you run into.
 
