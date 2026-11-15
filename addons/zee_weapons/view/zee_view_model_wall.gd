@@ -40,11 +40,9 @@ func _advance_wall(delta: float) -> void:
 		_animated.transform = _wall.offset(feel_rules.wall_retract, feel_rules.wall_tilt, w["push"], w["nudge"], aim_fraction(), w["impulse"]) * _animated.transform
 		_keep_off_near_plane(rest)
 
-## Slides the view model away from the eye until no part of the hands is nearer than the camera's near plane plus a margin, and
-## no part of the weapon is cut by that plane where it shows: a hand or a shroud through the lens is sliced open and shows its
-## inside as flat white or blue-grey faces (viewmodel-white-blue-1). A stock that passes the plane outside the view is not seen and
-## does not count. The weapon's share of the slide is capped at what the wall pulled it back toward the eye ([param rest] is where it
-## was before), so the clamp only undoes retraction and never shoves the gun past its free pose; the overlay draws it over the wall.
+## Slides the view model away from the eye until no part of the hands is nearer than the near plane plus a margin, and no shown part of the weapon is cut
+## by it (a sliced hand or shroud shows flat white or blue-grey insides, viewmodel-white-blue-1); a stock passing the plane out of view does not count. The weapon's
+## slide is capped at what the wall pulled it back ([param rest] is where it was), so this only undoes retraction; the overlay draws it over the wall.
 func _keep_off_near_plane(rest: Vector3 = Vector3.INF) -> void:
 	var camera := get_parent() as Camera3D
 	if camera == null:

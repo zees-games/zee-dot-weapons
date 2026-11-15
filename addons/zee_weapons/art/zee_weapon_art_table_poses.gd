@@ -4,17 +4,9 @@ extends "zee_weapon_art_table_paths.gd"
 ## weighs), split out for file size.
 
 
-## Where a weapon of each pose sits relative to the camera.
-##
-## [b]Lower and further out than a real weapon would be, and smaller than one.[/b] These
-## numbers are not anatomical, and the arithmetic says why. The camera runs at a
-## 90-degree vertical field of view, so at 0.5 m the visible world is a metre tall — and
-## a 0.7 m rifle held there at life size fills two thirds of the screen. Every game in
-## this genre answers that by drawing the view model at a much narrower field of view
-## than the world; a single camera cannot do that, so the equivalent is done here by
-## shrinking the weapon, which produces the same angular size.
-##
-## See [method pose_scale] for the other half of the same decision.
+## Where a weapon of each pose sits relative to the camera: lower, further out and smaller than a real one. At a 90-degree vertical field of view the
+## world at 0.5 m is a metre tall, so a 0.7 m rifle at life size fills two thirds of the screen. Games draw the view model at a narrower field of view;
+## one camera cannot, so the weapon is shrunk to the same angular size instead ([method pose_scale] is the other half of the decision).
 static func pose_offset(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
@@ -29,17 +21,9 @@ static func pose_offset(pose: StringName) -> Vector3:
 			return Vector3(0.21, -0.26, -0.40)
 
 
-## How a blaster of each pose is turned at the hip, in degrees (pitch, yaw, roll) in the
-## model's own space (a blaster's is the view's: it points -Z): yaw positive brings the muzzle
-## in toward the crosshair, roll positive cants the weapon's right side up toward the eye.
-##
-## [b]Canted and turned, because pointed straight down the view it is drawn end-on.[/b] A
-## weapon below and right of the eye, pointing where the eye points, shows the camera its
-## back face and a sliver of its left side: a stub in the corner, which is what this pack
-## drew until the contact sheet put it beside a production shooter's. Perspective already
-## carries a straight barrel toward the screen's centre; the yaw adds to that, and the cant
-## is what turns the right side (the side with the detail) toward the eye. At this distance a
-## right side needs about thirty degrees of cant before it faces the camera at all.
+## How a blaster of each pose is turned at the hip, in degrees (pitch, yaw, roll) in the model's own space (it points -Z): yaw positive brings the muzzle
+## toward the crosshair, roll positive cants the right side up toward the eye. Pointed straight down the view, a weapon shows the camera its back face and
+## a sliver of its left side, a stub in the corner; the cant turns the detailed right side to the eye, which takes about thirty degrees at this distance.
 static func pose_rotation(pose: StringName) -> Vector3:
 	match pose:
 		POSE_PISTOL:
@@ -109,24 +93,18 @@ static func sprint_world(pose: StringName) -> Array:
 			return [Vector3.ZERO, Vector3(0.0, 50.0, 0.0)]
 
 
-## How much a weapon of each pose is shrunk to stand in for a narrower field of view.
-##
-## [b]Roughly half, and it is not an arbitrary taste.[/b] A weapon drawn at life size
-## half a metre from a 90-degree camera spans most of the screen; a watcher reads that as
-## the gun being enormous rather than as the camera being wide. Halving it puts a rifle
-## at about a third of the screen height, which is where this genre has settled. A heavy
-## weapon is shrunk a little further because it is longer to begin with.
+## How much a weapon of each pose is shrunk to stand in for a narrower field of view: roughly half, because a weapon at life size half a metre
+## from a 90-degree camera spans most of the screen and reads as enormous. Halving it puts a rifle at about a third of the screen height, where
+## this genre has settled; a heavy weapon is shrunk a little further because it is longer to begin with.
 static func pose_scale(pose: StringName) -> float:
 	match pose:
 		POSE_PISTOL:
 			return 0.72
 		POSE_HEAVY:
 			return 0.72
-		# [b]Melee is not shrunk the way the blasters are.[/b] A knife is 35 cm long against
-		# a rifle's 71, so the correction that puts a rifle at a third of the screen puts a
-		# knife at a sixth — behind the hand holding it, which is where the first render
-		# had it. Held slightly above life size is what a first-person blade looks like in
-		# every game that ships one.
+		# [b]Melee is not shrunk the way the blasters are.[/b] A knife is 35 cm against a rifle's 71, so the correction that puts a rifle
+		# at a third of the screen puts a knife at a sixth, behind the hand holding it. Held slightly above life size is what a
+		# first-person blade looks like in every game that ships one.
 		POSE_MELEE:
 			return 1.20
 		POSE_THROWN:

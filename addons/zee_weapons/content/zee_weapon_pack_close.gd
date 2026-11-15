@@ -3,13 +3,8 @@ extends "zee_weapon_pack_builders.gd"
 ## The melee weapons and sidearms of ZeeWeaponPack, split out for file size.
 
 
-# --- Melee ------------------------------------------------------------------
-#
-# Seven of them, and they are not seven reskins. A melee weapon in a game with
-# twenty-six guns is only ever picked for a reason, so each of these has one: the knife
-# is the fastest thing in the game, the mallet is the hardest single hit, the spade has
-# the widest arc and the pickaxe has the longest reach. Damage alone would have made six
-# of them pointless.
+# Melee: seven, and not seven reskins. With twenty-six guns a melee weapon is only picked for a reason, so each has one: the knife is
+# the fastest thing in the game, the mallet the hardest single hit, the spade the widest arc and the pickaxe the longest reach.
 
 ## Always carried, so a player is never holding nothing — after a drop, during a
 ## respawn, in a mode with no loadout.
@@ -73,7 +68,7 @@ static func spade(t: Dictionary = {}) -> DotWeaponDef:
 	)
 
 
-# --- Sidearms ---------------------------------------------------------------
+# Sidearms
 
 ## The one everybody starts with. Never runs out, always loses a fair fight — which is
 ## what makes picking something up worth doing.

@@ -34,13 +34,9 @@ var _sheet_tick: int = 100000
 var _sheet_wall_body: StaticBody3D = null
 
 
-## Renders sheet frames to `<prefix>_NN.png` and quits.
-##
-## [b]The view model is stepped by hand.[/b] Its own `_process` is switched off and
-## [method ZeeViewModel.advance] is called with [constant SHEET_STEP], so what a frame shows
-## depends on the number of steps and not on how fast a software renderer happens to draw.
-## The range stops simulating too: the rig would otherwise push its own reload and deploy
-## fractions over the ones the sheet sets.
+## Renders sheet frames to `<prefix>_NN.png` and quits. The view model is stepped by hand: its `_process` is off and [method ZeeViewModel.advance] is
+## called with [constant SHEET_STEP], so a frame depends on the number of steps, not on how fast a software renderer draws. The range stops simulating too,
+## or the rig would push its own reload and deploy fractions over the ones the sheet sets.
 func _run_sheet(prefix: String) -> void:
 	_sheet_setup()
 
@@ -230,9 +226,8 @@ func _sheet_wall(share: float, kind: String) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.55, 0.5, 0.42)
 	mesh.material_override = mat
-	# `--wall-unseen`: the wall still pushes the gun, but is not drawn. A sheet is read back from the
-	# root viewport, where the wall overlay's SubViewport lags or is missing on the software
-	# renderer, so the drawn wall hides gun the player would see over it; unseen, the frame
+	# `--wall-unseen`: the wall still pushes the gun but is not drawn. A sheet is read back from the root viewport, where the wall overlay's
+	# SubViewport lags or is missing on the software renderer, so a drawn wall hides gun the player would see over it; unseen, the frame
 	# shows the whole pose and any part cut by the near plane.
 	mesh.visible = not OS.get_cmdline_user_args().has("--wall-unseen")
 	_sheet_wall_body.add_child(mesh)
@@ -303,11 +298,9 @@ func _sheet_reset() -> void:
 	_sheet_steps(1)
 
 
-## Pulls the trigger through the rig, as a game does: the use reaches the view model (the kick,
-## a melee swing, a throw) and the shot's effects (the flash, the tracer, the impact and its
-## mark), so the fire frames show what a player sees and not the kick alone. The magazine is
-## topped up first, so a two-round gun has a round for each fire frame. A weapon that will not
-## go off in half a second of held trigger and its release falls back to the kick.
+## Pulls the trigger through the rig, as a game does: the use reaches the view model (kick, melee swing, throw) and the shot's effects (flash, tracer,
+## impact and mark), so the fire frames show what a player sees. The magazine is topped up first, so a two-round gun has a round for each fire frame.
+## A weapon that will not go off in half a second of held trigger and its release falls back to the kick.
 func _sheet_fire(recoil: Vector2) -> void:
 	var held := _rig.arsenal.current() if _rig.arsenal != null else null
 	var def := _rig.current_def()
@@ -355,11 +348,8 @@ func _save_still() -> void:
 	get_tree().quit()
 
 
-## One `--name value` argument from the command line, after the bare `--`.
-##
-## [b]The bare `--` matters.[/b] Everything before it is Godot's and everything after it
-## is the project's, and an argument passed without it is swallowed by the engine —
-## which presents as the flag being ignored with no error at all.
+## One `--name value` argument from the command line, after the bare `--`: everything before it is Godot's, and an argument passed
+## without it is swallowed by the engine, which presents as the flag being ignored with no error at all.
 static func _argument(name: String) -> String:
 	var args := OS.get_cmdline_user_args()
 

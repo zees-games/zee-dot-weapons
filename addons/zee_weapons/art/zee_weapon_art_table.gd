@@ -45,7 +45,7 @@ static func effective_reload_keys(art: ZeeWeaponArt) -> Array:
 	return art.reload_keys if not art.reload_keys.is_empty() else reload_keys(art.pose)
 
 
-# --- The table --------------------------------------------------------------
+# The table
 
 ## Every weapon's art, keyed by weapon id.
 ##
@@ -158,7 +158,7 @@ static func get_art(id: StringName) -> ZeeWeaponArt:
 	return table().get(id, null)
 
 
-# --- Melee ------------------------------------------------------------------
+# Melee
 #
 # [b]Every melee model points along +Y, not +Z.[/b] Kenney's tools stand upright on
 # their handle with the origin at the butt, which is exactly where a hand grips them —
@@ -215,7 +215,7 @@ static func spade() -> ZeeWeaponArt:
 	return art
 
 
-# --- Sidearms ---------------------------------------------------------------
+# Sidearms
 
 static func pistol() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.PISTOL, "pistol", POSE_PISTOL).with_magazine(
@@ -247,7 +247,7 @@ static func derringer() -> ZeeWeaponArt:
 	return art
 
 
-# --- Primaries --------------------------------------------------------------
+# Primaries
 
 static func smg() -> ZeeWeaponArt:
 	var art := _gun(ZeeWeaponIds.SMG, "smg", POSE_RIFLE).with_magazine(
@@ -327,7 +327,7 @@ static func marksman() -> ZeeWeaponArt:
 	return _mounted(art, Vector3.INF, Vector3(0.0, 0.036, -0.50))
 
 
-# --- Heavies ----------------------------------------------------------------
+# Heavies
 
 ## The longest model, at 1.30 m (art-src/guns: a heavy bolt gun with a long scope and a folded
 ## bipod). Its origin is its bounds' centre like every other model's; the muzzle is measured
@@ -422,7 +422,7 @@ static func charge_rifle() -> ZeeWeaponArt:
 	return art
 
 
-# --- Thrown -----------------------------------------------------------------
+# Thrown
 #
 # The grenades stand on their base with the origin at the bottom, the same as the melee
 # tools, so they take the same forward axis.
@@ -435,7 +435,7 @@ static func sticky() -> ZeeWeaponArt:
 	return _thrown(ZeeWeaponIds.STICKY, BLASTERS + "grenade-b.glb")
 
 
-# --- Attachments ------------------------------------------------------------
+# Attachments
 
 ## Kit parts are sized for the toy blasters; on a real gun's receiver they draw at these scales.
 const OPTIC_SIZE := Vector3(0.5, 0.5, 0.5)
@@ -465,7 +465,7 @@ static func _mounted(art: ZeeWeaponArt, optic: Vector3, muzzle: Vector3) -> ZeeW
 	return art
 
 
-# --- Builders ---------------------------------------------------------------
+# Builders
 
 ## A blaster: points along -Z, Godot's own forward, sits at its pose's offset, measures its
 ## own muzzle.
@@ -569,7 +569,7 @@ static func _thrown(id: StringName, model: String) -> ZeeWeaponArt:
 	return art
 
 
-# --- Validation -------------------------------------------------------------
+# Validation
 
 ## Checks every entry, and that the table covers exactly the ids the pack defines.
 ## Loads no mesh: a dedicated server runs it without `assets/`, so file presence is [method validate_models]'s question.

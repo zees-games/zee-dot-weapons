@@ -2,17 +2,15 @@
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
 addons/zee_weapons/art/zee_model_cache.gd::long_block	6
 addons/zee_weapons/art/zee_weapon_art.gd::long_block	18
-addons/zee_weapons/art/zee_weapon_art_table.gd::banner	8
 addons/zee_weapons/art/zee_weapon_art_table.gd::history	1
-addons/zee_weapons/art/zee_weapon_art_table.gd::long_block	15
+addons/zee_weapons/art/zee_weapon_art_table.gd::long_block	11
 addons/zee_weapons/behaviour/zee_weapon_bash.gd::history	1
 addons/zee_weapons/behaviour/zee_weapon_bash.gd::long_block	6
 addons/zee_weapons/content/zee_weapon_cards.gd::long_block	1
 addons/zee_weapons/content/zee_weapon_damage.gd::long_block	5
-addons/zee_weapons/content/zee_weapon_ids.gd::banner	5
 addons/zee_weapons/content/zee_weapon_ids.gd::long_block	5
-addons/zee_weapons/content/zee_weapon_pack.gd::banner	7
-addons/zee_weapons/content/zee_weapon_pack.gd::long_block	7
+addons/zee_weapons/content/zee_weapon_pack.gd::banner	5
+addons/zee_weapons/content/zee_weapon_pack.gd::long_block	6
 addons/zee_weapons/net/zee_weapon_net.gd::banner	2
 addons/zee_weapons/net/zee_weapon_net.gd::long_block	7
 addons/zee_weapons/runtime/zee_weapon_input.gd::banner	3
@@ -39,7 +37,7 @@ addons/zee_weapons/view/zee_world_model.gd::history	1
 addons/zee_weapons/view/zee_world_model.gd::long_block	12
 addons/zee_weapons/zee_weapons_api.gd::long_block	2
 addons/zee_weapons/zee_weapons_plugin.gd::long_block	1
-examples/zee_range.gd::long_block	6
+examples/zee_range.gd::long_block	3
 examples/zee_selftest.gd::history	3
 examples/zee_selftest.gd::long_block	2
 tools/rack.gd::long_block	3

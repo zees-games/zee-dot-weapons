@@ -1,10 +1,9 @@
 class_name ZeeArtProvider
 extends RefCounted
 
-## What the view classes ask of a weapon pack's art, so a second pack can reuse them: they call this instead of naming
-## [ZeeModelCache], [ZeeWeaponArtTable] and [ZeeWeaponPack] directly. The default answers from zee's own art and catalogue; a
-## pack subclasses it and assigns it to [member ZeeWorldModel.art_provider]. Everything here is a pure lookup by art row or
-## weapon id, so a provider needs no node and no tree.
+## What the view classes ask of a weapon pack's art, so a second pack can reuse them instead of naming [ZeeModelCache], [ZeeWeaponArtTable] and [ZeeWeaponPack].
+## The default answers from zee's own art and catalogue; a pack subclasses it and assigns it to [member ZeeWorldModel.art_provider]. Everything here is a
+## pure lookup by art row or weapon id, so a provider needs no node and no tree.
 
 
 ## A fresh model for [param path], or null when it is missing.

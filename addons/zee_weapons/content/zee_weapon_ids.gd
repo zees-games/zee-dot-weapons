@@ -16,7 +16,7 @@ extends RefCounted
 ## file in the pack that knows which mesh a role wears. That is what lets the art be
 ## swapped for a game's own without touching a rule, a loadout or a save.
 
-# --- Damage types -----------------------------------------------------------
+# Damage types
 
 ## Anything the blasters fire. Foam darts, in this kit's fiction.
 const DAMAGE_DART := &"dart"
@@ -33,7 +33,7 @@ const DAMAGE_STRIKE := &"strike"
 ## making it immune to bullets.
 const DAMAGE_ENERGY := &"energy"
 
-# --- Ammunition pools -------------------------------------------------------
+# Ammunition pools
 #
 # Seven pools rather than twenty-seven, deliberately. A pool per weapon means every pickup
 # is useful to exactly one weapon and a player who is out of ammunition stays out; pools
@@ -64,9 +64,7 @@ const AMMO_ORDNANCE := &"ordnance"
 ## which three of each would not be.
 const AMMO_GRENADE := &"grenades"
 
-# --- Tags -------------------------------------------------------------------
-#
-# What a mode filters on. A rule that names weapon ids has to be edited every time a
+# Tags: what a mode filters on. A rule that names weapon ids has to be edited every time a
 # weapon is added; a rule that names a tag does not.
 
 ## Weapon def params dot-player-char's death reactions read, by name, so neither addon names the
@@ -86,7 +84,7 @@ const TAG_SCOPED := &"scoped"
 const TAG_ENERGY := &"energy"
 const TAG_AUTOMATIC := &"automatic"
 
-# --- Slots ------------------------------------------------------------------
+# Slots
 #
 # dot-weapon's slots are 1-based integers and it attaches no meaning to them. The
 # meaning is this pack's, and it is the layout every shooter in this genre has
@@ -98,7 +96,7 @@ const SLOT_PRIMARY := 3
 const SLOT_HEAVY := 4
 const SLOT_THROWN := 5
 
-# --- Attachments ------------------------------------------------------------
+# Attachments
 #
 # Prefixed, unlike the weapons: ZeeAttachmentArt asks every installed pack for an id's art
 # and the first answer wins, so a pack's `red_dot` must not come out wearing this one's.
@@ -108,7 +106,7 @@ const ATT_SCOPE := &"zee_scope"
 const ATT_SUPPRESSOR := &"zee_suppressor"
 const ATT_EXTENDED_MAG := &"zee_extended_mag"
 
-# --- Weapons ----------------------------------------------------------------
+# Weapons
 
 ## Melee. Always carried, never runs out, and always loses to anything with a barrel.
 const FISTS := &"fists"
