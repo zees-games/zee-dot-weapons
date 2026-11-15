@@ -77,7 +77,23 @@ func _ready() -> void:
 	_hip_converge_any_forward()
 	_thrown_span_sized()
 
+	var passed := _report()
 
+	# Half a second before quitting, for the effects section: a report still playing is
+	# held by the audio server until its mix thread lets go, and quitting before it has
+	# reports the playback and its stream as leaked at exit. Four frames was the first
+	# try and leaked two of each on about half the runs (2026-10-05): the mix thread runs
+	# on its own clock, not the frame's, and four headless frames can pass inside one of
+	# its periods. Stopping the voice and dropping its stream in ZeeShotFx._exit_tree did
+	# not change the rate, so the wait is the fix and it is measured: 0 in 6 runs.
+	await get_tree().create_timer(0.5).timeout
+
+	get_tree().quit(0 if passed else 1)
+
+
+
+## Prints the totals and the RESULT line; true when every section finished and every expected check passed.
+func _report() -> bool:
 	print("")
 	print("%d sections entered, %d finished, %d checks, %d failed" % [
 		_sections_entered, _sections_finished, _checks, _failures
@@ -96,18 +112,7 @@ func _ready() -> void:
 	var passed := _failures == 0 and _sections_entered == _sections_finished and _checks == CHECKS
 
 	print("RESULT: %s" % ("PASS" if passed else "FAIL"))
-
-	# Half a second before quitting, for the effects section: a report still playing is
-	# held by the audio server until its mix thread lets go, and quitting before it has
-	# reports the playback and its stream as leaked at exit. Four frames was the first
-	# try and leaked two of each on about half the runs (2026-10-05): the mix thread runs
-	# on its own clock, not the frame's, and four headless frames can pass inside one of
-	# its periods. Stopping the voice and dropping its stream in ZeeShotFx._exit_tree did
-	# not change the rate, so the wait is the fix and it is measured: 0 in 6 runs.
-	await get_tree().create_timer(0.5).timeout
-
-	get_tree().quit(0 if passed else 1)
-
+	return passed
 
 func _view_magazines(view: ZeeViewModel) -> void:
 	# A magazine gun's magazine must visibly leave the well and come back, or a reload reads as
@@ -284,48 +289,11 @@ func _aim() -> void:
 		absf(at.x) < 0.002 and at.y < -0.02 and at.z < 0.0)
 	# 15: the bullpup lost its added scope with the real-world guns and aims down its iron sight.
 
-	# The sight line, measured off each gun's own mesh, runs through the screen's centre at
-	# full aim: the rear and the front sight both on the view axis, the front further out.
-	# A sight built but held off the axis is the "aimed at the back of the gun" picture again.
-	var sighted := 0
-	var worst := 0.0
-	var worst_id := &""
-	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
-		if not art.aim_enabled or art.aim_scoped:
-			continue
-		view.equip(art)
-		view.aim(true)
-		step.call(0.6)
-		var points := view.sight_points()
-		if points.is_empty():
-			continue
-		sighted += 1
-		var rear: Vector3 = points.rear
-		var front: Vector3 = points.front
-		var off := maxf(Vector2(rear.x, rear.y).length(), Vector2(front.x, front.y).length())
-		if off > worst or front.z >= rear.z or rear.z >= -0.05:
-			worst = maxf(off, worst + 1.0 if front.z >= rear.z or rear.z >= -0.05 else off)
-			worst_id = art.id
-	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 15)
-	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
-		worst < 0.002)
+	_aim_iron_sights(view, step)
 
 	_aim_marked_sights()
 
-	view.equip(rifle)
-	view.aim(true)
-	step.call(0.6)
-	view.on_fired(Vector2(1.0, 0.2))
-	step.call(0.06)
-	var kicked := view.sight_points()
-	var kicked_front: Vector3 = kicked.front
-	var kick_angle := rad_to_deg(Vector2(kicked_front.x, kicked_front.y).length() / -kicked_front.z)
-	step.call(1.0)
-	var settled: Vector3 = view.sight_points().front
-	_check("a kick at the sight moves the front sight under three degrees (%.2f)" % kick_angle,
-		kick_angle < 3.0)
-	_check("and it settles back onto the crosshair (%.4f m)" % Vector2(settled.x, settled.y).length(),
-		Vector2(settled.x, settled.y).length() < 0.002)
+	_aim_kick(view, rifle, step)
 
 	view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.PISTOL))
 	_check("a new weapon starts at the hip, aim held or not", view.aim_fraction() == 0.0)
@@ -400,6 +368,54 @@ func _scope_modes() -> void:
 	camera.queue_free()
 	overlay.queue_free()
 	view.queue_free()
+
+
+## The sight line, measured off each gun's own mesh, runs through the screen's centre at full aim.
+## [param step] drives the view's _process by hand, as in [method _aim].
+func _aim_iron_sights(view: ZeeViewModel, step: Callable) -> void:
+	# The rear and the front sight both on the view axis, the front further out.
+	# A sight built but held off the axis is the "aimed at the back of the gun" picture again.
+	var sighted := 0
+	var worst := 0.0
+	var worst_id := &""
+	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
+		if not art.aim_enabled or art.aim_scoped:
+			continue
+		view.equip(art)
+		view.aim(true)
+		step.call(0.6)
+		var points := view.sight_points()
+		if points.is_empty():
+			continue
+		sighted += 1
+		var rear: Vector3 = points.rear
+		var front: Vector3 = points.front
+		var off := maxf(Vector2(rear.x, rear.y).length(), Vector2(front.x, front.y).length())
+		if off > worst or front.z >= rear.z or rear.z >= -0.05:
+			worst = maxf(off, worst + 1.0 if front.z >= rear.z or rear.z >= -0.05 else off)
+			worst_id = art.id
+	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 15)
+	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
+		worst < 0.002)
+
+
+## A kick at the sight stays small and settles back onto the crosshair. [param step] drives the
+## view's _process by hand, as in [method _aim].
+func _aim_kick(view: ZeeViewModel, rifle: ZeeWeaponArt, step: Callable) -> void:
+	view.equip(rifle)
+	view.aim(true)
+	step.call(0.6)
+	view.on_fired(Vector2(1.0, 0.2))
+	step.call(0.06)
+	var kicked := view.sight_points()
+	var kicked_front: Vector3 = kicked.front
+	var kick_angle := rad_to_deg(Vector2(kicked_front.x, kicked_front.y).length() / -kicked_front.z)
+	step.call(1.0)
+	var settled: Vector3 = view.sight_points().front
+	_check("a kick at the sight moves the front sight under three degrees (%.2f)" % kick_angle,
+		kick_angle < 3.0)
+	_check("and it settles back onto the crosshair (%.4f m)" % Vector2(settled.x, settled.y).length(),
+		Vector2(settled.x, settled.y).length() < 0.002)
 
 
 func _aim_lens() -> void:
