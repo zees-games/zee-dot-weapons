@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="zee-dot-weapons"
-config/description="A complete weapons pack for the Dot ecosystem: twenty-six weapons built on dot-weapon's catalogue, with first-person view models, third-person world models, procedural animation and the netcode to make another player's gun look right on your screen. Art is Kenney's CC0 Blaster Kit."
+config/description="A complete weapons pack for the Gamespice platform: twenty-six weapons built on dot-weapon's catalogue, with first-person view models, third-person world models, procedural animation and the netcode to make another player's gun look right on your screen. Art is Kenney's CC0 Blaster Kit."
 run/main_scene="res://examples/zee_range.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
