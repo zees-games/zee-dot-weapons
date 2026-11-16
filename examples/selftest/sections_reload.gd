@@ -69,8 +69,16 @@ func _reload_sequences() -> void:
 	var belt := _play(view, 20, 100)
 	_check("belt-fed: cover open, box out, belt laid, cover shut (%s)" % [belt.names], "cover_open" in belt.names and "belt_lay" in belt.names and "cover_close" in belt.names)
 
-	# Interrupted: the reload ending at any point puts every part away and the hand back.
-	_g = view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
+	_reload_interrupted(view)
+	_reload_data(view, gl)
+	view.queue_free()
+	_watched_reload()
+	_end()
+
+
+## A reload cut short puts every part away and eases the hand home.
+func _reload_interrupted(view: ZeeViewModel) -> void:
+	var _g := view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
 	view.on_reload_begin(0, 30)
 	view.on_reload(0.4)
 	view.advance(0.0)
@@ -92,11 +100,6 @@ func _reload_sequences() -> void:
 	view.on_reload(0.0)
 	_check("reload_release_seconds 0 snaps home at once", view.reload_sequence() == null)
 	view.reload_release_seconds = 0.2
-
-	_reload_data(view, gl)
-	view.queue_free()
-	_watched_reload()
-	_end()
 
 
 ## The style a profile row picks, and the order of a sequence's keys.

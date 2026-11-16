@@ -776,32 +776,3 @@ func _clear_models() -> void:
 	_belt = null
 	_magazine = null
 	_attachments.clear()
-
-
-func describe() -> Dictionary:
-	return {
-		"equipped": String(_id),
-		"has_model": _weapon != null,
-		"magazine": _magazine != null,
-		"attachments": _attachments.size(),
-		"arms": _arms.describe() if _arms != null else {},
-		"reload": _seq.describe() if _seq != null else {},
-		"pose": _pose.describe(),
-		"muzzle": _muzzle,
-		"aim": "%.2f%s%s" % [_aim_fraction, " held" if _aim_held else "", " scoped" if is_scoped() else ""],
-	}
-
-
-func describe_lines() -> PackedStringArray:
-	var out := PackedStringArray()
-	out.append("view model: %s%s" % [
-		String(_id) if _id != &"" else "(nothing)",
-		"" if _weapon != null else " (no mesh)",
-	])
-	out.append("  muzzle %.3f m out, %d attachment(s)" % [
-		_muzzle.length(), _attachments.size()
-	])
-	out.append("  %s" % str(_pose.describe()))
-	return out
-
-
