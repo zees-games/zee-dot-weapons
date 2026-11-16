@@ -78,6 +78,14 @@ const FEED_CARRY := Vector3(0.03, 0.06, 0.0)
 ## The last reload fraction handed in, for the hand that fetches the magazine.
 var _reload_fraction: float = 0.0
 
+## Seconds a reload cut short (a shot, a dry reserve, a shotgun stopped between shells) takes to ease the gun and hands
+## home from where it was cut, smoothstepped. 0 snaps back in one frame (a 0.7 m jump of the muzzle on a shotgun cut mid-shell).
+@export var reload_release_seconds: float = 0.2
+
+## The reload fraction the cut happened at, and how much of the cut pose is left (1 just cut, 0 home).
+var _release_at: float = 0.0
+var _release: float = 0.0
+
 ## Where the muzzle sits in the weapon's own space, measured when the model was built.
 var _muzzle := Vector3.ZERO
 

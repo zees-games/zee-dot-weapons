@@ -218,8 +218,10 @@ func _launcher(eject: int, count: int) -> void:
 func _tube(count: int, start_share: float) -> void:
 	var per := (1.0 - start_share) / float(count) if start_share > 0.0 else 0.6 / float(count)
 	_add(&"roll", start_share if start_share > 0.0 else 0.14, &"roll", &"under", Vector3(0.0, -0.04, 0.02))
+	# The arsenal ends the reload as the last round lands, so the way back to the hold comes out of the last round's
+	# share: with none, the gun and the hand jumped from the roll to the hold in the reload's final frame.
 	for i in count:
-		var share := per * (0.55 if empty and i == count - 1 else 1.0)
+		var share := per * (0.55 if empty and i == count - 1 else (0.6 if i == count - 1 else 1.0))
 		_add(StringName("fetch_%d" % i), share * 0.5, &"roll", &"pouch" if i == 0 else &"near")
 		_add(StringName("push_%d" % i), share * 0.5, &"roll", &"under", Vector3(0.0, -0.01, -0.03))
 	if empty:
@@ -227,7 +229,8 @@ func _tube(count: int, start_share: float) -> void:
 		_add(&"pump", per * 0.15, &"cant", &"fore")
 		_add(&"rest", per * 0.1, &"rest", &"fore")
 	else:
-		_add(&"rest", 0.001, &"rest", &"fore")
+		_add(&"return", per * 0.28, &"settle", &"fore")
+		_add(&"rest", per * 0.12, &"rest", &"fore")
 	for i in count:
 		props.append({"part": StringName(str(_spec.get("round", "shell"))), "segments": [[_mid(StringName("fetch_%d" % i)), _t1(StringName("push_%d" % i)), "hand", Vector3.ZERO, 0]]})
 

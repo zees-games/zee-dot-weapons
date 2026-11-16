@@ -7,8 +7,10 @@ extends RefCounted
 const DRAW_KEYS := [
 	[0.0, Vector3(0.03, -0.30, 0.06), Vector3(-35.0, -12.0, 50.0)],
 	[0.35, Vector3(0.015, -0.10, 0.03), Vector3(-12.0, -6.0, 18.0)],
-	[0.70, Vector3(0.0, 0.006, 0.0), Vector3(3.0, 0.0, -4.0)],
-	[0.86, Vector3(0.0, -0.002, 0.0), Vector3(-0.8, 0.0, 1.0)],
+	# One small overshoot that eases home. A second, opposite one at 0.86 reversed the pitch inside two frames of a
+	# quarter-second pistol draw (0.25 s): the muzzle dropped 4 cm in one frame as the gun came up.
+	[0.70, Vector3(0.0, 0.004, 0.0), Vector3(1.6, 0.0, -2.2)],
+	[0.86, Vector3(0.0, 0.0012, 0.0), Vector3(0.4, 0.0, -0.6)],
 	[1.0, Vector3.ZERO, Vector3.ZERO],
 ]
 

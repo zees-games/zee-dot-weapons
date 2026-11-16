@@ -162,8 +162,8 @@ func _rig_world_attachments() -> void:
 
 
 func _rig_reload_motion() -> void:
-	# The reload motion spans the profile's whole reload (a per-round one is the start plus a round
-	# time per missing round) and its keys end at the rest pose.
+	# The reload motion spans the arsenal's whole reload (a per-round one lands its first round as the start ends, then one
+	# per round time) and its keys end at the rest pose.
 	var timing := ZeeWeaponRig.new()
 	timing.tick_rate = ZeeWeaponPack.TICK_RATE
 	add_child(timing)
@@ -175,9 +175,11 @@ func _rig_reload_motion() -> void:
 			continue
 		var want := def.reload_ticks
 		if def.reload_per_round:
-			want = def.reload_start_ticks + def.reload_ticks * def.magazine
+			want = def.reload_start_ticks + def.reload_ticks * (def.magazine - 1)
 		if absi(timing.reload_motion_ticks(def, def.magazine) - want) > 1:
 			drift.append(str(def.id))
+		if def.reload_per_round and absi(timing.reload_motion_ticks(def, 1) - def.reload_start_ticks) > 1:
+			drift.append("%s (one round)" % def.id)
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
 		var keys: Array = art.reload_keys if not art.reload_keys.is_empty() else ZeeWeaponArtTable.reload_keys(art.pose)
 		if keys.is_empty():

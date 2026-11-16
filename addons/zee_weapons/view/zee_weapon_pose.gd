@@ -305,6 +305,11 @@ var _deploy: float = 1.0
 ## How far through a reload, 0 to 1. 0 and 1 are both at rest.
 var _reload: float = 0.0
 
+## A reload cut short (fired, switched, ran dry): where its keys were cut, and how much of that pose is left, 1 to 0.
+## Read only while [member _reload] is 0, so the gun eases home instead of jumping from mid-reload to rest in one frame.
+var _release_at: float = 0.0
+var _release: float = 0.0
+
 ## 0 to 1, a charged weapon's draw.
 var _charge: float = 0.0
 
@@ -494,6 +499,12 @@ func set_reload(fraction: float) -> void:
 	_reload = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else _reload
 
 
+## A reload cut at [param at] (0 to 1) whose pose is still [param weight] (1 just cut, 0 home) in the gun.
+func set_reload_release(at: float, weight: float) -> void:
+	_release_at = clampf(at, 0.0, 1.0) if is_finite(at) else 0.0
+	_release = clampf(weight, 0.0, 1.0) if is_finite(weight) else 0.0
+
+
 ## A charged weapon's draw, 0 to 1.
 func set_charge(fraction: float) -> void:
 	_charge = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else _charge
@@ -564,7 +575,12 @@ func offset() -> Transform3D:
 	# A rotation about this transform's origin is a rotation about the camera, which swings
 	# the whole gun across the screen rather than turning it in the hand.
 	var drawn := sample_keys(tunables.draw_keys, _deploy) if holstered > 0.0 else [Vector3.ZERO, Vector3.ZERO]
-	var reloaded := sample_keys(tunables.reload_keys, _reload) if _reload > 0.0 else [Vector3.ZERO, Vector3.ZERO]
+	var reloaded := [Vector3.ZERO, Vector3.ZERO]
+	if _reload > 0.0:
+		reloaded = sample_keys(tunables.reload_keys, _reload)
+	elif _release > 0.0:
+		var cut := sample_keys(tunables.reload_keys, _release_at)
+		reloaded = [(cut[0] as Vector3) * _release, (cut[1] as Vector3) * _release]
 	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
 	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) \
 		+ tunables.sprint_rotation * _sprint

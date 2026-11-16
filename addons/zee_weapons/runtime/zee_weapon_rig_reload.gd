@@ -23,17 +23,26 @@ func _on_reload_started(slot: int) -> void:
 	_reload_started = _last_tick
 	_reload_ticks = reload_motion_ticks(carried.def, carried.magazine_space())
 	if _view != null and not _replaying:
-		var start := float(arsenal.ticks_for(carried.def, carried.def.reload_start_ticks)) if carried.def.reload_per_round else 0.0
-		_view.on_reload_begin(carried.magazine, carried.def.magazine, start / float(_reload_ticks))
+		_view.on_reload_begin(carried.magazine, carried.def.magazine, reload_start_share(carried.def, carried.magazine_space()))
 
 
-## Ticks the reload motion spans: a per-round reload is the start plus one round time per missing
-## round, so the motion must cover all of it, not wrap every start-length.
+## Ticks the reload motion spans: the arsenal's own timeline. A per-round reload lands its first round as the start ends
+## and one more every round time, so it is over at the start plus a round time per missing round after the first. A motion
+## one round longer ran to about 60% and was cut there: the gun jumped from the shell push to the hold in one frame.
 func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
 	var ticks := def.reload_ticks
 	if def.reload_per_round:
-		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space, 1)
+		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space - 1, 0)
 	return maxi(1, arsenal.ticks_for(def, ticks))
+
+
+## How much of a per-round reload's motion the opening (the roll to the loading port) takes: the start's part of the start
+## plus a round time per round, so a one-shell top-up still has room for its fetch and push.
+func reload_start_share(def: DotWeaponDef, space: int) -> float:
+	if not def.reload_per_round:
+		return 0.0
+	var whole := def.reload_start_ticks + def.reload_ticks * maxi(space, 1)
+	return float(def.reload_start_ticks) / float(maxi(whole, 1))
 
 
 func _on_fire_mode_changed(slot: int, _mode: int) -> void:

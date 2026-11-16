@@ -73,10 +73,25 @@ func _reload_sequences() -> void:
 	_g = view.equip(ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE))
 	view.on_reload_begin(0, 30)
 	view.on_reload(0.4)
+	view.advance(0.0)
 	var mid := view.reload_parts_shown()
+	var weapon := view.weapon_node()
+	var cut_at := (view.global_transform.affine_inverse() * weapon.global_transform).origin
 	view.on_reload(0.0)
-	_check("a cancelled reload ends the sequence and hides its parts (%d shown mid-way, %d after)" % [mid, view.reload_parts_shown()],
-		mid >= 1 and view.reload_sequence() == null and view.reload_parts_shown() == 0)
+	view.advance(1.0 / 60.0)
+	var hidden := view.reload_parts_shown()
+	# Eased home, not snapped: one 60 fps frame after the cut the gun has barely left where it was cut.
+	var step := (view.global_transform.affine_inverse() * weapon.global_transform).origin.distance_to(cut_at)
+	for _i in ceili(view.reload_release_seconds * 60.0) + 1:
+		view.advance(1.0 / 60.0)
+	_check("a cancelled reload hides its parts, eases home and ends the sequence (%d shown mid-way, %d after; %.3f m the first frame)" % [mid, hidden, step],
+		mid >= 1 and hidden == 0 and step < 0.02 and view.reload_sequence() == null)
+	view.reload_release_seconds = 0.0
+	view.on_reload_begin(0, 30)
+	view.on_reload(0.4)
+	view.on_reload(0.0)
+	_check("reload_release_seconds 0 snaps home at once", view.reload_sequence() == null)
+	view.reload_release_seconds = 0.2
 
 	_reload_data(view, gl)
 	view.queue_free()

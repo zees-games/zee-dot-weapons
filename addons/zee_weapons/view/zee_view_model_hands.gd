@@ -54,7 +54,14 @@ func _place_hands() -> void:
 	var pose := _art.pose if _art.has_model() else &"fists"
 	var fore := aim * _support_hand()
 	var in_seq := _seq != null and _reload_fraction > 0.0 and _reload_fraction < 1.0
-	var grip := aim * (_grip_at + (_seq.right_offset(_reload_fraction) if in_seq else Vector3.ZERO))
+	# A reload cut short: the hands ease home from where it was cut, with the gun (ZeeWeaponPose.set_reload_release).
+	var held := _release_weight()
+	var right := Vector3.ZERO
+	if in_seq:
+		right = _seq.right_offset(_reload_fraction)
+	elif held > 0.0 and _seq != null:
+		right = _seq.right_offset(_release_at) * held
+	var grip := aim * (_grip_at + right)
 	var anchor := _animated
 	if hands_scale != 1.0 or hands_min_distance > 0.0:
 		var to_holder := transform * _animated.transform * aim * _holder.transform
@@ -73,9 +80,10 @@ func _place_hands() -> void:
 	grip = into * grip
 	fore = into * fore
 	if "support_free" in _arms:
-		_arms.set("support_free", in_seq or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
+		_arms.set("support_free", in_seq or held > 0.0 or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
 	if "support_blend" in _arms:
-		_arms.set("support_blend", clampf(minf(_reload_fraction, 1.0 - _reload_fraction) / SUPPORT_EASE, 0.0, 1.0))
+		var f := _release_at if held > 0.0 else _reload_fraction
+		_arms.set("support_blend", clampf(minf(f, 1.0 - f) / SUPPORT_EASE, 0.0, 1.0) * (held if held > 0.0 else 1.0))
 	# A game's own arms may answer the older three-argument reach; they get no axes.
 	if _arms.get_method_argument_count("reach") >= 6:
 		_arms.call(
@@ -89,7 +97,20 @@ func _place_hands() -> void:
 ## a magazine, to the well, down with the old magazine and out of sight, back up with the next
 ## one, and back to the fore-end. Keys in the same shape as the gun's, so the two agree.
 func _support_hand() -> Vector3:
-	var f := _reload_fraction
+	var held := _release_weight()
+	if held > 0.0 and _reload_fraction <= 0.0:
+		return _fore_at.lerp(_support_hand_at(_release_at), held)
+	return _support_hand_at(_reload_fraction)
+
+
+## How much of a cut reload's pose is left in the hands, smoothstepped: 1 just cut, 0 home.
+func _release_weight() -> float:
+	var r := clampf(_release, 0.0, 1.0)
+	return r * r * (3.0 - 2.0 * r)
+
+
+## [method _support_hand] at reload fraction [param f].
+func _support_hand_at(f: float) -> Vector3:
 	if _seq != null and f > 0.0 and f < 1.0:
 		return _seq.left_hand(f)
 	if not _has_well or f <= 0.0 or f >= 1.0:

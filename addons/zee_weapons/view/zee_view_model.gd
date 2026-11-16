@@ -443,15 +443,33 @@ func on_deploy(fraction: float) -> void:
 
 
 ## How far through a reload, 0 to 1; the magazine is animated from the same number.
+## A reload that stops before its end (the arsenal ends a shell-by-shell reload when it likes, a shot cuts it) eases home
+## over [member reload_release_seconds] from where it stopped; the sequence is kept until then, since the cut pose is its.
 func on_reload(fraction: float) -> void:
+	var was := _reload_fraction
 	_reload_fraction = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else 0.0
-	if _seq != null:
-		if _reload_fraction > 0.0:
+	if _reload_fraction > 0.0:
+		_release = 0.0
+		if _seq != null:
 			_seq_ran = true
-		elif _seq_ran:
-			_end_sequence()
+	elif was > 0.0 and was < 1.0 and reload_release_seconds > 0.0:
+		_release_at = was
+		_release = 1.0
+	elif _release <= 0.0 and _seq != null and _seq_ran:
+		_end_sequence()
 	_pose.set_reload(_reload_fraction)
+	_pose.set_reload_release(_release_at, _ease(_release))
 	_animate_magazine(_reload_fraction)
+
+
+## One frame of a cut reload's way home ([method on_reload]).
+func _advance_release(delta: float) -> void:
+	if _release <= 0.0:
+		return
+	_release = maxf(0.0, _release - delta / reload_release_seconds) if reload_release_seconds > 0.0 else 0.0
+	_pose.set_reload_release(_release_at, _ease(_release))
+	if _release <= 0.0 and _reload_fraction <= 0.0 and _seq != null and _seq_ran:
+		_end_sequence()
 
 
 static var _parts_warmed := false
@@ -497,6 +515,9 @@ func reload_parts_shown(part: StringName = &"") -> int:
 func _end_sequence() -> void:
 	_seq = null
 	_seq_ran = false
+	_release = 0.0
+	if _pose != null:
+		_pose.set_reload_release(0.0, 0.0)
 	if _props != null:
 		_props.queue_free()
 		_props = null
@@ -581,6 +602,7 @@ func advance(delta: float) -> void:
 		_belt.advance(delta)
 
 	_strafe_now = _strafe_speed(delta)
+	_advance_release(delta)
 	_pose.advance(delta, _look_delta(), _speed, _on_floor, _crouched, _strafe_now)
 	_sprint = move_toward(_sprint, 1.0 if _sprinting and sprint_pose else 0.0, delta / SPRINT_SECONDS)
 	_pose.set_sprint(_ease(_sprint))
