@@ -28,6 +28,9 @@ var ads_rules: ZeeAdsRules = null:
 ## that share of life size ([ZeeHandsFrame]), so a game's own arms reach it; otherwise the drawn weapon itself.
 signal hands_reached(anchor: Node3D, grip: Vector3, fore: Vector3, pose: StringName)
 
+## The share of a reload the support hand spends leaving the grip for the well, and returning.
+const SUPPORT_EASE := 0.12
+
 const ReloadSequence := preload("zee_reload_sequence.gd")
 
 ## The reload being played as phases (zee_reload_sequence.gd), or null for the generic one.
@@ -71,6 +74,8 @@ func _place_hands() -> void:
 	fore = into * fore
 	if "support_free" in _arms:
 		_arms.set("support_free", in_seq or (_has_well and not _feeds and _reload_fraction > 0.0 and _reload_fraction < 1.0))
+	if "support_blend" in _arms:
+		_arms.set("support_blend", clampf(minf(_reload_fraction, 1.0 - _reload_fraction) / SUPPORT_EASE, 0.0, 1.0))
 	# A game's own arms may answer the older three-argument reach; they get no axes.
 	if _arms.get_method_argument_count("reach") >= 6:
 		_arms.call(

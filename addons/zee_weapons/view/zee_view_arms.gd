@@ -194,6 +194,9 @@ func build() -> DotResult:
 ## True while the support hand is sent somewhere ([method reach]'s `fore`) even though the pose
 ## would cup it on the grip: set by the view model through a pistol's magazine change.
 var support_free := false
+## How far the support hand has left the grip for `fore`, 0 (cupped on it) to 1 (at `fore`): eased in and out by the view model, so the hand
+## travels to the magazine well and back instead of appearing there on the first frame of a reload.
+var support_blend := 1.0
 ## Where each shoulder and hand was put last ([method _hands_for]'s keys), in this node's space, for a check.
 var last_hands: Dictionary = {}
 
@@ -241,8 +244,9 @@ func reach(
 		# A pistol's support hand cups the grip and ignores [param fore]; through a magazine
 		# change it must go to the well and fetch, or the magazine travels alone, a hand's
 		# width from the fist that is supposed to carry it.
-		hands["left"] = fore
-		hands["left_shoulder"] = Vector3(minf(fore.x - 0.05, -0.05), -0.46, minf(fore.z + 0.26, -0.09))
+		var left: Vector3 = (hands["left"] as Vector3).lerp(fore, clampf(support_blend, 0.0, 1.0))
+		hands["left"] = left
+		hands["left_shoulder"] = Vector3(minf(left.x - 0.05, -0.05), -0.46, minf(left.z + 0.26, -0.09))
 	last_hands = hands
 
 	if _style_built == &"rigged":
