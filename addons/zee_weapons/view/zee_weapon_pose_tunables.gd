@@ -175,7 +175,7 @@ const KICK_PARAMS := {
 
 ## The builders' kick numbers as profile params: the defaults above, so a profile that sets none changes nothing.
 static func kick_defaults() -> Dictionary:
-	var base := Tunables.new()
+	var base := ZeeWeaponPoseTunables.new()
 	var out := {}
 	for key: StringName in KICK_PARAMS:
 		out[key] = float(base.get(KICK_PARAMS[key]))
@@ -184,7 +184,7 @@ static func kick_defaults() -> Dictionary:
 
 ## Sets the kick numbers from a weapon's params; a key that is absent or not a number keeps the default.
 func apply_kick(params: Dictionary) -> void:
-	var base := Tunables.new()
+	var base := ZeeWeaponPoseTunables.new()
 	for key: StringName in KICK_PARAMS:
 		var field: StringName = KICK_PARAMS[key]
 		var v: Variant = params.get(key, params.get(String(key)))
