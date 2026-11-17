@@ -45,10 +45,11 @@ const RECOIL_SHARE := 0.35
 # through as it comes down, followed through and back.
 
 ## A melee swing, timed to the person's slash overlay (the arm is up at about 0.12 s and through
-## by 0.3 s at the rate the family plays it).
+## by 0.3 s at the rate the family plays it). The 0.22 key cocks the wrist only 20 degrees: at 65
+## the blade laid back over the shoulder through the holder's head, with the arm already past it.
 const SWING_KEYS := [
 	[0.0, Vector3.ZERO, Vector3.ZERO],
-	[0.22, Vector3(0.0, 0.03, 0.04), Vector3(65.0, -15.0, -10.0)],
+	[0.22, Vector3(0.0, 0.03, 0.04), Vector3(20.0, -15.0, -10.0)],
 	[0.42, Vector3(0.0, 0.0, -0.05), Vector3(-35.0, 30.0, 20.0)],
 	[0.58, Vector3(0.0, -0.02, -0.03), Vector3(-55.0, 38.0, 25.0)],
 	[0.82, Vector3(0.0, 0.0, 0.0), Vector3(-15.0, 10.0, 6.0)],
