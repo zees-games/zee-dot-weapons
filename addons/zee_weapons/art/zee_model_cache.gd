@@ -87,6 +87,11 @@ static func scene(path: String) -> DotResult:
 
 	var loaded: Variant = load(real)
 
+	if loaded == null and real.begins_with("res://.deps/"):
+		# `.deps` (a CI runner's clones of the packs) is `.gdignore`d, so the engine never imported
+		# the glb and `load` has nothing to open; read the file itself.
+		loaded = _pack_glb(ProjectSettings.globalize_path(real))
+
 	if not (loaded is PackedScene):
 		return DotResult.fail(
 			DotError.CODE_INVALID, "%s is not a scene." % path
@@ -128,6 +133,28 @@ static func _own_children(node: Node, root: Node) -> void:
 	for child in node.get_children():
 		child.owner = root
 		_own_children(child, root)
+
+
+## A [PackedScene] of the glb at the absolute [param file], read at run time, or null.
+static func _pack_glb(file: String) -> PackedScene:
+	var doc := GLTFDocument.new()
+	var state := GLTFState.new()
+	if doc.append_from_file(file, state) != OK:
+		return null
+	var root := doc.generate_scene(state)
+	if root == null:
+		return null
+	_own_all(root, root)
+	var packed := PackedScene.new()
+	var ok := packed.pack(root) == OK
+	root.free()
+	return packed if ok else null
+
+
+static func _own_all(node: Node, root: Node) -> void:
+	for child in node.get_children():
+		child.owner = root
+		_own_all(child, root)
 
 
 ## Loads every scene in [param paths] into the cache, so the first equip of each does not read
