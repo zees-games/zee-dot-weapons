@@ -180,6 +180,16 @@ func _art_asset_root(table: Dictionary) -> void:
 	ZeeModelCache.set_asset_root("res://")
 	_check("putting res:// back finds it again, not the failure", ZeeModelCache.scene(pistol.model_path).ok)
 
+	# A pack only linked into addons/ keeps its glbs outside res://: an absolute file path is read at run time.
+	var outside := ProjectSettings.globalize_path("res://assets/low-poly-guns/derringer.glb")
+	var read := ZeeModelCache.scene(outside)
+	var instance: Node = (read.value as PackedScene).instantiate() if read.ok else null
+	_check("a glb outside res:// is read from its file", instance is Node3D)
+	if instance != null:
+		instance.free()
+	_check("its bounds are measured like any model", ZeeModelCache.bounds(outside).size.length() > 0.01)
+	_check("a missing file outside res:// still fails", not ZeeModelCache.scene("/nonexistent/none.glb").ok)
+
 
 func _orientation() -> void:
 	_begin("orientation")

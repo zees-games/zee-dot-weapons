@@ -13,7 +13,7 @@ const AUTHORED_DEPTH := 0.55
 ## Applies [param row] to [param art]; a row with no readable model changes nothing.
 static func apply(art: ZeeWeaponArt, row: Dictionary) -> void:
 	var model := str(row.get("model", ""))
-	if model == "" or not ResourceLoader.exists(model):
+	if model == "" or not (ResourceLoader.exists(model) or FileAccess.file_exists(model)):
 		return
 	var view: Dictionary = row.get("view", {})
 	var motion := str(row.get("motion", "gun"))

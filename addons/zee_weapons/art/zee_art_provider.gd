@@ -68,7 +68,8 @@ func rigged_arms_model() -> String:
 
 ## Whether [param path] resolves to a resource the art can load.
 func model_exists(path: String) -> bool:
-	return ResourceLoader.exists(ZeeModelCache.resolve(path))
+	var real := ZeeModelCache.resolve(path)
+	return ResourceLoader.exists(real) or (not real.begins_with("res://") and FileAccess.file_exists(real))
 
 
 ## The sound class of weapon [param id] when the pack knows it, else the empty name.

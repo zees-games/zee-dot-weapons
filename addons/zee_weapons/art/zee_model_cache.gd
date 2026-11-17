@@ -75,6 +75,9 @@ static func scene(path: String) -> DotResult:
 
 	var real := resolve(path)
 
+	if not real.begins_with("res://") and not ResourceLoader.exists(real) and real.get_extension().to_lower() in ["glb", "gltf"] and FileAccess.file_exists(real):
+		return _scene_from_file(path, real)
+
 	if not ResourceLoader.exists(real):
 		return DotResult.fail(
 			DotError.CODE_IO,
@@ -91,6 +94,40 @@ static func scene(path: String) -> DotResult:
 
 	_scenes[path] = loaded
 	return DotResult.success(loaded)
+
+
+## A glb that lives outside the project (a weapon pack only linked into `addons/`, its art in its own checkout), read at run time
+## and packed, so the rest of the cache treats it like any other scene. There is no import step, so a stale `.godot` cache cannot
+## show an old model; an exported game never reaches this, a mounted pack's art is under `res://`.
+static func _scene_from_file(path: String, file: String) -> DotResult:
+	var doc := GLTFDocument.new()
+	var state := GLTFState.new()
+
+	if doc.append_from_file(file, state) != OK:
+		return DotResult.fail(DotError.CODE_INVALID, "%s is not a readable glb." % file)
+
+	var root := doc.generate_scene(state)
+
+	if root == null:
+		return DotResult.fail(DotError.CODE_INVALID, "%s has no scene." % file)
+
+	var packed := PackedScene.new()
+	_own_children(root, root)
+
+	if packed.pack(root) != OK:
+		root.free()
+		return DotResult.fail(DotError.CODE_INVALID, "%s could not be packed." % file)
+
+	root.free()
+	_scenes[path] = packed
+	return DotResult.success(packed)
+
+
+## Every descendant owned by [param root], which [method PackedScene.pack] keeps only for owned nodes.
+static func _own_children(node: Node, root: Node) -> void:
+	for child in node.get_children():
+		child.owner = root
+		_own_children(child, root)
 
 
 ## Loads every scene in [param paths] into the cache, so the first equip of each does not read
