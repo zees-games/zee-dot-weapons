@@ -87,7 +87,7 @@ static func scene(path: String) -> DotResult:
 
 	# `.deps` (a CI runner's clones of the packs) is `.gdignore`d, so the engine never imported the glb and
 	# `load` has nothing to open; read the file itself.
-	var loaded: Variant = _pack_glb(ProjectSettings.globalize_path(real)) if real.begins_with("res://.deps/") else load(real)
+	var loaded: Variant = _pack_glb(ProjectSettings.globalize_path(real)) if _unimported(real) else load(real)
 
 	if not (loaded is PackedScene):
 		return DotResult.fail(
@@ -133,6 +133,23 @@ static func _own_children(node: Node, root: Node) -> void:
 
 
 ## A [PackedScene] of the glb at the absolute [param file], read at run time, or null.
+## A glb whose import the engine never made (a `.deps` clone, or a link into one): the imported scene its
+## `.import` names is not on disk.
+static func _unimported(real: String) -> bool:
+	if real.begins_with("res://.deps/"):
+		return true
+
+	if real.get_extension().to_lower() not in ["glb", "gltf"]:
+		return false
+
+	var cfg := ConfigFile.new()
+
+	if cfg.load(real + ".import") != OK:
+		return false
+
+	return not FileAccess.file_exists(String(cfg.get_value("remap", "path", "")))
+
+
 static func _pack_glb(file: String) -> PackedScene:
 	var doc := GLTFDocument.new()
 	var state := GLTFState.new()
