@@ -19,6 +19,8 @@ const RIM_COLOR := Color(0.06, 0.06, 0.07)
 const RIM_SHARE := 0.07
 
 static var _parts: Dictionary = {}
+## [method IronSight.measure]'s answers by what it reads (see [method measure]); never trimmed, like the cut cache.
+static var _measured: Dictionary = {}
 
 
 ## `{line, aim, sight}` for [param art] on [param weapon] under [param holder] (`sight` a node to add under the holder, or
@@ -33,7 +35,7 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 		line.merge(dressed_line, true)
 	elif not dressed_line.is_empty():
 		# A fitted optic with no marks: look through it, the eye kept back past the gun's own back end.
-		var measured := IronSight.measure(weapon, holder, art.model_forward)
+		var measured := measure(weapon, holder, art.model_forward)
 		line = {"back": measured.get("back", dressed_line.rear)}
 		line.merge(dressed_line, true)
 	elif art.sight_own:
@@ -44,7 +46,7 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 	if line.is_empty():
 		if not art.iron_sight:
 			return {}
-		line = IronSight.measure(weapon, holder, art.model_forward)
+		line = measure(weapon, holder, art.model_forward)
 		built = true
 	if line.is_empty():
 		return {}
@@ -61,6 +63,41 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 	elif line.get("post", false) and dot_degrees > 0.0:
 		sight = _dot(line, art.model_forward, (relief + span) * tan(deg_to_rad(dot_degrees)) / art.view_scale)
 	return {"line": line, "aim": Transform3D(basis, Vector3(0.0, 0.0, -relief) - basis * (line.rear as Vector3)), "sight": sight}
+
+
+## [method IronSight.measure], cached by everything it reads: each mesh under [param weapon], its transform into
+## [param holder] and the material on each surface, plus [param forward]. The measure walks every triangle in GDScript
+## (27 ms for the SMG on a desktop) and every equip builds the same meshes in the same place, so only the first pays it;
+## a different mesh, placement or material is a different key, so the answer is always the one a fresh walk gives.
+## A copy is returned: a caller may change it.
+static func measure(weapon: Node, holder: Node3D, forward: Vector3) -> Dictionary:
+	var key := _measure_key(weapon, holder, forward)
+	if not _measured.has(key):
+		_measured[key] = IronSight.measure(weapon, holder, forward)
+	return (_measured[key] as Dictionary).duplicate(true)
+
+
+## The inputs of [method IronSight.measure], in the order its walk visits the meshes.
+static func _measure_key(weapon: Node, holder: Node3D, forward: Vector3) -> Array:
+	var key: Array = [forward]
+	var stack: Array[Node] = [weapon]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		var mi := n as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var to_space := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != holder:
+			if walk is Node3D:
+				to_space = (walk as Node3D).transform * to_space
+			walk = walk.get_parent()
+		key.append(mi.mesh)
+		key.append(to_space)
+		for s in mi.mesh.get_surface_count():
+			key.append(mi.get_active_material(s))
+	return key
 
 
 ## A glowing dot of [param radius] (model metres) just behind the post's tip on [param line], its top on the line.

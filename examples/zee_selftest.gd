@@ -20,7 +20,9 @@ extends "res://examples/selftest/sections_wall.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 893
+const CHECKS := 894
+const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
+const SightFit := preload("res://addons/zee_weapons/view/zee_sight_fit.gd")
 
 
 func _ready() -> void:
@@ -378,10 +380,19 @@ func _aim_iron_sights(view: ZeeViewModel, step: Callable) -> void:
 	var sighted := 0
 	var worst := 0.0
 	var worst_id := &""
+	var cached_same := 0
+	var cached_bad: Array[String] = []
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
 		if not art.aim_enabled or art.aim_scoped:
 			continue
 		view.equip(art)
+		# The fit kept its measure in a cache keyed by the meshes: the cached answer must be what a fresh walk gives.
+		var fresh := IronSight.measure(view._weapon, view._holder, art.model_forward)
+		var cached := SightFit.measure(view._weapon, view._holder, art.model_forward)
+		if cached == fresh and SightFit.measure(view._weapon, view._holder, art.model_forward) == fresh:
+			cached_same += 1
+		else:
+			cached_bad.append(String(art.id))
 		view.aim(true)
 		step.call(0.6)
 		var points := view.sight_points()
@@ -395,6 +406,8 @@ func _aim_iron_sights(view: ZeeViewModel, step: Callable) -> void:
 			worst = maxf(off, worst + 1.0 if front.z >= rear.z or rear.z >= -0.05 else off)
 			worst_id = art.id
 	_check("every unscoped blaster has a measured iron sight (%d)" % sighted, sighted == 15)
+	_check("the cached sight measure is a fresh walk's, gun by gun (%d same, bad: %s)" % [cached_same, ", ".join(cached_bad)],
+		cached_bad.is_empty() and cached_same > 0)
 	_check("and its line runs through the screen's centre when aimed (worst %.4f m, %s)" % [worst, worst_id],
 		worst < 0.002)
 
