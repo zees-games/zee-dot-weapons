@@ -13,6 +13,9 @@ static func model_paths(arts: Array, with_arms: bool) -> Array[String]:
 			if path != "":
 				seen[path] = true
 
+	for path in ZeeAttachmentArt.listed_paths():
+		seen[path] = true
+
 	if with_arms:
 		seen[Consts.ARMS_MODEL] = true
 		seen[Consts.RIGGED_ARMS_MODEL] = true
