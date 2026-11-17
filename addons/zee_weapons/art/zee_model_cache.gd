@@ -85,12 +85,9 @@ static func scene(path: String) -> DotResult:
 			+ "mounted before it can be drawn."
 		)
 
-	var loaded: Variant = load(real)
-
-	if loaded == null and real.begins_with("res://.deps/"):
-		# `.deps` (a CI runner's clones of the packs) is `.gdignore`d, so the engine never imported
-		# the glb and `load` has nothing to open; read the file itself.
-		loaded = _pack_glb(ProjectSettings.globalize_path(real))
+	# `.deps` (a CI runner's clones of the packs) is `.gdignore`d, so the engine never imported the glb and
+	# `load` has nothing to open; read the file itself.
+	var loaded: Variant = _pack_glb(ProjectSettings.globalize_path(real)) if real.begins_with("res://.deps/") else load(real)
 
 	if not (loaded is PackedScene):
 		return DotResult.fail(
@@ -139,10 +136,13 @@ static func _own_children(node: Node, root: Node) -> void:
 static func _pack_glb(file: String) -> PackedScene:
 	var doc := GLTFDocument.new()
 	var state := GLTFState.new()
-	if doc.append_from_file(file, state) != OK:
+	var err := doc.append_from_file(file, state)
+	if err != OK:
+		DotLog.warn(CHANNEL, "could not read a glb from disk", {"path": file, "error": err})
 		return null
 	var root := doc.generate_scene(state)
 	if root == null:
+		DotLog.warn(CHANNEL, "a glb read from disk made no scene", {"path": file})
 		return null
 	_own_all(root, root)
 	var packed := PackedScene.new()
