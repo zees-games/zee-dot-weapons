@@ -23,7 +23,7 @@
 #   EXTRA="--no-arms 1" tools/screenshot.sh rifle  # weapon only, no hands
 #   tools/screenshot.sh --aim --all                # every weapon aimed down its sight, tiled into screenshots/all_aim.png
 #   tools/screenshot.sh --aim --fit zee_scope,zee_suppressor rifle   # aimed through a fitted optic
-#   tools/screenshot.sh --aim --pack res://addons/arena_weapons/spawn_provider.gd aw_rifle aw_pistol
+#   tools/screenshot.sh --aim --pack res://addons/fc_weapons/spawn_provider.gd aw_rifle aw_pistol
 #   (--aim and --pack also reach a GPU box, which carries only SHOT_* variables: SHOT_EXTRA is added to EXTRA)
 #
 # EXTRA is passed straight through to the range. `--no-arms` is the one that earns

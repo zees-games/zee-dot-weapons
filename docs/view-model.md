@@ -169,7 +169,7 @@ The view model reacts to look (lag and roll), strafing (a trail and a lean again
 
 Strafe speed is handed to `drive_view(..., strafe)` (metres a second, positive right) or, left out, measured from how the view model's node moved (a teleport over 30 m/s is no strafe).
 
-**Aimed, the gun drifted sideways** (arena, 2026-10-15): aim steadied the sway and bob to a quarter but left the roll whole, and a quarter of the look lag and the bob's sideways swing is centimetres at a half metre's range, so the body of the gun swung left and right of a sight that was meant to stay on the crosshair. Sideways motion and roll are now held to a twentieth aimed (`steady_x` in `ZeeWeaponPose.offset`). Review on `EXTRA="--moves" tools/screenshot.sh --sheet rifle`: hip and aimed, strafing, turning, walking, landing.
+**Aimed, the gun drifted sideways** (FC, 2026-10-15): aim steadied the sway and bob to a quarter but left the roll whole, and a quarter of the look lag and the bob's sideways swing is centimetres at a half metre's range, so the body of the gun swung left and right of a sight that was meant to stay on the crosshair. Sideways motion and roll are now held to a twentieth aimed (`steady_x` in `ZeeWeaponPose.offset`). Review on `EXTRA="--moves" tools/screenshot.sh --sheet rifle`: hip and aimed, strafing, turning, walking, landing.
 
 
 ## Sprint carry and grips

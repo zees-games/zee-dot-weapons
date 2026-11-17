@@ -2,9 +2,9 @@
 #
 # Copy the weapon art a game needs into the game (or check that it is all there).
 #
-#   tools/sync-art.sh ../game-arena            # copy what ZeeWeaponArtTable names
-#   tools/sync-art.sh ../game-arena --check    # copy nothing; exit 1 if anything is missing or differs
-#   tools/sync-art.sh ../game-arena --arms     # also the arms model (style = &"model")
+#   tools/sync-art.sh ../game-fatal-contact            # copy what ZeeWeaponArtTable names
+#   tools/sync-art.sh ../game-fatal-contact --check    # copy nothing; exit 1 if anything is missing or differs
+#   tools/sync-art.sh ../game-fatal-contact --arms     # also the arms model (style = &"model")
 #
 # The sources are found from the game's own addons/ links: zee_weapons (and zed_weapons when
 # linked) resolve to their repositories, whose assets/ hold the art. The list is the table's
