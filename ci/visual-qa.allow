@@ -1,0 +1,3 @@
+# Content pack, not a game: items are weapons. Replace with tools/visual_qa.gd + tools/visual_qa_shot.sh
+# (DotGameVisualQaCapture, addons/dot_game/docs/visual-qa.md) once the capture entry exists; tracked on Nightly.
+*
