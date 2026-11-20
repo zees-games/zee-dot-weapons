@@ -1,3 +1,5 @@
+![Zee Weapons banner](https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/banner.png)
+
 Twenty-seven low-poly weapons for GameSpice games, in a bright toy-blaster style: seven melee weapons, four sidearms, nine primaries, five heavies and two grenades. Each one has a first-person view model with arms, a world model, sounds and a tuned profile, and every number below is a default read straight from the pack's data that a game or server can change without touching the pack.
 
 ### In GameSpice and Fatal Contact
