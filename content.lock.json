@@ -1,0 +1,15 @@
+{
+	"format": 1,
+	"mirrors": [],
+	"origin": "https://dev.dotgames.org/content",
+	"packs": [
+		{
+			"id": "gamemann/zee-dot-weapons",
+			"into": "",
+			"kind": "pack",
+			"manifest_sha256": "d1c1a1037e8001d719a5622d4b4d9992ed5e5befcda73138d1984b0a2e439767",
+			"optional": false,
+			"version": "0.1.67"
+		}
+	]
+}
