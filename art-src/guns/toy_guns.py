@@ -35,10 +35,15 @@ def derringer():
         cyl(r, 0.12, "cbc", (0, 0.2, 0.07 + 3 * r + 0.006), material="steel", sides=10),
         box((0.038, 0.05, 0.03), "cbd", (0, 0.17, 0.07 + 2 * r + 0.012), "graphite", 0.15),
         box((0.012, 0.03, 0.03), "cbd", (0, 0.0, 0.07 + 2 * r + 0.012), "steel", 0.1),
-        box((0.008, 0.04, 0.012), "ccd", (0, 0.1, 0.0), "graphite", 0.1),
+        # Trigger and a closed guard hung from the frame (the old lone bar floated 6 cm below it).
+        box((0.006, 0.008, 0.03), "ccd", (0, 0.088, 0.042), "steel", 0.1),
+        box((0.008, 0.10, 0.008), "ccd", (0, 0.088, 0.028), "graphite", 0.1),
+        box((0.008, 0.008, 0.044), "ccd", (0, 0.134, 0.028), "graphite", 0.1),
     ]
-    grip = box((0.034, 0.06, 0.1), "cbu", (0, -0.015, 0.082), "walnut", 0.2)
-    shear(grip, 1, 2, 0.55)
+    # A bird's-head grip raked like the pistol's: raked at 0.55 it lay at 45 degrees and the fist,
+    # which closes on a near-upright grip, held the air in front of it.
+    grip = box((0.034, 0.06, 0.1), "cbu", (0, -0.008, 0.082), "walnut", 0.2)
+    shear(grip, 1, 2, 0.3)
     parts.append(grip)
     return join(parts, "derringer"), None, 0.26
 
