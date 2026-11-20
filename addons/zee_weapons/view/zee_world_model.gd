@@ -28,7 +28,8 @@ extends Node3D
 
 ## How much of a weapon's recoil a watcher sees.
 const Dress := preload("zee_attachment_dress.gd")
-const ReloadParts := preload("zee_reload_parts.gd")
+const WallRay := preload("zee_world_wall_ray.gd")
+const WatchedMag := preload("zee_watched_magazine.gd")
 
 const RECOIL_SHARE := 0.35
 
@@ -197,8 +198,8 @@ var _reloading: bool = false
 var _reload_blend: float = 0.0
 var _reload_time: float = 0.0
 var _reload_period: float = 1.5
-## The magazine drawn in the support hand during a watcher's reload (null until the first).
-var _watched_mag: Node3D = null
+## The magazine drawn in the support hand during a watcher's reload (built on the first).
+var _watched_mag := WatchedMag.new()
 
 
 func _ready() -> void:
@@ -535,24 +536,11 @@ func advance(delta: float) -> void:
 
 
 ## The magazine a watcher sees change: in the support hand from the well, down to the belt and back (the middle
-## half of the reload's cycle), so the hand goes for something and brings it. Built on the first reload.
+## half of the reload's cycle), so the hand goes for something and brings it.
 func _advance_watched_magazine() -> void:
 	var fraction := reload_fraction()
 	var show_it := _reload_blend > 0.5 and fraction >= 0.26 and fraction <= 0.74 and _weapon != null and _support_local.is_finite()
-	if not show_it:
-		if _watched_mag != null:
-			_watched_mag.visible = false
-		return
-	if _watched_mag == null:
-		_watched_mag = ReloadParts.box_magazine()
-		if _watched_mag == null:
-			return
-		_watched_mag.scale = Vector3.ONE * 0.8
-		add_child(_watched_mag)
-	_watched_mag.visible = true
-	var hand := _support_world()
-	_watched_mag.global_transform = Transform3D(_holder.global_transform.basis.orthonormalized(), hand - _holder.global_transform.basis.y.normalized() * 0.03)
-	_watched_mag.scale = Vector3.ONE * 0.8
+	_watched_mag.update(self, show_it, _support_world() if show_it else Vector3.ZERO, _holder.global_transform if show_it else Transform3D())
 
 
 ## Metres the gun must be pulled back for a wall [param hit] away from a ray that starts [param arm] behind the hand (INF for none).
@@ -574,43 +562,18 @@ func _advance_wall(delta: float) -> void:
 	if _wall_target == 0.0 and _wall_amount < 0.002:
 		_wall_amount = 0.0
 
-var _wall_query: PhysicsRayQueryParameters3D
+var _wall_ray := WallRay.new()
 
 
 func _probe_wall() -> float:
-	var world := get_world_3d()
-	if world == null:
-		return 0.0
 	var person := _person()
 	var facing: Node3D = person if person is Node3D else self
-	var forward := -facing.global_basis.z
-	forward.y = 0.0
-	if forward.length_squared() < 0.0001:
-		return 0.0
-	forward = forward.normalized()
 	var hand := _holder.global_position
-	var from := hand - forward * WALL_ARM
 	var length := hand.distance_to(muzzle_transform().origin)
-	if _wall_query == null:
-		_wall_query = PhysicsRayQueryParameters3D.new()
-		_wall_query.collide_with_areas = false
-	var query := _wall_query
-	query.from = from
-	query.to = from + forward * (WALL_ARM + length + WALL_MARGIN)
-	query.collision_mask = wall_mask
-	query.exclude.clear()
 	var body := _carrier_body()
-	if body is CollisionObject3D:
-		query.exclude.append((body as CollisionObject3D).get_rid())
-	for _hop in range(6):
-		var found := world.direct_space_state.intersect_ray(query)
-		if found.is_empty():
-			return 0.0
-		if found["collider"] is CharacterBody3D:
-			query.exclude.append(found["rid"])
-			continue
-		return wall_pull(from.distance_to(found["position"]), length, WALL_ARM, WALL_MARGIN, wall_max_pull)
-	return 0.0
+	var rid := (body as CollisionObject3D).get_rid() if body is CollisionObject3D else RID()
+	var hit := _wall_ray.hit_distance(get_world_3d(), -facing.global_basis.z, hand, length, wall_mask, rid)
+	return 0.0 if hit < 0.0 else wall_pull(hit, length, WALL_ARM, WALL_MARGIN, wall_max_pull)
 
 
 ## The pull-back now, for a suite and a tool.
@@ -798,8 +761,7 @@ func _meshes(node: Node) -> Array[MeshInstance3D]:
 
 
 func _clear_models() -> void:
-	if _watched_mag != null:
-		_watched_mag.visible = false
+	_watched_mag.hide()
 	if _weapon != null:
 		_weapon.queue_free()
 

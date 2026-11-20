@@ -2,6 +2,10 @@ extends Node3D
 
 ## Shared meshes and materials of ZeeShotFx, built once; split out for file size.
 
+## A watcher sees the flash from metres away on a world-sized gun, not half a metre from the eye:
+## at full size it was four to five times the gun's own length in the visual judge's clips.
+const REMOTE_FLASH_SIZE := 0.3
+
 ## Materials shared by every carrier's effects, built once.
 static var _tracer_material: StandardMaterial3D = null
 static var _beam_material: StandardMaterial3D = null

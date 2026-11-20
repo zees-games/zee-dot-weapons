@@ -224,11 +224,6 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 			_trace(muzzle.origin, shot.origin, direction, shot.max_range, beam, rail)
 
 
-## A watcher sees the flash from metres away on a world-sized gun, not half a metre from the eye:
-## at full size it was four to five times the gun's own length in the visual judge's clips.
-const REMOTE_FLASH_SIZE := 0.3
-
-
 ## A use somebody else made, known only by its kind: a watcher's view, from the world
 ## model's muzzle along its barrel.
 func play_remote(
