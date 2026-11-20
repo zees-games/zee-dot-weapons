@@ -322,10 +322,13 @@ func muzzle_transform() -> Transform3D:
 
 	distance = maxf(distance, float(_dressed.get("reach", 0.0)))
 
-	return _weapon.global_transform * Transform3D(
+	# The weapon carries the pose's hand scale; the point does, the flash's size must not
+	# (a scaled basis drew the flash several times its size on a watched figure).
+	var at := _weapon.global_transform * Transform3D(
 		Basis.IDENTITY,
 		_art.model_forward.normalized() * distance + _art.muzzle_offset
 	)
+	return Transform3D(at.basis.orthonormalized(), at.origin)
 
 
 # --- Being told what happened -----------------------------------------------
