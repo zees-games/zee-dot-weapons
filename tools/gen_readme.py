@@ -261,6 +261,22 @@ def stats(wid, prefix):
 
 # ---- README ----
 
+QUALITY_HEADING = "## Quality and ongoing improvement"
+QUALITY_DEFAULT = (
+    "The models, textures, sounds and animations in this pack are being improved over time, and some of them are "
+    "low quality today. Improvement is driven by the Nightly queue, a work queue where agents pick up items, and by "
+    "a visual judge loop that views rendered frames and files defects until each asset passes repeated clean "
+    "reviews. Known defects are filed there and fixed in later releases, and the screenshots in this README are "
+    "regenerated as the assets improve."
+)
+
+
+def quality_section(words):
+    """The 'Quality and ongoing improvement' section. docs/readme/weapons.yml may override it with a `quality:` key."""
+    text = " ".join(str(words.get("quality") or QUALITY_DEFAULT).split())
+    return QUALITY_HEADING + "\n\n" + text
+
+
 def load_words():
     path = os.path.join(ROOT, "docs/readme/weapons.yml")
     return yaml.safe_load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
@@ -335,6 +351,10 @@ def main():
     old = open(path, encoding="utf-8").read()
     new = splice(old, "summary", summary, before=words.get("summary_before", "## Using it"))
     new = splice(new, "weapons", "## The weapons\n\n" + body, before=words.get("weapons_before", "## Credits"))
+    if check and "<!-- gen_readme:quality -->" not in old:
+        print("gen_readme: README.md has no '%s' section; run tools/gen_readme.sh --text" % QUALITY_HEADING, file=sys.stderr)
+        sys.exit(1)
+    new = splice(new, "quality", quality_section(words), before=words.get("quality_before", "## Credits"))
     # Owner rule: no repo-name H1 first line (GitHub already shows the name).
     first = new.split("\n", 1)[0]
     if first.startswith("# "):
