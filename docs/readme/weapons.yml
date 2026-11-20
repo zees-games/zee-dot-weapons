@@ -1,0 +1,93 @@
+# Words for the generated parts of README.md (tools/gen_readme.py). Numbers never go here: every stat in the
+# README is read from weapons/<id>.tres and cfg/addons/zee_weapons/weapon/**/<id>.yml (ticks at 64 Hz).
+# order: the README order, by slot (missing ids are appended alphabetically). class: the summary's Class column.
+# no_image: ids with no model to render (fists are the bare hands).
+id_prefix: ""
+summary_before: "## What it adds to dot-weapon"
+weapons_before: "## Credits"
+no_image: [fists]
+order: [fists, knife, shiv, hatchet, mallet, pickaxe, spade, pistol, revolver, machine_pistol, derringer,
+  smg, carbine, rifle, bullpup, battle_rifle, burst_rifle, shotgun, drum_shotgun, marksman,
+  sniper, minigun, launcher, beamer, charge_rifle, frag, sticky]
+weapons:
+  fists:
+    class: Melee
+    blurb: Bare hands, for when everything else is empty or dropped. Weak, but you always have them.
+  knife:
+    class: Melee
+    blurb: The all-round blade. Quick to draw and quick to swing, with more bite than the shiv for a short reach.
+  shiv:
+    class: Melee
+    blurb: A shorter, lighter blade. The quickest swing and draw of anything here, traded for less damage per hit.
+  hatchet:
+    class: Melee
+    blurb: A slower chop that lands hard. Two hits finish most fights at close range.
+  mallet:
+    class: Melee
+    blurb: The heaviest hit in the melee slot. Slow to draw and slow to swing, with a wide arc that is hard to dodge.
+  pickaxe:
+    class: Melee
+    blurb: The longest reach of the melee weapons, with a narrow arc. It rewards a precise swing from just out of range.
+  spade:
+    class: Melee
+    blurb: A wide, sweeping swing with good reach. Forgiving to aim when the target is moving.
+  pistol:
+    class: Pistol
+    blurb: The dependable sidearm. Accurate, quick to draw and fast to reload, with enough darts to finish what the main gun started.
+  revolver:
+    class: Pistol
+    blurb: Six heavy rounds and a stiff kick. Accurate from standing, but the bloom after each shot punishes rushing.
+  machine_pistol:
+    class: Pistol
+    blurb: A pocket bullet hose that empties its magazine in under two seconds, with burst and semi for when spraying is not the answer.
+  derringer:
+    class: Pistol
+    blurb: Two barrels, two shots, big damage at arm's length. A last-ditch backup that wins a corner fight and little else.
+  smg:
+    class: SMG
+    blurb: Light, fast and steady on the move. The pick for clearing rooms and running between them.
+  carbine:
+    class: Assault rifle
+    blurb: A short, light rifle. A little less damage and range than the assault rifle for a quicker handling all-rounder.
+  rifle:
+    class: Assault rifle
+    blurb: The all-rounder. Full auto with a burst option, accurate at mid range and controllable in long sprays.
+  bullpup:
+    class: Assault rifle
+    blurb: A fast-firing rifle with a scope that stays accurate while you move.
+  battle_rifle:
+    class: Battle rifle
+    blurb: Semi-automatic and hard-hitting at long range. Bloom climbs quickly, so pace your shots.
+  burst_rifle:
+    class: Assault rifle
+    blurb: Three-round bursts with very little recoil. Land a whole burst and the target is nearly gone.
+  shotgun:
+    class: Shotgun
+    blurb: Nine pellets at short range. It loads a round at a time, so you can top it up between fights.
+  drum_shotgun:
+    class: Shotgun
+    blurb: An automatic shotgun with a twenty-round drum. It gives up range and reload speed to keep firing.
+  marksman:
+    class: Marksman rifle
+    blurb: A scoped semi-automatic for picking targets off at range. Pinpoint when still, poor on the move.
+  sniper:
+    class: Sniper rifle
+    blurb: The longest reach and the biggest hit with a dart. One shot drops most targets, but only if you stand still to take it.
+  minigun:
+    class: Heavy
+    blurb: No magazine and the highest fire rate in the pack. Slow to bring up and heavy to carry, it holds a corridor on its own.
+  launcher:
+    class: Launcher
+    blurb: Rockets that splash. A direct hit is not needed; landing one near a group is.
+  beamer:
+    class: Energy
+    blurb: A continuous beam that hurts more the longer you keep it on target. Short range, but nothing to reload.
+  charge_rifle:
+    class: Energy
+    blurb: Hold to charge and release for a hit that crosses the map. A quick tap fires at a third of the damage.
+  frag:
+    class: Grenade
+    blurb: A three-second fuse and the widest blast of the two grenades. Bounce it round a corner to flush people out.
+  sticky:
+    class: Grenade
+    blurb: Sticks to whatever it hits and goes off a little sooner than the frag, with a smaller, harder blast.
