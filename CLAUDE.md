@@ -102,3 +102,7 @@ Short forms; the reasoning is in the linked file.
 
 - **No recorded sounds.** Every report is baked; `ZeeWeaponSound.set_stream` takes a recording per weapon when there is one to vendor. [shot-fx](docs/shot-fx.md#sounds-are-baked)
 - **Client shells.** A game calling `set_asset_root`, `view_punch` or the reaching arms needs a client shell built with a zee-dot-weapons that has them, or the zee pack delivered as an addon release; a game calls newer methods through `has_method`.
+
+## Visual quality
+
+A visual change (a weapon model, its animation, arms or effects) is done only when a fresh judge says so: follow dot-game's brief, `../dot-game/docs/visual-judge-brief.md` (GPU capture, never llvmpipe; three consecutive zero-defect passes; `--audit` before you report). Your own reading of the sheets never counts.
