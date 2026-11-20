@@ -335,6 +335,13 @@ def main():
     old = open(path, encoding="utf-8").read()
     new = splice(old, "summary", summary, before=words.get("summary_before", "## Using it"))
     new = splice(new, "weapons", "## The weapons\n\n" + body, before=words.get("weapons_before", "## Credits"))
+    # Owner rule: no repo-name H1 first line (GitHub already shows the name).
+    first = new.split("\n", 1)[0]
+    if first.startswith("# "):
+        if check:
+            print("gen_readme: README.md starts with an H1 (%s); remove it" % first, file=sys.stderr)
+            sys.exit(1)
+        new = new.split("\n", 1)[1].lstrip("\n")
     if check:
         if new != old:
             print("gen_readme: README.md is out of date; run tools/gen_readme.sh --text", file=sys.stderr)
