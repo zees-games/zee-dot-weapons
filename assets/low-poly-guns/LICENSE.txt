@@ -26,3 +26,5 @@ Kenney, "Blaster Kit" 2.1
 Modelled in the scripts (CC0 with the rest of this folder's art): every handguard, barrel, brake, flash hider, compensator, suppressor band, rail, sight, ring, sunshade, the revolver's under-lug and vent rib, the shotgun's heat shield, tube and pump, the launcher's tube, venturi and grips' housing, and the magazines of the machine pistol and the battle rifle.
 
 Rounds (assets/ammo/): Kenney Weapon Pack, CC0, see assets/ammo/LICENSE-kenney-weapon-pack.txt.
+
+frag.glb and sticky.glb are the pack's own, modelled from primitives by art-src/guns/grenades.py (no source model; same licence as the pack). They stand on their base, origin at the bottom centre, top on +Y. Rebuild: blender -b --python art-src/guns/grenades.py

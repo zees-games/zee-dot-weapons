@@ -428,11 +428,13 @@ static func charge_rifle() -> ZeeWeaponArt:
 # tools, so they take the same forward axis.
 
 static func frag() -> ZeeWeaponArt:
-	return _thrown(ZeeWeaponIds.FRAG, BLASTERS + "grenade-a.glb")
+	# The pack's own pineapple (art-src/guns/grenades.py): the kit's grenade-a read as a lantern.
+	return _thrown(ZeeWeaponIds.FRAG, GUNS + "frag.glb")
 
 
 static func sticky() -> ZeeWeaponArt:
-	return _thrown(ZeeWeaponIds.STICKY, BLASTERS + "grenade-b.glb")
+	# A strapped charge on its adhesive pad (art-src/guns/grenades.py): the kit's grenade-b read as a ball.
+	return _thrown(ZeeWeaponIds.STICKY, GUNS + "sticky.glb")
 
 
 # Attachments

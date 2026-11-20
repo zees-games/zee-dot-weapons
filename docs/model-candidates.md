@@ -6,7 +6,7 @@ Researched 2026-10-15 for nightly item fgr-weapons-unique-1. Nothing here is dow
 
 ## Current models
 
-Every zee weapon already points at a different Kenney Blaster Kit file (CC0), so no two share a file. The "shared SMG look" is stylistic: the Blaster Kit is one toy-blaster family with the same boxy body, stock and magazine. Melee uses Kenney Survival Kit tools and knives. Grenades use Blaster Kit grenade-a and grenade-b.
+Every zee weapon already points at a different Kenney Blaster Kit file (CC0), so no two share a file. The "shared SMG look" is stylistic: the Blaster Kit is one toy-blaster family with the same boxy body, stock and magazine. Melee uses Kenney Survival Kit tools and knives. The frag and sticky grenades are the pack's own (`art-src/guns/grenades.py`); the Blaster Kit grenade-a and grenade-b read as a lantern and a ball.
 
 Sidearms: Dart Pistol blaster-k, Revolver blaster-o, Machine Pistol blaster-c, Derringer blaster-b. Primary: SMG blaster-i, Carbine blaster-m, Assault Rifle blaster-q, Bullpup blaster-r, Battle Rifle blaster-g, Burst Rifle blaster-n, Shotgun blaster-j, Drum Shotgun blaster-l, Marksman Rifle blaster-p. Heavy: Sniper blaster-e, Minigun blaster-f, Launcher blaster-a, Beamer blaster-h, Charge Rifle blaster-d.
 
