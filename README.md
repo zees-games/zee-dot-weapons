@@ -2,11 +2,11 @@ Twenty-seven low-poly weapons for GameSpice games, in a bright toy-blaster style
 
 ### In GameSpice and Fatal Contact
 
-- **GameSpice:** the pack is published to the Workshop as `gamemann/zee-dot-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
+- GameSpice:** the pack is published to the Workshop as `gamemann/zee-dot-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
 - **Fatal Contact:** FC's own weapons are [fc-weapons](https://github.com/zees-games/fc-weapons). An FC server can add this pack to its overlay for extra weapons, and [zed-dot-weapons](https://github.com/zees-games/zed-dot-weapons) builds on it.
 - **Your own Godot game:** link or copy `addons/zee_weapons/` and `assets/` beside dot-weapon and use the code in [Using it](#using-it). Server owners retune any weapon in `cfg/addons/zee_weapons/weapon/<id>.yml`.
 
-The weapons plug into [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [GameSpice collection](https://gamespice.net), such as Playlot and [Fatal Contact](https://github.com/zees-games/game-fatal-contact) servers, use it.
+The weapons plug into [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [**GameSpice collection**](https://gamespice.net), such as Playlot and [Fatal Contact](https://github.com/zees-games/game-fatal-contact) servers, use it.
 
 The pack has its own headless test suite, but little of it has been in front of real players. Please report anything you run into.
 
