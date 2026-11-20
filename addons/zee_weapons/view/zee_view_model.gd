@@ -262,6 +262,7 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 			_magazine = _add_part(art.magazine_path, art.magazine_transform())
 		else:
 			_magazine = _add_built(ReloadParts.build(art.magazine_part), art.magazine_transform())
+		_magazine.visible = _magazine_at_rest()
 
 	for part in Dress.art_parts(art, _holder):
 		_set_on_top(part)
@@ -524,8 +525,11 @@ func _end_sequence() -> void:
 	if _art != null:
 		_pose.tunables.reload_keys = _default_reload_keys()
 		if _magazine != null:
-			_magazine.visible = true
+			_magazine.visible = _magazine_at_rest()
 			_magazine.transform = _art.magazine_transform()
+		var own := _own_magazine()
+		if own != null:
+			own.visible = true
 
 
 func _default_reload_keys() -> Array:
@@ -534,13 +538,13 @@ func _default_reload_keys() -> Array:
 
 func _animate_sequence(f: float) -> void:
 	var out: bool = _seq.own_magazine_out(f)
+	var own := _own_magazine()
 	if _magazine != null:
-		_magazine.visible = not _art.magazine_loose and not out
+		# The seated magazine is the gun's own where it has one; the props draw the one in hand.
+		_magazine.visible = not _art.magazine_loose and not out and own == null
 		_magazine.transform = _art.magazine_transform()
-	if _art.hide_during_reload != &"" and _weapon != null:
-		var own := _weapon.find_child(String(_art.hide_during_reload), true, false) as Node3D
-		if own != null:
-			own.visible = not out
+	if own != null:
+		own.visible = not out
 	if _props != null:
 		var scale := maxf(_holder.transform.basis.get_scale().x, 0.0001)
 		_props.show_at(_seq, f if f > 0.0 and f < 1.0 else -1.0, _holder.transform.affine_inverse(), float(_seq.prop_scale) / scale)
@@ -662,11 +666,12 @@ func _animate_magazine(fraction: float) -> void:
 	var f := clampf(fraction, 0.0, 1.0)
 	var rest := _art.magazine_transform()
 
-	# The gun's own magazine node is out of the gun from when the hand pulls it (0.20) to the seat.
-	if _art.hide_during_reload != &"" and _weapon != null:
-		var own := _weapon.find_child(String(_art.hide_during_reload), true, false) as Node3D
-		if own != null:
-			own.visible = not (f >= 0.20 and f < 0.58)
+	# The gun's own magazine node is out of the gun from the drop (0.10) to the seat, and the
+	# separate one stands in for it only then: drawn at rest as well, it doubled or floated.
+	var own := _own_magazine()
+	var own_out := f >= 0.10 and f < 0.58
+	if own != null:
+		own.visible = not own_out
 
 	# Timed to the reload keys (ZeeWeaponPose.RELOAD_KEYS_*) and `_support_hand`: out while the gun rolls onto its side (0.10-0.28),
 	# in the hand from 0.36, seated with the jolt at 0.58. Visible throughout it reads as the gun shaking; rising from nothing, as a hand reaching for air.
@@ -704,7 +709,7 @@ func _animate_magazine(fraction: float) -> void:
 		at = held if held.is_finite() else rest.origin
 		basis = rest.basis * Basis(Vector3.RIGHT, deg_to_rad(-20.0 * (1.0 - settle)))
 
-	_magazine.visible = shown
+	_magazine.visible = shown and (own == null or own_out)
 	_magazine.transform = Transform3D(basis, at)
 
 
@@ -776,3 +781,16 @@ func _clear_models() -> void:
 	_belt = null
 	_magazine = null
 	_attachments.clear()
+
+
+## The gun model's own magazine node ([member ZeeWeaponArt.hide_during_reload]), or null.
+func _own_magazine() -> Node3D:
+	if _art == null or _art.hide_during_reload == &"" or _weapon == null:
+		return null
+	return _weapon.find_child(String(_art.hide_during_reload), true, false) as Node3D
+
+
+## Whether the separate magazine is drawn seated at rest: not where the gun carries its own (it
+## only stands in while that one is out), and not a loose round (in sight only while carried in).
+func _magazine_at_rest() -> bool:
+	return _art != null and not _art.magazine_loose and _own_magazine() == null
