@@ -23,35 +23,37 @@ The pack has its own headless test suite, but little of it has been in front of 
 Every blaster can also bash with the alt-fire button. Weapons differ in how they play, not just in numbers: the knife is the fastest, the mallet hits hardest, the bullpup stays accurate while you move, the beamer rewards keeping aim on a target, and the minigun has no magazine. Seven ammunition types are shared between them.
 
 <!-- gen_readme:summary -->
-| | Weapon | Class | Damage | Rate |
+| | Weapon | Class | Damage | Fire rate |
 | --- | --- | --- | --- | --- |
-|  | [Fists](#fists) | Melee | 22 | 120 rpm |
-| <a href="#knife"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/knife_thumb.webp" width="160" alt="Knife"></a> | [Knife](#knife) | Melee | 45 | 148 rpm |
-| <a href="#shiv"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shiv_thumb.webp" width="160" alt="Shiv"></a> | [Shiv](#shiv) | Melee | 34 | 192 rpm |
-| <a href="#hatchet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/hatchet_thumb.webp" width="160" alt="Hatchet"></a> | [Hatchet](#hatchet) | Melee | 62 | 80 rpm |
-| <a href="#mallet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/mallet_thumb.webp" width="160" alt="Mallet"></a> | [Mallet](#mallet) | Melee | 85 | 55 rpm |
-| <a href="#pickaxe"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pickaxe_thumb.webp" width="160" alt="Pickaxe"></a> | [Pickaxe](#pickaxe) | Melee | 68 | 70 rpm |
-| <a href="#spade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/spade_thumb.webp" width="160" alt="Spade"></a> | [Spade](#spade) | Melee | 56 | 85 rpm |
-| <a href="#dart-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pistol_thumb.webp" width="160" alt="Dart Pistol"></a> | [Dart Pistol](#dart-pistol) | Pistol | 20 | 384 rpm |
-| <a href="#revolver"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/revolver_thumb.webp" width="160" alt="Revolver"></a> | [Revolver](#revolver) | Pistol | 46 | 142 rpm |
+|  | [Fists](#fists) | Melee | 22 | one swing every 0.5 s |
+| <a href="#knife"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/knife_thumb.webp" width="160" alt="Knife"></a> | [Knife](#knife) | Melee | 45 | one swing every 0.41 s |
+| <a href="#shiv"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shiv_thumb.webp" width="160" alt="Shiv"></a> | [Shiv](#shiv) | Melee | 34 | one swing every 0.31 s |
+| <a href="#hatchet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/hatchet_thumb.webp" width="160" alt="Hatchet"></a> | [Hatchet](#hatchet) | Melee | 62 | one swing every 0.75 s |
+| <a href="#mallet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/mallet_thumb.webp" width="160" alt="Mallet"></a> | [Mallet](#mallet) | Melee | 85 | one swing every 1.09 s |
+| <a href="#pickaxe"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pickaxe_thumb.webp" width="160" alt="Pickaxe"></a> | [Pickaxe](#pickaxe) | Melee | 68 | one swing every 0.86 s |
+| <a href="#spade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/spade_thumb.webp" width="160" alt="Spade"></a> | [Spade](#spade) | Melee | 56 | one swing every 0.7 s |
+| <a href="#dart-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pistol_thumb.webp" width="160" alt="Dart Pistol"></a> | [Dart Pistol](#dart-pistol) | Pistol | 20 | one shot every 0.16 s |
+| <a href="#revolver"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/revolver_thumb.webp" width="160" alt="Revolver"></a> | [Revolver](#revolver) | Pistol | 46 | one shot every 0.42 s |
 | <a href="#machine-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/machine_pistol_thumb.webp" width="160" alt="Machine Pistol"></a> | [Machine Pistol](#machine-pistol) | Pistol | 13 | 960 rpm |
-| <a href="#derringer"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/derringer_thumb.webp" width="160" alt="Derringer"></a> | [Derringer](#derringer) | Pistol | 62 | 89 rpm |
+| <a href="#derringer"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/derringer_thumb.webp" width="160" alt="Derringer"></a> | [Derringer](#derringer) | Pistol | 62 | one shot every 0.67 s |
 | <a href="#smg"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/smg_thumb.webp" width="160" alt="SMG"></a> | [SMG](#smg) | SMG | 16 | 768 rpm |
 | <a href="#carbine"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/carbine_thumb.webp" width="160" alt="Carbine"></a> | [Carbine](#carbine) | Assault rifle | 21 | 640 rpm |
 | <a href="#assault-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/rifle_thumb.webp" width="160" alt="Assault Rifle"></a> | [Assault Rifle](#assault-rifle) | Assault rifle | 23 | 640 rpm |
 | <a href="#bullpup"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/bullpup_thumb.webp" width="160" alt="Bullpup"></a> | [Bullpup](#bullpup) | Assault rifle | 20 | 768 rpm |
-| <a href="#battle-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/battle_rifle_thumb.webp" width="160" alt="Battle Rifle"></a> | [Battle Rifle](#battle-rifle) | Battle rifle | 36 | 295 rpm |
-| <a href="#burst-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/burst_rifle_thumb.webp" width="160" alt="Burst Rifle"></a> | [Burst Rifle](#burst-rifle) | Assault rifle | 24 | 240 rpm |
-| <a href="#shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shotgun_thumb.webp" width="160" alt="Shotgun"></a> | [Shotgun](#shotgun) | Shotgun | 12 x 9 | 75 rpm |
-| <a href="#drum-shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/drum_shotgun_thumb.webp" width="160" alt="Drum Shotgun"></a> | [Drum Shotgun](#drum-shotgun) | Shotgun | 8 x 7 | 192 rpm |
-| <a href="#marksman-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/marksman_thumb.webp" width="160" alt="Marksman Rifle"></a> | [Marksman Rifle](#marksman-rifle) | Marksman rifle | 58 | 183 rpm |
-| <a href="#sniper-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sniper_thumb.webp" width="160" alt="Sniper Rifle"></a> | [Sniper Rifle](#sniper-rifle) | Sniper rifle | 118 | 45 rpm |
+| <a href="#battle-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/battle_rifle_thumb.webp" width="160" alt="Battle Rifle"></a> | [Battle Rifle](#battle-rifle) | Battle rifle | 36 | one shot every 0.2 s |
+| <a href="#burst-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/burst_rifle_thumb.webp" width="160" alt="Burst Rifle"></a> | [Burst Rifle](#burst-rifle) | Assault rifle | 24 | one shot every 0.25 s |
+| <a href="#shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shotgun_thumb.webp" width="160" alt="Shotgun"></a> | [Shotgun](#shotgun) | Shotgun | 12 x 9 | one shot every 0.8 s |
+| <a href="#drum-shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/drum_shotgun_thumb.webp" width="160" alt="Drum Shotgun"></a> | [Drum Shotgun](#drum-shotgun) | Shotgun | 8 x 7 | one shot every 0.31 s |
+| <a href="#marksman-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/marksman_thumb.webp" width="160" alt="Marksman Rifle"></a> | [Marksman Rifle](#marksman-rifle) | Marksman rifle | 58 | one shot every 0.33 s |
+| <a href="#sniper-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sniper_thumb.webp" width="160" alt="Sniper Rifle"></a> | [Sniper Rifle](#sniper-rifle) | Sniper rifle | 118 | one shot every 1.33 s |
 | <a href="#minigun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/minigun_thumb.webp" width="160" alt="Minigun"></a> | [Minigun](#minigun) | Heavy | 11 | 1280 rpm |
-| <a href="#launcher"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/launcher_thumb.webp" width="160" alt="Launcher"></a> | [Launcher](#launcher) | Launcher | 32 | 70 rpm |
+| <a href="#launcher"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/launcher_thumb.webp" width="160" alt="Launcher"></a> | [Launcher](#launcher) | Launcher | 32 | one shot every 0.86 s |
 | <a href="#beamer"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/beamer_thumb.webp" width="160" alt="Beamer"></a> | [Beamer](#beamer) | Energy | 9 | 960 rpm |
-| <a href="#charge-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/charge_rifle_thumb.webp" width="160" alt="Charge Rifle"></a> | [Charge Rifle](#charge-rifle) | Energy | 105 | 89 rpm |
-| <a href="#frag-grenade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/frag_thumb.webp" width="160" alt="Frag Grenade"></a> | [Frag Grenade](#frag-grenade) | Grenade | 115 splash | 60 rpm |
-| <a href="#sticky-charge"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sticky_thumb.webp" width="160" alt="Sticky Charge"></a> | [Sticky Charge](#sticky-charge) | Grenade | 135 splash | 60 rpm |
+| <a href="#charge-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/charge_rifle_thumb.webp" width="160" alt="Charge Rifle"></a> | [Charge Rifle](#charge-rifle) | Energy | 105 | one shot every 0.67 s |
+| <a href="#frag-grenade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/frag_thumb.webp" width="160" alt="Frag Grenade"></a> | [Frag Grenade](#frag-grenade) | Grenade | 115 splash | one throw every 1 s |
+| <a href="#sticky-charge"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sticky_thumb.webp" width="160" alt="Sticky Charge"></a> | [Sticky Charge](#sticky-charge) | Grenade | 135 splash | one throw every 1 s |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 <!-- /gen_readme:summary -->
 
 ## What it adds to dot-weapon
@@ -167,12 +169,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 22 (strike) |
-| Swing rate | 120 rpm |
+| Fire rate | one swing every 0.5 s |
 | Fire modes | semi |
 | Reach | 1.6 m |
 | Swing arc | 30 deg |
 | Draw time | 0.25 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Knife
 
@@ -183,12 +187,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 45 (strike) |
-| Swing rate | 148 rpm |
+| Fire rate | one swing every 0.41 s |
 | Fire modes | semi |
 | Reach | 1.9 m |
 | Swing arc | 24 deg |
 | Draw time | 0.16 s |
 | Weight | 0.4 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Shiv
 
@@ -199,12 +205,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 34 (strike) |
-| Swing rate | 192 rpm |
+| Fire rate | one swing every 0.31 s |
 | Fire modes | semi |
 | Reach | 1.8 m |
 | Swing arc | 20 deg |
 | Draw time | 0.12 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Hatchet
 
@@ -215,12 +223,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 62 (strike) |
-| Swing rate | 80 rpm |
+| Fire rate | one swing every 0.75 s |
 | Fire modes | semi |
 | Reach | 2 m |
 | Swing arc | 40 deg |
 | Draw time | 0.25 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Mallet
 
@@ -231,12 +241,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 85 (strike) |
-| Swing rate | 55 rpm |
+| Fire rate | one swing every 1.09 s |
 | Fire modes | semi |
 | Reach | 1.9 m |
 | Swing arc | 50 deg |
 | Draw time | 0.5 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Pickaxe
 
@@ -247,12 +259,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 68 (strike) |
-| Swing rate | 70 rpm |
+| Fire rate | one swing every 0.86 s |
 | Fire modes | semi |
 | Reach | 2.4 m |
 | Swing arc | 26 deg |
 | Draw time | 0.25 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Spade
 
@@ -263,12 +277,14 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 56 (strike) |
-| Swing rate | 85 rpm |
+| Fire rate | one swing every 0.7 s |
 | Fire modes | semi |
 | Reach | 2.3 m |
 | Swing arc | 55 deg |
 | Draw time | 0.25 s |
 | Weight | 1.5 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Dart Pistol
 
@@ -279,7 +295,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 20 (dart) |
-| Fire rate | 384 rpm |
+| Fire rate | one shot every 0.16 s |
 | Fire modes | semi |
 | Magazine | 15 + 60 reserve |
 | Reload | 1.59 s |
@@ -290,6 +306,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.22 s |
 | Weight | 1 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Revolver
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/revolver.webp" width="1280" alt="Revolver, studio render">
@@ -299,7 +317,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 46 (dart) |
-| Fire rate | 142 rpm |
+| Fire rate | one shot every 0.42 s |
 | Fire modes | semi |
 | Magazine | 6 + 36 reserve |
 | Reload | 2.41 s |
@@ -309,6 +327,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Range | 100 m (falloff 30-70 m to 60 %) |
 | Draw time | 0.3 s |
 | Weight | 1 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Machine Pistol
 
@@ -331,6 +351,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.25 s |
 | Weight | 1 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Derringer
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/derringer.webp" width="1280" alt="Derringer, studio render">
@@ -340,7 +362,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 62 (dart) |
-| Fire rate | 89 rpm |
+| Fire rate | one shot every 0.67 s |
 | Fire modes | semi |
 | Magazine | 2 + 12 reserve |
 | Reload | 2 s |
@@ -349,6 +371,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Range | 18 m |
 | Draw time | 0.19 s |
 | Weight | 1 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### SMG
 
@@ -371,6 +395,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.27 s |
 | Weight | 2.8 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Carbine
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/carbine.webp" width="1280" alt="Carbine, studio render">
@@ -392,6 +418,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.3 s |
 | Weight | 4 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Assault Rifle
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/rifle.webp" width="1280" alt="Assault Rifle, studio render">
@@ -411,6 +439,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Recoil | 0.36 deg up, 0.15 deg side |
 | Range | 180 m (falloff 30-70 m to 60 %) |
 | Draw time | 0.31 s |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Bullpup
 
@@ -433,6 +463,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.34 s |
 | Weight | 5 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Battle Rifle
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/battle_rifle.webp" width="1280" alt="Battle Rifle, studio render">
@@ -442,7 +474,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 36 (dart) |
-| Fire rate | 295 rpm |
+| Fire rate | one shot every 0.2 s |
 | Fire modes | semi |
 | Magazine | 20 + 80 reserve |
 | Reload | 2.3 s |
@@ -453,6 +485,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.36 s |
 | Weight | 4 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Burst Rifle
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/burst_rifle.webp" width="1280" alt="Burst Rifle, studio render">
@@ -462,7 +496,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 24 (dart) |
-| Fire rate | 240 rpm |
+| Fire rate | one shot every 0.25 s |
 | Fire modes | burst, semi, auto |
 | Burst | 3 rounds |
 | Magazine | 30 + 90 reserve |
@@ -474,6 +508,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.3 s |
 | Weight | 4 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Shotgun
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shotgun.webp" width="1280" alt="Shotgun, studio render">
@@ -483,7 +519,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 12 x 9 pellets (dart) |
-| Fire rate | 75 rpm |
+| Fire rate | one shot every 0.8 s |
 | Fire modes | semi |
 | Magazine | 8 + 32 reserve |
 | Reload | 0.42 s per round |
@@ -491,6 +527,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Recoil | 2.4 deg up, 0.15 deg side |
 | Range | 26 m |
 | Draw time | 0.38 s |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Drum Shotgun
 
@@ -501,7 +539,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 8 x 7 pellets (dart) |
-| Fire rate | 192 rpm |
+| Fire rate | one shot every 0.31 s |
 | Fire modes | auto, semi |
 | Magazine | 20 + 40 reserve |
 | Reload | 4 s |
@@ -510,6 +548,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Range | 20 m |
 | Draw time | 0.42 s |
 | Weight | 4 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Marksman Rifle
 
@@ -520,7 +560,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 58 (dart) |
-| Fire rate | 183 rpm |
+| Fire rate | one shot every 0.33 s |
 | Fire modes | semi |
 | Magazine | 10 + 40 reserve |
 | Reload | 2.59 s |
@@ -531,6 +571,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.45 s |
 | Weight | 5 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Sniper Rifle
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sniper.webp" width="1280" alt="Sniper Rifle, studio render">
@@ -540,7 +582,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Damage | 118 (dart) |
-| Fire rate | 45 rpm |
+| Fire rate | one shot every 1.33 s |
 | Fire modes | semi |
 | Magazine | 5 + 25 reserve |
 | Reload | 3.2 s |
@@ -549,6 +591,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Range | 1000 m (falloff 30-70 m to 60 %) |
 | Draw time | 0.7 s |
 | Weight | 6 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Minigun
 
@@ -568,6 +612,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 1.09 s |
 | Weight | 7.5 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Launcher
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/launcher.webp" width="1280" alt="Launcher, studio render">
@@ -578,7 +624,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | --- | --- |
 | Damage | 32 (blast) |
 | Splash | 88 within 4.5 m |
-| Fire rate | 70 rpm |
+| Fire rate | one shot every 0.86 s |
 | Fire modes | semi |
 | Magazine | 4 + 12 reserve |
 | Reload | 2.8 s |
@@ -586,6 +632,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Projectile speed | 44 m/s |
 | Draw time | 0.5 s |
 | Weight | 6 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Beamer
 
@@ -602,6 +650,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Draw time | 0.41 s |
 | Weight | 6 kg |
 
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
+
 ### Charge Rifle
 
 <img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/charge_rifle.webp" width="1280" alt="Charge Rifle, studio render">
@@ -613,7 +663,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Damage | 105 (energy) |
 | Uncharged damage | 33 % |
 | Full charge | 1.09 s |
-| Fire rate | 89 rpm |
+| Fire rate | one shot every 0.67 s |
 | Fire modes | charge |
 | Magazine | 4 + 24 reserve |
 | Reload | 2.59 s |
@@ -622,6 +672,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Range | 500 m |
 | Draw time | 0.5 s |
 | Weight | 6 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Frag Grenade
 
@@ -632,7 +684,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Splash | 115 within 5.2 m |
-| Throw rate | 60 rpm |
+| Fire rate | one throw every 1 s |
 | Fire modes | charge |
 | Carried | 2 (max 4) |
 | Recoil | 0.4 deg up, 0.15 deg side |
@@ -640,6 +692,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Fuse | 3 s |
 | Draw time | 0.34 s |
 | Weight | 0.4 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 
 ### Sticky Charge
 
@@ -650,7 +704,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Default | |
 | --- | --- |
 | Splash | 135 within 4 m |
-| Throw rate | 60 rpm |
+| Fire rate | one throw every 1 s |
 | Fire modes | charge |
 | Carried | 2 (max 4) |
 | Recoil | 0.4 deg up, 0.15 deg side |
@@ -658,6 +712,8 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 | Fuse | 2.2 s |
 | Draw time | 0.34 s |
 | Weight | 0.4 kg |
+
+*Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 <!-- /gen_readme:weapons -->
 
 <!-- gen_readme:quality -->

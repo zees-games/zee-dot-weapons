@@ -146,6 +146,19 @@ def fmt(v, unit="", digits=2):
     return s + unit
 
 
+RATE_NOTE = "Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon."
+
+
+def rate_text(kind, rpm, modes, note=""):
+    """Fire rate wording: rpm only for fast automatic/burst weapons (>= 300 rpm cyclic), else the time between shots."""
+    if not rpm:
+        return None
+    if kind in ("hitscan", "projectile") and rpm >= 300 and ("auto" in modes or "burst" in modes or "hold" in modes or not modes):
+        return fmt(rpm, " rpm", 0) + note
+    noun = "swing" if kind == "melee" else "throw" if kind == "thrown" else "shot"
+    return "one %s every %s s%s" % (noun, fmt(60.0 / rpm, "", 2), note)
+
+
 def stats(wid, prefix):
     d = read_tres(os.path.join(ROOT, "weapons", wid + ".tres"))
     r, t, dt, params = d["resource"], d["tuning"], d["damage_type"], d["params"]
@@ -201,11 +214,11 @@ def stats(wid, prefix):
     s["rpm"] = rpm
     s["damage"] = dmg if dmg else sd
     s["pellets"] = pellets
-    if rpm:
-        add("Swing rate" if kind == "melee" else "Throw rate" if kind == "thrown" else "Fire rate", fmt(rpm, " rpm", 0))
     modes = r.get("fire_modes") or p.get("fire_modes") or []
     if isinstance(p.get("fire_mode"), str) and not modes:
         modes = [p["fire_mode"]]
+    s["rate"] = rate_text(kind, rpm, modes, "")
+    add("Fire rate", s["rate"])
     if modes:
         add("Fire modes", ", ".join(modes))
     burst = get("burst_count")
@@ -298,7 +311,7 @@ def render(words, base):
     if unexpected:
         print("gen_readme: no image yet for %s" % ", ".join(unexpected), file=sys.stderr)
 
-    summary = ["| | Weapon | Class | Damage | Rate |", "| --- | --- | --- | --- | --- |"]
+    summary = ["| | Weapon | Class | Damage | Fire rate |", "| --- | --- | --- | --- | --- |"]
     for s in all_stats:
         w = info.get(s["id"], {})
         cls = w.get("class") or str(s["menu"].get("category", s["kind"])).capitalize()
@@ -306,7 +319,7 @@ def render(words, base):
         dmg = (fmt(d) + (" x %d" % s["pellets"] if s["pellets"] and s["pellets"] > 1 else "")) if d else "-"
         if s["kind"] == "thrown" and d:
             dmg += " splash"
-        rate = fmt(s["rpm"], " rpm", 0) if s["rpm"] else "-"
+        rate = s["rate"] or "-"
         thumb = '<a href="#%s"><img src="%s%s/%s_thumb.webp" width="160" alt="%s"></a>' % (
             anchor(s["name"]), base, IMG_DIR, s["id"], s["name"]) if s["id"] not in missing else ""
         summary.append('| %s | [%s](#%s) | %s | %s | %s |' % (thumb, s["name"], anchor(s["name"]), cls, dmg, rate))
@@ -328,7 +341,10 @@ def render(words, base):
         for label, value in s["rows"]:
             body.append("| %s | %s |" % (label, value))
         body.append("")
-    return "\n".join(summary) + "\n", "\n".join(body)
+        if s["rate"]:
+            body.append("*%s*" % RATE_NOTE)
+            body.append("")
+    return "\n".join(summary) + "\n\n*%s*\n" % RATE_NOTE, "\n".join(body)
 
 
 def splice(text, tag, content, before=None):
