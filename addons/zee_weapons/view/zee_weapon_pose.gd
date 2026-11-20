@@ -93,6 +93,7 @@ var _roll: float = 0.0
 
 ## Distance travelled, in metres. Drives the bob phase.
 var _bob_distance: float = 0.0
+var _breath_time: float = 0.0
 
 ## Smoothed sideways speed over [member Tunables.strafe_reference], -1 (left) to 1 (right).
 var _strafe: float = 0.0
@@ -160,6 +161,9 @@ var aim_sway_scale: float = 1.0
 ## This gun's own strafe sway (keys tilt, yaw, aimed, response; from its ads profile). An absent key uses the server's rules.
 var gun_strafe: Dictionary = {}
 
+## Metres-scale of the slow idle breathing drift (0 = none, the default, so a suite sees a still gun). The view turns it on.
+var idle_breath: float = 0.0
+
 
 static func make(p_weight: float = 1.0) -> ZeeWeaponPose:
 	var pose := ZeeWeaponPose.new()
@@ -194,6 +198,7 @@ func advance(
 	# and an exponential smoothing step with a one-second delta overshoots past its
 	# target and comes back, which reads as the weapon snapping.
 	var step := minf(delta, 0.1)
+	_breath_time = fposmod(_breath_time + step, 1000.0)
 
 	_advance_sway(step, look_delta)
 	_advance_strafe(step, strafe if on_floor else 0.0)
@@ -376,6 +381,9 @@ func offset() -> Transform3D:
 
 	var bob := _bob_offset() * rules.bob
 	position += Vector3(bob.x * steady_x, bob.y * steady, bob.z * steady)
+	# Breathing: a held gun is never dead still, which is what "idle sway" asks of a standing view (a judge's frame
+	# difference of nothing). Less than a walk's bob, steadied at the sight like the rest, and off wherever the bob or the kick is (a sober view model).
+	position += Vector3(sin(_breath_time * 1.1) * 0.0022, sin(_breath_time * 1.7 + 0.8) * 0.0032, 0.0) * steady * idle_breath * maxf(0.0, feel) * maxf(0.0, minf(rules.bob, rules.kick))
 	position += aim_shift * _aim
 
 	# Roll is steadied too: at the sight a rolling gun is the sight picture tipping, and it

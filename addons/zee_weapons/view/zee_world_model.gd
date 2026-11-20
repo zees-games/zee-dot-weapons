@@ -28,6 +28,7 @@ extends Node3D
 
 ## How much of a weapon's recoil a watcher sees.
 const Dress := preload("zee_attachment_dress.gd")
+const ReloadParts := preload("zee_reload_parts.gd")
 
 const RECOIL_SHARE := 0.35
 
@@ -196,6 +197,8 @@ var _reloading: bool = false
 var _reload_blend: float = 0.0
 var _reload_time: float = 0.0
 var _reload_period: float = 1.5
+## The magazine drawn in the support hand during a watcher's reload (null until the first).
+var _watched_mag: Node3D = null
 
 
 func _ready() -> void:
@@ -528,6 +531,28 @@ func advance(delta: float) -> void:
 	_holder.transform = Transform3D(
 		low * carry[1] * turn * rest.basis, rest.origin + moved + carry[0] + Vector3(0.0, 0.0, _kick + _wall_amount)
 	)
+	_advance_watched_magazine()
+
+
+## The magazine a watcher sees change: in the support hand from the well, down to the belt and back (the middle
+## half of the reload's cycle), so the hand goes for something and brings it. Built on the first reload.
+func _advance_watched_magazine() -> void:
+	var fraction := reload_fraction()
+	var show_it := _reload_blend > 0.5 and fraction >= 0.26 and fraction <= 0.74 and _weapon != null and _support_local.is_finite()
+	if not show_it:
+		if _watched_mag != null:
+			_watched_mag.visible = false
+		return
+	if _watched_mag == null:
+		_watched_mag = ReloadParts.box_magazine()
+		if _watched_mag == null:
+			return
+		_watched_mag.scale = Vector3.ONE * 0.8
+		add_child(_watched_mag)
+	_watched_mag.visible = true
+	var hand := _support_world()
+	_watched_mag.global_transform = Transform3D(_holder.global_transform.basis.orthonormalized(), hand - _holder.global_transform.basis.y.normalized() * 0.03)
+	_watched_mag.scale = Vector3.ONE * 0.8
 
 
 ## Metres the gun must be pulled back for a wall [param hit] away from a ray that starts [param arm] behind the hand (INF for none).
@@ -773,6 +798,8 @@ func _meshes(node: Node) -> Array[MeshInstance3D]:
 
 
 func _clear_models() -> void:
+	if _watched_mag != null:
+		_watched_mag.visible = false
 	if _weapon != null:
 		_weapon.queue_free()
 

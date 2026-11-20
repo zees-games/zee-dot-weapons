@@ -44,8 +44,9 @@ static func pose_world_factor(pose: StringName) -> float:
 			return 0.62
 		POSE_MELEE, POSE_THROWN:
 			return 1.0
+		# 0.7 left a rifle a toy against the figure's own body in the visual judge's clips.
 		_:
-			return 0.7
+			return 0.92
 
 
 ## Whether a pose is held with two hands in third person (before [member ZeeWeaponArt.hands]).

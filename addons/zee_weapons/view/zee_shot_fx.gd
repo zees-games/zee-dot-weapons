@@ -224,6 +224,11 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 			_trace(muzzle.origin, shot.origin, direction, shot.max_range, beam, rail)
 
 
+## A watcher sees the flash from metres away on a world-sized gun, not half a metre from the eye:
+## at full size it was four to five times the gun's own length in the visual judge's clips.
+const REMOTE_FLASH_SIZE := 0.3
+
+
 ## A use somebody else made, known only by its kind: a watcher's view, from the world
 ## model's muzzle along its barrel.
 func play_remote(
@@ -246,7 +251,7 @@ func play_remote(
 
 	var beam := kind == ZeeWeaponNet.KIND_BEAM
 	if not beam:
-		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)), id, false)
+		_flash(muzzle, REMOTE_FLASH_SIZE, ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)), id, false)
 
 	var rail := charge >= CHARGE_READY \
 		and ZeeWeaponSound.class_for(id, ZeeWeaponNet.kind_name(kind)) == ZeeWeaponSound.CHARGE

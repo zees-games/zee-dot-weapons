@@ -33,8 +33,15 @@ const NEAR_MARGIN := 0.05
 ## Metres beyond the camera near plane that no part of the drawn model may come nearer than.
 const NEAR_CLEAR := 0.02
 
-var _pose := ZeeWeaponPose.make()
+var _pose := _make_pose()
 var _wall := ZeeWallSlam.new()
+
+
+static func _make_pose() -> ZeeWeaponPose:
+	var p := ZeeWeaponPose.make()
+	p.idle_breath = 1.0
+	return p
+
 var _wall_excluded: Array[RID] = []
 var _art: ZeeWeaponArt = null
 var _id: StringName = &""

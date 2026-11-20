@@ -494,7 +494,7 @@ const GRIP_RADIUS := Glove.GRIP_RADIUS
 
 ## The rigged arm's scale against the file (a 0.52 m arm and a 0.19 m hand): the weapons are
 ## drawn at about half size and the hand must not be a giant's beside them.
-const RIGGED_SCALE := 1.0
+const RIGGED_SCALE := 0.82
 
 ## One arm: a gloved hand (never stretched) and a faceted sleeve stretched from the wrist to
 ## the shoulder.
