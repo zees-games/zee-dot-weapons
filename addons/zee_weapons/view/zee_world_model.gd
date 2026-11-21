@@ -13,7 +13,7 @@ extends Node3D
 ## floor.
 ##
 ## [b]It is attached by duck typing, never by class.[/b] `attach_to` takes any node that
-## answers `attachment(point)` — which dot-player-char's visual does and a game's own rig
+## answers `attachment(point)` — which gs-player-char's visual does and a game's own rig
 ## can — and this file mentions no character class at all, because a script that
 ## references a `class_name` the project does not have fails to parse and takes every
 ## script that references [i]it[/i] down with it.
@@ -101,7 +101,7 @@ const RELOAD_SUPPORT_KEYS := [
 ## The attachment point on the character to hang from.
 ##
 ## Any node answering `attachment(point)`. The name is the character rig's to define;
-## `right_hand` is what dot-player-char ships.
+## `right_hand` is what gs-player-char ships.
 @export var mount: StringName = &"right_hand"
 
 @export_group("Behaviour")
@@ -408,7 +408,7 @@ func throw() -> void:
 
 
 ## The person this hand belongs to: the nearest node above it that answers both `swing(which)`
-## and `set_hold(kind)`, which dot-player-char's figure does.
+## and `set_hold(kind)`, which gs-player-char's figure does.
 ##
 ## [b]Asked for a throw only, and duck-typed for [method attach_to]'s reason.[/b] Every game
 ## already plays the slash on a swing itself, and a second call would restart it; nobody plays

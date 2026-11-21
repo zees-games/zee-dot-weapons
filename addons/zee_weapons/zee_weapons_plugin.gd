@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-## Editor entry point for zee-dot-weapons. Registers inspector types only.
+## Editor entry point for zee-gs-weapons. Registers inspector types only.
 ##
 ## [b]No autoloads[/b], the same as every addon in this family and for the same reason:
 ## a server simulating thirty carriers and a client predicting one are many rigs in one

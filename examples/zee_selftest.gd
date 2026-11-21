@@ -21,12 +21,12 @@ extends "res://examples/selftest/sections_wall.gd"
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
 const CHECKS := 894
-const IronSight := preload("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
+const IronSight := preload("res://addons/gs_weapon/view/gs_weapon_iron_sight.gd")
 const SightFit := preload("res://addons/zee_weapons/view/zee_sight_fit.gd")
 
 
 func _ready() -> void:
-	print("zee-dot-weapons self-test")
+	print("zee-gs-weapons self-test")
 	print("=========================")
 
 	_ids()
@@ -456,7 +456,7 @@ func _aim_lens() -> void:
 func _aim_marked_sights() -> void:
 	# A model with real sights marks their line with two nodes, and is aimed along those
 	# instead of a measured line with a ring and a notch built over its own sights.
-	var sight_script := load("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd")
+	var sight_script := load("res://addons/gs_weapon/view/gs_weapon_iron_sight.gd")
 	var marked_gun := Node3D.new()
 	var body := MeshInstance3D.new()
 	var box := BoxMesh.new()
@@ -612,7 +612,7 @@ func _aim_cut() -> void:
 
 
 func _hits(node: Node3D, from: Vector3, to: Vector3) -> bool:
-	for tri: Dictionary in load("res://addons/dot_weapon/view/dot_weapon_iron_sight.gd").triangles_of(node, node):
+	for tri: Dictionary in load("res://addons/gs_weapon/view/gs_weapon_iron_sight.gd").triangles_of(node, node):
 		if Geometry3D.segment_intersects_triangle(from, to, tri.a, tri.b, tri.c) != null:
 			return true
 	return false
@@ -641,7 +641,7 @@ func _red_dot() -> void:
 	add_child(next)
 	var next_dot := next.find_child(fit.RETICLE_NAME, true, false) as Node3D
 	fit.track(next, Vector3(0.004, -0.002, 0.0))
-	_check("the next gun's dot, renamed (%s), still tracks the eye" % next.name, next.name != fit.RED_DOT_NAME and next.to_global(next_dot.position).is_equal_approx(Vector3(0.004, -0.002, -0.2)))
+	_check("the next gun's dot, renamed (%s), still tracks the eye" % next.name, next.name != fit.RED_GS_NAME and next.to_global(next_dot.position).is_equal_approx(Vector3(0.004, -0.002, -0.2)))
 	next.queue_free()
 
 

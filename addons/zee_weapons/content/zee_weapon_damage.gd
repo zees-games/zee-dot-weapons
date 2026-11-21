@@ -91,7 +91,7 @@ static func table() -> Dictionary:
 	}
 
 
-## Every type as a list, for dot-combat's manager, which registers them that way.
+## Every type as a list, for gs-combat's manager, which registers them that way.
 static func all() -> Array[GSDamageType]:
 	return [dart(), blast(), strike(), energy()]
 

@@ -14,7 +14,7 @@ extends RefCounted
 ## weapon's own [GSWeaponDef] and its ballistics at [constant ZeeWeaponPack.TICK_RATE], so a
 ## retune shows on the card the day it lands; a second table of "card numbers" would be the one
 ## that is wrong. The bars are scaled against fixed ceilings rather than the pack's own maxima, so
-## a second pack (zed-dot-weapons) with a bigger gun does not shrink every bar here.
+## a second pack (zed-gs-weapons) with a bigger gun does not shrink every bar here.
 ##
 ## Content only: a dedicated server never calls this, and nothing here touches art.
 

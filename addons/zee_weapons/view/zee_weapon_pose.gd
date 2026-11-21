@@ -224,7 +224,7 @@ func advance(
 ## [b]The sideways kick picks a side each shot.[/b] The behaviours hand over a magnitude
 ## and it was applied as given, so every shot of every weapon pushed the gun the same way
 ## and a held trigger walked it steadily off to one side.
-## With [param signed_yaw] (the outcome's `recoil_signed`, from dot-weapon's recoil rules) the sign of [code]recoil.y[/code] is the side, so the view agrees with the server's bullet.
+## With [param signed_yaw] (the outcome's `recoil_signed`, from gs-weapon's recoil rules) the sign of [code]recoil.y[/code] is the side, so the view agrees with the server's bullet.
 func punch(recoil: Vector2, signed_yaw: bool = false) -> void:
 	if not is_finite(recoil.x) or not is_finite(recoil.y):
 		return

@@ -2,7 +2,7 @@
 name: "Sticky Charge"
 description: ""
 tags: ["thrown", "explosive"]
-behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_thrown.gd"
+behaviour: "res://addons/gs_weapon/behaviour/gs_weapon_thrown.gd"
 slot: 5
 authored_tick_rate: 64
 deploy_ticks: 22

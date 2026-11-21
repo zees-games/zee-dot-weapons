@@ -1,14 +1,14 @@
-![Zee Weapons banner](https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/banner.png)
+![Zee Weapons banner](https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/banner.png)
 
 Twenty-seven low-poly weapons for GameSpice games, in a bright toy-blaster style: seven melee weapons, four sidearms, nine primaries, five heavies and two grenades. Each one has a first-person view model with arms, a world model, sounds and a tuned profile, and every number below is a default read straight from the pack's data that a game or server can change without touching the pack.
 
 ### In GameSpice and Fatal Contact
 
-- GameSpice:** the pack is published to the Workshop as `gamemann/zee-dot-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
-- **Fatal Contact:** FC's own weapons are [fc-weapons](https://github.com/zees-games/fc-weapons). An FC server can add this pack to its overlay for extra weapons, and [zed-dot-weapons](https://github.com/zees-games/zed-dot-weapons) builds on it.
-- **Your own Godot game:** link or copy `addons/zee_weapons/` and `assets/` beside dot-weapon and use the code in [Using it](#using-it). Server owners retune any weapon in `cfg/addons/zee_weapons/weapon/<id>.yml`.
+- GameSpice:** the pack is published to the Workshop as `gamemann/zee-gs-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
+- **Fatal Contact:** FC's own weapons are [fc-weapons](https://github.com/zees-games/fc-weapons). An FC server can add this pack to its overlay for extra weapons, and [zed-gs-weapons](https://github.com/zees-games/zed-gs-weapons) builds on it.
+- **Your own Godot game:** link or copy `addons/zee_weapons/` and `assets/` beside gs-weapon and use the code in [Using it](#using-it). Server owners retune any weapon in `cfg/addons/zee_weapons/weapon/<id>.yml`.
 
-The weapons plug into [dot-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [**GameSpice collection**](https://gamespice.net), such as Playlot and [Fatal Contact](https://github.com/zees-games/game-fatal-contact) servers, use it.
+The weapons plug into [gs-weapon](https://github.com/gamespice-platform/weapon) (blasters, melee weapons, grenades and fists), with everything a player sees and hears: first-person view models with arms, third-person world models, animation, tracers, sounds and recoil. Games in the [**GameSpice collection**](https://gamespice.net), such as Playlot and [Fatal Contact](https://github.com/zees-games/game-fatal-contact) servers, use it.
 
 The pack has its own headless test suite, but little of it has been in front of real players. Please report anything you run into.
 
@@ -28,39 +28,39 @@ Every blaster can also bash with the alt-fire button. Weapons differ in how they
 | | Weapon | Class | Damage | Fire rate |
 | --- | --- | --- | --- | --- |
 |  | [Fists](#fists) | Melee | 22 | one swing every 0.5 s |
-| <a href="#knife"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/knife_thumb.webp" width="160" alt="Knife"></a> | [Knife](#knife) | Melee | 45 | one swing every 0.41 s |
-| <a href="#shiv"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shiv_thumb.webp" width="160" alt="Shiv"></a> | [Shiv](#shiv) | Melee | 34 | one swing every 0.31 s |
-| <a href="#hatchet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/hatchet_thumb.webp" width="160" alt="Hatchet"></a> | [Hatchet](#hatchet) | Melee | 62 | one swing every 0.75 s |
-| <a href="#mallet"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/mallet_thumb.webp" width="160" alt="Mallet"></a> | [Mallet](#mallet) | Melee | 85 | one swing every 1.09 s |
-| <a href="#pickaxe"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pickaxe_thumb.webp" width="160" alt="Pickaxe"></a> | [Pickaxe](#pickaxe) | Melee | 68 | one swing every 0.86 s |
-| <a href="#spade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/spade_thumb.webp" width="160" alt="Spade"></a> | [Spade](#spade) | Melee | 56 | one swing every 0.7 s |
-| <a href="#dart-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pistol_thumb.webp" width="160" alt="Dart Pistol"></a> | [Dart Pistol](#dart-pistol) | Pistol | 20 | one shot every 0.16 s |
-| <a href="#revolver"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/revolver_thumb.webp" width="160" alt="Revolver"></a> | [Revolver](#revolver) | Pistol | 46 | one shot every 0.42 s |
-| <a href="#machine-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/machine_pistol_thumb.webp" width="160" alt="Machine Pistol"></a> | [Machine Pistol](#machine-pistol) | Pistol | 13 | 960 rpm |
-| <a href="#derringer"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/derringer_thumb.webp" width="160" alt="Derringer"></a> | [Derringer](#derringer) | Pistol | 62 | one shot every 0.67 s |
-| <a href="#smg"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/smg_thumb.webp" width="160" alt="SMG"></a> | [SMG](#smg) | SMG | 16 | 768 rpm |
-| <a href="#carbine"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/carbine_thumb.webp" width="160" alt="Carbine"></a> | [Carbine](#carbine) | Assault rifle | 21 | 640 rpm |
-| <a href="#assault-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/rifle_thumb.webp" width="160" alt="Assault Rifle"></a> | [Assault Rifle](#assault-rifle) | Assault rifle | 23 | 640 rpm |
-| <a href="#bullpup"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/bullpup_thumb.webp" width="160" alt="Bullpup"></a> | [Bullpup](#bullpup) | Assault rifle | 20 | 768 rpm |
-| <a href="#battle-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/battle_rifle_thumb.webp" width="160" alt="Battle Rifle"></a> | [Battle Rifle](#battle-rifle) | Battle rifle | 36 | one shot every 0.2 s |
-| <a href="#burst-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/burst_rifle_thumb.webp" width="160" alt="Burst Rifle"></a> | [Burst Rifle](#burst-rifle) | Assault rifle | 24 | one shot every 0.25 s |
-| <a href="#shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shotgun_thumb.webp" width="160" alt="Shotgun"></a> | [Shotgun](#shotgun) | Shotgun | 12 x 9 | one shot every 0.8 s |
-| <a href="#drum-shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/drum_shotgun_thumb.webp" width="160" alt="Drum Shotgun"></a> | [Drum Shotgun](#drum-shotgun) | Shotgun | 8 x 7 | one shot every 0.31 s |
-| <a href="#marksman-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/marksman_thumb.webp" width="160" alt="Marksman Rifle"></a> | [Marksman Rifle](#marksman-rifle) | Marksman rifle | 58 | one shot every 0.33 s |
-| <a href="#sniper-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sniper_thumb.webp" width="160" alt="Sniper Rifle"></a> | [Sniper Rifle](#sniper-rifle) | Sniper rifle | 118 | one shot every 1.33 s |
-| <a href="#minigun"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/minigun_thumb.webp" width="160" alt="Minigun"></a> | [Minigun](#minigun) | Heavy | 11 | 1280 rpm |
-| <a href="#launcher"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/launcher_thumb.webp" width="160" alt="Launcher"></a> | [Launcher](#launcher) | Launcher | 32 | one shot every 0.86 s |
-| <a href="#beamer"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/beamer_thumb.webp" width="160" alt="Beamer"></a> | [Beamer](#beamer) | Energy | 9 | 960 rpm |
-| <a href="#charge-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/charge_rifle_thumb.webp" width="160" alt="Charge Rifle"></a> | [Charge Rifle](#charge-rifle) | Energy | 105 | one shot every 0.67 s |
-| <a href="#frag-grenade"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/frag_thumb.webp" width="160" alt="Frag Grenade"></a> | [Frag Grenade](#frag-grenade) | Grenade | 115 splash | one throw every 1 s |
-| <a href="#sticky-charge"><img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sticky_thumb.webp" width="160" alt="Sticky Charge"></a> | [Sticky Charge](#sticky-charge) | Grenade | 135 splash | one throw every 1 s |
+| <a href="#knife"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/knife_thumb.webp" width="160" alt="Knife"></a> | [Knife](#knife) | Melee | 45 | one swing every 0.41 s |
+| <a href="#shiv"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/shiv_thumb.webp" width="160" alt="Shiv"></a> | [Shiv](#shiv) | Melee | 34 | one swing every 0.31 s |
+| <a href="#hatchet"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/hatchet_thumb.webp" width="160" alt="Hatchet"></a> | [Hatchet](#hatchet) | Melee | 62 | one swing every 0.75 s |
+| <a href="#mallet"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/mallet_thumb.webp" width="160" alt="Mallet"></a> | [Mallet](#mallet) | Melee | 85 | one swing every 1.09 s |
+| <a href="#pickaxe"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/pickaxe_thumb.webp" width="160" alt="Pickaxe"></a> | [Pickaxe](#pickaxe) | Melee | 68 | one swing every 0.86 s |
+| <a href="#spade"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/spade_thumb.webp" width="160" alt="Spade"></a> | [Spade](#spade) | Melee | 56 | one swing every 0.7 s |
+| <a href="#dart-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/pistol_thumb.webp" width="160" alt="Dart Pistol"></a> | [Dart Pistol](#dart-pistol) | Pistol | 20 | one shot every 0.16 s |
+| <a href="#revolver"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/revolver_thumb.webp" width="160" alt="Revolver"></a> | [Revolver](#revolver) | Pistol | 46 | one shot every 0.42 s |
+| <a href="#machine-pistol"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/machine_pistol_thumb.webp" width="160" alt="Machine Pistol"></a> | [Machine Pistol](#machine-pistol) | Pistol | 13 | 960 rpm |
+| <a href="#derringer"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/derringer_thumb.webp" width="160" alt="Derringer"></a> | [Derringer](#derringer) | Pistol | 62 | one shot every 0.67 s |
+| <a href="#smg"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/smg_thumb.webp" width="160" alt="SMG"></a> | [SMG](#smg) | SMG | 16 | 768 rpm |
+| <a href="#carbine"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/carbine_thumb.webp" width="160" alt="Carbine"></a> | [Carbine](#carbine) | Assault rifle | 21 | 640 rpm |
+| <a href="#assault-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/rifle_thumb.webp" width="160" alt="Assault Rifle"></a> | [Assault Rifle](#assault-rifle) | Assault rifle | 23 | 640 rpm |
+| <a href="#bullpup"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/bullpup_thumb.webp" width="160" alt="Bullpup"></a> | [Bullpup](#bullpup) | Assault rifle | 20 | 768 rpm |
+| <a href="#battle-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/battle_rifle_thumb.webp" width="160" alt="Battle Rifle"></a> | [Battle Rifle](#battle-rifle) | Battle rifle | 36 | one shot every 0.2 s |
+| <a href="#burst-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/burst_rifle_thumb.webp" width="160" alt="Burst Rifle"></a> | [Burst Rifle](#burst-rifle) | Assault rifle | 24 | one shot every 0.25 s |
+| <a href="#shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/shotgun_thumb.webp" width="160" alt="Shotgun"></a> | [Shotgun](#shotgun) | Shotgun | 12 x 9 | one shot every 0.8 s |
+| <a href="#drum-shotgun"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/drum_shotgun_thumb.webp" width="160" alt="Drum Shotgun"></a> | [Drum Shotgun](#drum-shotgun) | Shotgun | 8 x 7 | one shot every 0.31 s |
+| <a href="#marksman-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/marksman_thumb.webp" width="160" alt="Marksman Rifle"></a> | [Marksman Rifle](#marksman-rifle) | Marksman rifle | 58 | one shot every 0.33 s |
+| <a href="#sniper-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/sniper_thumb.webp" width="160" alt="Sniper Rifle"></a> | [Sniper Rifle](#sniper-rifle) | Sniper rifle | 118 | one shot every 1.33 s |
+| <a href="#minigun"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/minigun_thumb.webp" width="160" alt="Minigun"></a> | [Minigun](#minigun) | Heavy | 11 | 1280 rpm |
+| <a href="#launcher"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/launcher_thumb.webp" width="160" alt="Launcher"></a> | [Launcher](#launcher) | Launcher | 32 | one shot every 0.86 s |
+| <a href="#beamer"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/beamer_thumb.webp" width="160" alt="Beamer"></a> | [Beamer](#beamer) | Energy | 9 | 960 rpm |
+| <a href="#charge-rifle"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/charge_rifle_thumb.webp" width="160" alt="Charge Rifle"></a> | [Charge Rifle](#charge-rifle) | Energy | 105 | one shot every 0.67 s |
+| <a href="#frag-grenade"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/frag_thumb.webp" width="160" alt="Frag Grenade"></a> | [Frag Grenade](#frag-grenade) | Grenade | 115 splash | one throw every 1 s |
+| <a href="#sticky-charge"><img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/sticky_thumb.webp" width="160" alt="Sticky Charge"></a> | [Sticky Charge](#sticky-charge) | Grenade | 135 splash | one throw every 1 s |
 
 *Rates are the time between shots and ignore reloading; rpm is the cyclic rate of an automatic weapon.*
 <!-- /gen_readme:summary -->
 
-## What it adds to dot-weapon
+## What it adds to gs-weapon
 
-dot-weapon decides when a weapon fires, reloads and switches, but draws nothing. This pack is the part you see and hear.
+gs-weapon decides when a weapon fires, reloads and switches, but draws nothing. This pack is the part you see and hear.
 
 | Class | What it does |
 | --- | --- |
@@ -71,12 +71,12 @@ dot-weapon decides when a weapon fires, reloads and switches, but draws nothing.
 | `ZeeWeaponPose` | The animation maths, with no nodes, so tests can check it. |
 | `ZeeShotFx` | Tracer, muzzle flash, impact effects and the shot sound. Never built on a server. |
 | `ZeeWeaponSound` | A sound for each kind of weapon, generated on first use. The pack ships no audio files; `ZeeWeaponSound.set_stream(id, stream)` replaces any of them with a recording. |
-| `ZeeWeaponNet` | Four small replicated fields on top of dot-weapon's, so other players see your gun fire and reload. |
+| `ZeeWeaponNet` | Four small replicated fields on top of gs-weapon's, so other players see your gun fire and reload. |
 | `ZeeWeaponRig` | The one node a game adds per player. It sets up everything above. |
 
 ## Using it
 
-Copy `addons/zee_weapons/` and `assets/` into your project, next to `dot_core`, `dot_combat` and `dot_weapon`, and enable the plugin.
+Copy `addons/zee_weapons/` and `assets/` into your project, next to `gs_core`, `gs_combat` and `gs_weapon`, and enable the plugin.
 
 ```gdscript
 var rig := ZeeWeaponRig.new()
@@ -96,7 +96,7 @@ Once per simulation tick:
 var outcome := rig.simulate_tick(command, tick)
 
 for shot in outcome.shots:
-    combat.resolve(shot)                   # dot-combat, on the authority only
+    combat.resolve(shot)                   # gs-combat, on the authority only
 ```
 
 Once per rendered frame, for sway, bob and the camera's share of the recoil:
@@ -110,13 +110,13 @@ fps_view.external_angles = Vector3(punch.x, punch.y, 0.0)
 
 Add the punch to the camera after your controller has positioned it. Do not add it to the command's angles: the shot has already gone where the command pointed.
 
-Tracers, flashes, impacts and sounds come with the rig. Set `rig.effects = false` if your game draws its own from the `used` signal. The rig finds the player through `GSWeaponPlayerBridge`, which names no player or netcode class, so it works with dot-player or your own.
+Tracers, flashes, impacts and sounds come with the rig. Set `rig.effects = false` if your game draws its own from the `used` signal. The rig finds the player through `GSWeaponPlayerBridge`, which names no player or netcode class, so it works with gs-player or your own.
 
 ### Networking
 
 ```gdscript
 # On the carrier's replicated object, once:
-var specs := ZeeWeaponNet.all_specs()      # dot-weapon's three fields, plus this pack's four
+var specs := ZeeWeaponNet.all_specs()      # gs-weapon's three fields, plus this pack's four
 
 # On the authority, every tick after simulating:
 rig.pull_net(replicated)
@@ -141,15 +141,15 @@ ZeeWeaponArtTable.add_source(&"my_pack", Callable(MyPack, &"art"))
 ZeeWeaponSound.set_class(&"my_rifle", ZeeWeaponSound.RIFLE)
 ```
 
-Pass static methods as above, not lambdas: a lambda kept by zee outlives its script and the game crashes at quit. An id this pack already has stays this pack's (the other is skipped with a warning). `remove_source(&"my_pack")` takes a pack out. [zed-dot-weapons](https://github.com/zees-games/zed-dot-weapons) does this.
+Pass static methods as above, not lambdas: a lambda kept by zee outlives its script and the game crashes at quit. An id this pack already has stays this pack's (the other is skipped with a warning). `remove_source(&"my_pack")` takes a pack out. [zed-gs-weapons](https://github.com/zees-games/zed-gs-weapons) does this.
 
 ## Requirements
 
-Godot 4.7, plus [dot-core](https://github.com/gamespice-platform/core), [dot-combat](https://github.com/gamespice-platform/combat) and [dot-weapon](https://github.com/gamespice-platform/weapon). dot-net, dot-player, dot-player-controller and dot-player-char are used if present. It runs on desktop, mobile and the browser from one build.
+Godot 4.7, plus [gs-core](https://github.com/gamespice-platform/core), [gs-combat](https://github.com/gamespice-platform/combat) and [gs-weapon](https://github.com/gamespice-platform/weapon). gs-net, gs-player, gs-player-controller and gs-player-char are used if present. It runs on desktop, mobile and the browser from one build.
 
 ## Running it
 
-The easiest way to get the pack and its addons is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap) (`./bootstrap.sh`, then `cd projects/zee-dot-weapons`).
+The easiest way to get the pack and its addons is [gs-bootstrap](https://github.com/gamespice-platform/bootstrap) (`./bootstrap.sh`, then `cd projects/zee-gs-weapons`).
 
 | Command | What it does |
 | --- | --- |
@@ -182,7 +182,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Knife
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/knife.webp" width="1280" alt="Knife, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/knife.webp" width="1280" alt="Knife, studio render">
 
 **Melee** `knife`. The all-round blade. Quick to draw and quick to swing, with more bite than the shiv for a short reach.
 
@@ -200,7 +200,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Shiv
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shiv.webp" width="1280" alt="Shiv, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/shiv.webp" width="1280" alt="Shiv, studio render">
 
 **Melee** `shiv`. A shorter, lighter blade. The quickest swing and draw of anything here, traded for less damage per hit.
 
@@ -218,7 +218,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Hatchet
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/hatchet.webp" width="1280" alt="Hatchet, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/hatchet.webp" width="1280" alt="Hatchet, studio render">
 
 **Melee** `hatchet`. A slower chop that lands hard. Two hits finish most fights at close range.
 
@@ -236,7 +236,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Mallet
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/mallet.webp" width="1280" alt="Mallet, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/mallet.webp" width="1280" alt="Mallet, studio render">
 
 **Melee** `mallet`. The heaviest hit in the melee slot. Slow to draw and slow to swing, with a wide arc that is hard to dodge.
 
@@ -254,7 +254,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Pickaxe
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pickaxe.webp" width="1280" alt="Pickaxe, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/pickaxe.webp" width="1280" alt="Pickaxe, studio render">
 
 **Melee** `pickaxe`. The longest reach of the melee weapons, with a narrow arc. It rewards a precise swing from just out of range.
 
@@ -272,7 +272,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Spade
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/spade.webp" width="1280" alt="Spade, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/spade.webp" width="1280" alt="Spade, studio render">
 
 **Melee** `spade`. A wide, sweeping swing with good reach. Forgiving to aim when the target is moving.
 
@@ -290,7 +290,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Dart Pistol
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/pistol.webp" width="1280" alt="Dart Pistol, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/pistol.webp" width="1280" alt="Dart Pistol, studio render">
 
 **Pistol** `pistol`. The dependable sidearm. Accurate, quick to draw and fast to reload, with enough darts to finish what the main gun started.
 
@@ -312,7 +312,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Revolver
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/revolver.webp" width="1280" alt="Revolver, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/revolver.webp" width="1280" alt="Revolver, studio render">
 
 **Pistol** `revolver`. Six heavy rounds and a stiff kick. Accurate from standing, but the bloom after each shot punishes rushing.
 
@@ -334,7 +334,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Machine Pistol
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/machine_pistol.webp" width="1280" alt="Machine Pistol, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/machine_pistol.webp" width="1280" alt="Machine Pistol, studio render">
 
 **Pistol** `machine_pistol`. A pocket bullet hose that empties its magazine in under two seconds, with burst and semi for when spraying is not the answer.
 
@@ -357,7 +357,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Derringer
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/derringer.webp" width="1280" alt="Derringer, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/derringer.webp" width="1280" alt="Derringer, studio render">
 
 **Pistol** `derringer`. Two barrels, two shots, big damage at arm's length. A last-ditch backup that wins a corner fight and little else.
 
@@ -378,7 +378,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### SMG
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/smg.webp" width="1280" alt="SMG, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/smg.webp" width="1280" alt="SMG, studio render">
 
 **SMG** `smg`. Light, fast and steady on the move. The pick for clearing rooms and running between them.
 
@@ -401,7 +401,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Carbine
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/carbine.webp" width="1280" alt="Carbine, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/carbine.webp" width="1280" alt="Carbine, studio render">
 
 **Assault rifle** `carbine`. A short, light rifle. A little less damage and range than the assault rifle for a quicker handling all-rounder.
 
@@ -424,7 +424,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Assault Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/rifle.webp" width="1280" alt="Assault Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/rifle.webp" width="1280" alt="Assault Rifle, studio render">
 
 **Assault rifle** `rifle`. The all-rounder. Full auto with a burst option, accurate at mid range and controllable in long sprays.
 
@@ -446,7 +446,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Bullpup
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/bullpup.webp" width="1280" alt="Bullpup, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/bullpup.webp" width="1280" alt="Bullpup, studio render">
 
 **Assault rifle** `bullpup`. A fast-firing rifle with a scope that stays accurate while you move.
 
@@ -469,7 +469,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Battle Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/battle_rifle.webp" width="1280" alt="Battle Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/battle_rifle.webp" width="1280" alt="Battle Rifle, studio render">
 
 **Battle rifle** `battle_rifle`. Semi-automatic and hard-hitting at long range. Bloom climbs quickly, so pace your shots.
 
@@ -491,7 +491,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Burst Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/burst_rifle.webp" width="1280" alt="Burst Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/burst_rifle.webp" width="1280" alt="Burst Rifle, studio render">
 
 **Assault rifle** `burst_rifle`. Three-round bursts with very little recoil. Land a whole burst and the target is nearly gone.
 
@@ -514,7 +514,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Shotgun
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/shotgun.webp" width="1280" alt="Shotgun, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/shotgun.webp" width="1280" alt="Shotgun, studio render">
 
 **Shotgun** `shotgun`. Nine pellets at short range. It loads a round at a time, so you can top it up between fights.
 
@@ -534,7 +534,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Drum Shotgun
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/drum_shotgun.webp" width="1280" alt="Drum Shotgun, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/drum_shotgun.webp" width="1280" alt="Drum Shotgun, studio render">
 
 **Shotgun** `drum_shotgun`. An automatic shotgun with a twenty-round drum. It gives up range and reload speed to keep firing.
 
@@ -555,7 +555,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Marksman Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/marksman.webp" width="1280" alt="Marksman Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/marksman.webp" width="1280" alt="Marksman Rifle, studio render">
 
 **Marksman rifle** `marksman`. A scoped semi-automatic for picking targets off at range. Pinpoint when still, poor on the move.
 
@@ -577,7 +577,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Sniper Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sniper.webp" width="1280" alt="Sniper Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/sniper.webp" width="1280" alt="Sniper Rifle, studio render">
 
 **Sniper rifle** `sniper`. The longest reach and the biggest hit with a dart. One shot drops most targets, but only if you stand still to take it.
 
@@ -598,7 +598,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Minigun
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/minigun.webp" width="1280" alt="Minigun, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/minigun.webp" width="1280" alt="Minigun, studio render">
 
 **Heavy** `minigun`. No magazine and the highest fire rate in the pack. Slow to bring up and heavy to carry, it holds a corridor on its own.
 
@@ -618,7 +618,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Launcher
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/launcher.webp" width="1280" alt="Launcher, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/launcher.webp" width="1280" alt="Launcher, studio render">
 
 **Launcher** `launcher`. Rockets that splash. A direct hit is not needed; landing one near a group is.
 
@@ -639,7 +639,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Beamer
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/beamer.webp" width="1280" alt="Beamer, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/beamer.webp" width="1280" alt="Beamer, studio render">
 
 **Energy** `beamer`. A continuous beam that hurts more the longer you keep it on target. Short range, but nothing to reload.
 
@@ -656,7 +656,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Charge Rifle
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/charge_rifle.webp" width="1280" alt="Charge Rifle, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/charge_rifle.webp" width="1280" alt="Charge Rifle, studio render">
 
 **Energy** `charge_rifle`. Hold to charge and release for a hit that crosses the map. A quick tap fires at a third of the damage.
 
@@ -679,7 +679,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Frag Grenade
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/frag.webp" width="1280" alt="Frag Grenade, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/frag.webp" width="1280" alt="Frag Grenade, studio render">
 
 **Grenade** `frag`. A three-second fuse and the widest blast of the two grenades. Bounce it round a corner to flush people out.
 
@@ -699,7 +699,7 @@ In the range: WASD to move, mouse to look, left click to fire, right click to ba
 
 ### Sticky Charge
 
-<img src="https://raw.githubusercontent.com/zees-games/zee-dot-weapons/main/docs/img/sticky.webp" width="1280" alt="Sticky Charge, studio render">
+<img src="https://raw.githubusercontent.com/zees-games/zee-gs-weapons/main/docs/img/sticky.webp" width="1280" alt="Sticky Charge, studio render">
 
 **Grenade** `sticky`. Sticks to whatever it hits and goes off a little sooner than the frag, with a smaller, harder blast.
 

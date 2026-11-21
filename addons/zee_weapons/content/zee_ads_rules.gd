@@ -5,7 +5,7 @@ extends Resource
 ## Spread and move speed apply in [ZeeWeaponRig] from the command's aim bit (server and prediction alike); time, zoom, sway and toggle are the view model's.
 ## Layered through [GSAddonConfig] (`cfg/addons/zee_weapons/*.yml`, env, argv); shape: `ads: {default: {zoom: 0.0}, weapons: {sniper: {zoom: 0.25}}}`.
 
-const ScopeView := preload("res://addons/dot_weapon/view/dot_weapon_scope_view.gd")
+const ScopeView := preload("res://addons/gs_weapon/view/gs_weapon_scope_view.gd")
 
 ## The keys the simulation reads (spread, move speed, whether aiming exists). A client predicts with
 ## them, so they are replicated; the rest is the view model's own and stays local.
@@ -260,7 +260,7 @@ func hit_flinch_for(id: StringName) -> float:
 
 
 ## Degrees of the glowing dot on a model's own front post when aimed; 0 draws none.
-func sight_dot_for(id: StringName) -> float:
+func sight_gs_for(id: StringName) -> float:
 	return float(value_for(id, "sight_dot"))
 
 

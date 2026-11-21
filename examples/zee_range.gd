@@ -55,7 +55,7 @@ func _ready() -> void:
 
 	_crosshair.text = "+"
 
-	print("zee-dot-weapons range — %d weapons" % ZeeWeaponIds.all().size())
+	print("zee-gs-weapons range — %d weapons" % ZeeWeaponIds.all().size())
 	print("1-5 slots · wheel cycles · LMB fire · RMB bash · R reload · F1 state")
 
 	_equip_requested()
@@ -293,7 +293,7 @@ func _on_landed(impact: float) -> void:
 
 ## Traces one shot and marks where it landed.
 ##
-## [b]A range, not a combat system.[/b] dot-combat is what resolves a shot properly —
+## [b]A range, not a combat system.[/b] gs-combat is what resolves a shot properly —
 ## hitboxes, hit groups, lag compensation, armour — and this pack does not depend on it
 ## for anything but its [GSShot] type. What this does is put a mark on a wall so you can
 ## see where the pellets went, which is the only question a firing range asks.

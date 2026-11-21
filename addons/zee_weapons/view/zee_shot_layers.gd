@@ -1,15 +1,15 @@
 class_name ZeeShotLayers
 extends Node
 
-## dot-audio's layered, room-aware shot (GSShotPlayer) for ZeeShotFx. Duck-typed by script path so a project without dot-audio, or a class with no stock shot, falls back to ZeeShotFx's single sound.
+## gs-audio's layered, room-aware shot (GSShotPlayer) for ZeeShotFx. Duck-typed by script path so a project without gs-audio, or a class with no stock shot, falls back to ZeeShotFx's single sound.
 
 const CHANNEL := "zee.shot_layers"
-const ROOT := "res://addons/dot_audio/"
-const PLAYER := ROOT + "runtime/dot_shot_player.gd"
-const MANAGER := ROOT + "runtime/dot_audio_manager.gd"
-const ENCLOSURE := ROOT + "runtime/dot_audio_enclosure.gd"
-const CATALOGUE := ROOT + "core/dot_audio_catalogue.gd"
-const SHOT_STOCK := ROOT + "core/dot_audio_shot_stock.gd"
+const ROOT := "res://addons/gs_audio/"
+const PLAYER := ROOT + "runtime/gs_shot_player.gd"
+const MANAGER := ROOT + "runtime/gs_audio_manager.gd"
+const ENCLOSURE := ROOT + "runtime/gs_audio_enclosure.gd"
+const CATALOGUE := ROOT + "core/gs_audio_catalogue.gd"
+const SHOT_STOCK := ROOT + "core/gs_audio_shot_stock.gd"
 
 ## Weapon classes with a stock shot; the suppressed class plays the light set, suppressed.
 const STOCK_CLASSES: Array[StringName] = [&"light", &"magnum", &"smg", &"rifle", &"heavy", &"sniper", &"shotgun", &"launcher", &"minigun", &"beam", &"charge", &"swing", &"throw"]
@@ -22,7 +22,7 @@ var _stock: GDScript = null
 var _ready_ok := false
 
 
-## True when dot-audio's shot player and stock are linked in this project.
+## True when gs-audio's shot player and stock are linked in this project.
 static func available() -> bool:
 	for path in [PLAYER, MANAGER, ENCLOSURE, CATALOGUE, SHOT_STOCK]:
 		if not ResourceLoader.exists(path):
@@ -41,7 +41,7 @@ func is_ready() -> bool:
 	return _ready_ok
 
 
-## Builds the manager, player and enclosure once. False when dot-audio is missing or a stock shot fails to register.
+## Builds the manager, player and enclosure once. False when gs-audio is missing or a stock shot fails to register.
 func setup(send_bus: StringName) -> bool:
 	if _ready_ok:
 		return true

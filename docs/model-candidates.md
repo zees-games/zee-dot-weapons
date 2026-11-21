@@ -10,7 +10,7 @@ Every zee weapon already points at a different Kenney Blaster Kit file (CC0), so
 
 Sidearms: Dart Pistol blaster-k, Revolver blaster-o, Machine Pistol blaster-c, Derringer blaster-b. Primary: SMG blaster-i, Carbine blaster-m, Assault Rifle blaster-q, Bullpup blaster-r, Battle Rifle blaster-g, Burst Rifle blaster-n, Shotgun blaster-j, Drum Shotgun blaster-l, Marksman Rifle blaster-p. Heavy: Sniper blaster-e, Minigun blaster-f, Launcher blaster-a, Beamer blaster-h, Charge Rifle blaster-d.
 
-zed-dot-weapons uses Kenney Weapon Pack (CC0) files, all different: pistol, pistolSilencer, uzi, uziLongSilencer (Tactical SMG, same body as uzi plus a silencer), shotgun, shotgunShort, sniperSand, machinegun, machinegunLauncher, rocketlauncherModern, flamethrower_long, grenadeVintage. The closest pairs are uzi and Tactical SMG, and pistol and Silenced Pistol.
+zed-gs-weapons uses Kenney Weapon Pack (CC0) files, all different: pistol, pistolSilencer, uzi, uziLongSilencer (Tactical SMG, same body as uzi plus a silencer), shotgun, shotgunShort, sniperSand, machinegun, machinegunLauncher, rocketlauncherModern, flamethrower_long, grenadeVintage. The closest pairs are uzi and Tactical SMG, and pistol and Silenced Pistol.
 
 ## Candidate sources (all CC0)
 

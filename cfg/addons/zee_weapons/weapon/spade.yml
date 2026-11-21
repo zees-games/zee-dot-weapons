@@ -2,7 +2,7 @@
 name: "Spade"
 description: ""
 tags: ["melee"]
-behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
+behaviour: "res://addons/gs_weapon/behaviour/gs_weapon_melee.gd"
 slot: 1
 authored_tick_rate: 64
 deploy_ticks: 16

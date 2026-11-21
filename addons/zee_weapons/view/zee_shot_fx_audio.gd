@@ -37,7 +37,7 @@ var _last_casing_msec: int = -100000
 ## The audio bus reports are played on.
 @export var bus: StringName = &"Master"
 
-## Play guns as dot-audio's layered, room-aware shot when it is linked and the class has a stock shot; off, or missing, plays the single sound.
+## Play guns as gs-audio's layered, room-aware shot when it is linked and the class has a stock shot; off, or missing, plays the single sound.
 @export var layered_shots: bool = true
 
 ## Decibels added to every report. A game's mixer is the better place for this; this is

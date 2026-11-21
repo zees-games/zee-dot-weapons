@@ -74,7 +74,7 @@ while [ $# -gt 0 ]; do
         --world) WORLD=1; shift ;;
         --reloads) # optional comma list of fractions, or a count; a leading digit tells it from a weapon id
             if [[ "${2:-}" =~ ^[0-9] ]]; then EXTRA="$EXTRA --reloads $2"; shift 2
-            else EXTRA="$EXTRA --reloads 9"; shift; fi ;;  # a bare count: dot-weapon's fractions(9)
+            else EXTRA="$EXTRA --reloads 9"; shift; fi ;;  # a bare count: gs-weapon's fractions(9)
         --wallsheet) EXTRA="$EXTRA --wallsheet"; shift ;;
         --wall-unseen) EXTRA="$EXTRA --wall-unseen"; shift ;;   # wall sheet with the wall not drawn (the overlay is not in a sheet)
         --wall) EXTRA="$EXTRA --wall"; shift ;;   # pressed against the back wall (a flag, because `heavy` drops EXTRA)
@@ -179,7 +179,7 @@ sheet() {
     grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
 
     if [ -s "$tmp/f_sheet.png" ]; then
-        # A reload sheet: the range built it with dot-weapon's GSWeaponReloadShots.
+        # A reload sheet: the range built it with gs-weapon's GSWeaponReloadShots.
         cp "$tmp/f_sheet.png" "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
     else
         ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \

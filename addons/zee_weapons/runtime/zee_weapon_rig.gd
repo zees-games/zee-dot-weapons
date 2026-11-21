@@ -337,7 +337,7 @@ func _simulate_aimed(command: GSWeaponCommand, context: GSWeaponContext) -> GSWe
 	return outcome
 
 
-## The class's aim factors and hip spread (dot-weapon switches both the instant the aim bit is set) follow the sights' ramp.
+## The class's aim factors and hip spread (gs-weapon switches both the instant the aim bit is set) follow the sights' ramp.
 static func _ease_class_aim(b: GSWeaponBallistics, def: GSWeaponDef, ramp: float) -> void:
 	var klass := GSWeaponAccuracyClass.resolve(b.accuracy_class, def.tags, def.id)
 	var factor := lerpf(1.0, b.accuracy("spread_aim", klass), ramp)
@@ -354,7 +354,7 @@ static func aim_facts(shot: GSShot) -> Dictionary:
 	return {"ads_progress": float(shot.get_meta(&"ads_progress", -1.0)), "quickscope": bool(shot.get_meta(&"quickscope", false))}
 
 
-## Marks each shot fired while the sights were still coming up: `ads_progress` (0 to 1) always, `quickscope` true for a scope fired before it landed. Metadata, because a shot is dot-combat's.
+## Marks each shot fired while the sights were still coming up: `ads_progress` (0 to 1) always, `quickscope` true for a scope fired before it landed. Metadata, because a shot is gs-combat's.
 func _tag_aimed_shots(outcome: GSWeaponOutcome, scoped: bool) -> void:
 	for shot in outcome.shots:
 		shot.set_meta(&"ads_progress", _ads_progress)
@@ -401,7 +401,7 @@ func is_replaying() -> bool:
 	return _replaying
 
 
-## The alt-fire, simulated here because dot-weapon's arsenal routes one button (see [ZeeWeaponBash]).
+## The alt-fire, simulated here because gs-weapon's arsenal routes one button (see [ZeeWeaponBash]).
 ## The cooldown lives in [member _bash_ready_tick], travels in [method snapshot] and rolls back, so a correction cannot bash twice.
 func _advance_bash(
 	command: GSWeaponCommand, context: GSWeaponContext, tick: int
@@ -424,7 +424,7 @@ func _advance_bash(
 
 	# A bash interrupts a reload, the same as firing does. Unlike firing, it can always
 	# afford to: a bash spends nothing, so there is no order-of-operations trap here of
-	# the kind that made dot-weapon's `_try_use` check payment before cancelling.
+	# the kind that made gs-weapon's `_try_use` check payment before cancelling.
 	arsenal.cancel_reload()
 	_reload_started = -1
 

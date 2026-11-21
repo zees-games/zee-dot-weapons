@@ -103,7 +103,7 @@ func cvar_specs() -> Array[Dictionary]:
 
 ## Registers the cvars through [param add] (a server module's `add_cvar`, or anything shaped
 ## `(name, default, description, flags) -> cvar` with a `changed` signal and `get_string()`),
-## and keeps these fields in step with them. Duck-typed, because dot-server is not a dependency
+## and keeps these fields in step with them. Duck-typed, because gs-server is not a dependency
 ## here; a value a cvar already holds (argv, a config file) is read back after registering.
 func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	var made: Array = []
@@ -123,7 +123,7 @@ func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	return made
 
 
-## Follows a server's values through [param source] (dot-server's `GSClientLink`, or anything
+## Follows a server's values through [param source] (gs-server's `GSClientLink`, or anything
 ## with `replicated_cvar(name, fallback)` and a `replicated_cvar_changed(name, value)` signal).
 ## False when it cannot (an older shell's link); the fields keep their own.
 func follow_cvars(source: Object) -> bool:

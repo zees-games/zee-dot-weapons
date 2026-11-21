@@ -2,7 +2,7 @@
 name: "Carbine"
 description: ""
 tags: ["primary", "automatic"]
-behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+behaviour: "res://addons/gs_weapon/behaviour/gs_weapon_hitscan.gd"
 slot: 3
 authored_tick_rate: 64
 deploy_ticks: 19

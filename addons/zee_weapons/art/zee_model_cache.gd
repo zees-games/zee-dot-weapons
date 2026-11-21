@@ -42,7 +42,7 @@ static var _asset_root: String = "res://"
 ##
 ## [b]Every path in [ZeeWeaponArtTable] and [ZeeViewArms] says `res://assets/…`, and in a
 ## delivered game that is the one place the art is not.[/b] The pack vendors it beside its
-## own files and dot-cloud mounts those under `res://dot_cloud/<id>/<version>/`, so a
+## own files and gs-cloud mounts those under `res://gs_cloud/<id>/<version>/`, so a
 ## client shell — which carries this addon and no art — resolves every weapon to nothing
 ## and the WARN below says "the weapon will be invisible" for all twenty-seven. The table
 ## is not rewritten because it is the one file that names art and must keep reading the same

@@ -2,7 +2,7 @@ class_name ZeeWeaponProfiles
 extends RefCounted
 
 ## Shim over [GSWeaponProfiles]' overlay (profiles laid over code-built defs); kept for the old name.
-## zed-dot-weapons and other packs may call [GSWeaponProfiles] directly.
+## zed-gs-weapons and other packs may call [GSWeaponProfiles] directly.
 
 
 static func profile_set(addon: String, game: String = "", pack_root: String = "", base_roots: PackedStringArray = PackedStringArray(), layer: Variant = null) -> GSProfileSet:

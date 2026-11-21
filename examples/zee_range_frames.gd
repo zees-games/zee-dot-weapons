@@ -1,6 +1,6 @@
 extends RefCounted
 
-const ReloadShots := preload("res://addons/dot_weapon/view/dot_weapon_reload_shots.gd")
+const ReloadShots := preload("res://addons/gs_weapon/view/gs_weapon_reload_shots.gd")
 
 ## The frame lists of the range's contact sheet (`--sheet`), and the flags that swap them.
 
@@ -45,7 +45,7 @@ static func frames(args: PackedStringArray, reloads: String, aimin: String) -> A
 	# A whole reload on one sheet, which the five reload frames cannot show for a gun fed a round at a time.
 	if reloads != "":
 		frames = []
-		# A bare count ("9") is that many fractions spread over the reload (dot-weapon's); a comma list is the fractions themselves.
+		# A bare count ("9") is that many fractions spread over the reload (gs-weapon's); a comma list is the fractions themselves.
 		var fractions := ReloadShots.fractions(int(reloads)) if reloads.is_valid_int() else reloads.split_floats(",")
 		for fraction in fractions:
 			frames.append(["reload %d%%" % roundi(fraction * 100.0), "reload:%f" % fraction])

@@ -48,7 +48,7 @@ static func mallet(t: Dictionary = {}) -> GSWeaponDef:
 	)
 	def.deploy_ticks = sec_ticks(0.5)
 	def.holster_ticks = sec_ticks(0.4)
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): A swing that kills may knock the body over backwards.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): A swing that kills may knock the body over backwards.
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 

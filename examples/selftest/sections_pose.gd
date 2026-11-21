@@ -204,7 +204,7 @@ func _recoil_params() -> void:
 	var pack_rifle := ZeeWeaponPack.rifle()
 	_check("every gun builder carries the kick params (rifle)", pack_rifle.params.has(&"view_kick_pitch") and pack_rifle.params.has(&"view_kick_rate_max"))
 
-	# Signed (dot-weapon's recoil_signed): the sign of the yaw is the side, every time.
+	# Signed (gs-weapon's recoil_signed): the sign of the yaw is the side, every time.
 	var fixed := ZeeWeaponPose.make(1.0)
 	var fixed_right := 0
 	var fixed_left := 0

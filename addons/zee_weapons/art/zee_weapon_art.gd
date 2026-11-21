@@ -11,9 +11,9 @@ extends Resource
 ## happily not have — a model path, two offsets and a scale — and a headless build
 ## never loads a single one.
 ##
-## [b]Paths, never [PackedScene] references.[/b] Same rule dot-weapon's
+## [b]Paths, never [PackedScene] references.[/b] Same rule gs-weapon's
 ## [member GSWeaponDef.behaviour_path] follows and for the same reason: a game
-## delivered as a dot-cloud content pack is mounted at runtime and a mounted pack's
+## delivered as a gs-cloud content pack is mounted at runtime and a mounted pack's
 ## `class_name` globals are not registered in the host, so a preloaded resource could
 ## only ever ship inside the build. A path is resolved when the model is first drawn,
 ## by [ZeeModelCache], which is the moment the content is definitely mounted.
@@ -107,7 +107,7 @@ extends Resource
 @export var aim_rotation: Vector3 = Vector3.ZERO
 
 ## Whether aiming looks along an iron sight measured from the mesh and built on it (a notch
-## at the rear, a ring round a post at the front; see dot-weapon `view/dot_weapon_iron_sight.gd`). When the
+## at the rear, a ring round a post at the front; see gs-weapon `view/gs_weapon_iron_sight.gd`). When the
 ## view model can measure one, it replaces [member aim_offset] and [member aim_rotation]:
 ## the line through the two sights goes through the eye, so the front sight sits on the
 ## crosshair and the gun's top runs away below it. Off, or on a scoped weapon, or with no

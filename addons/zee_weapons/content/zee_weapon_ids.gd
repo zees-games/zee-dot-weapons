@@ -67,7 +67,7 @@ const AMMO_GRENADE := &"grenades"
 # Tags: what a mode filters on. A rule that names weapon ids has to be edited every time a
 # weapon is added; a rule that names a tag does not.
 
-## Weapon def params dot-player-char's death reactions read, by name, so neither addon names the
+## Weapon def params gs-player-char's death reactions read, by name, so neither addon names the
 ## other: a reaction id this weapon's kills always get, and a 0-to-1 power that makes the
 ## power launch possible at 0.5 and up.
 const PARAM_DEATH_REACTION := &"death_reaction"
@@ -86,7 +86,7 @@ const TAG_AUTOMATIC := &"automatic"
 
 # Slots
 #
-# dot-weapon's slots are 1-based integers and it attaches no meaning to them. The
+# gs-weapon's slots are 1-based integers and it attaches no meaning to them. The
 # meaning is this pack's, and it is the layout every shooter in this genre has
 # converged on, because it maps to the number keys.
 

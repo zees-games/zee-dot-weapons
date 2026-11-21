@@ -247,7 +247,7 @@ func _pack() -> void:
 	var slots := catalogue.ids_in_slot(ZeeWeaponIds.SLOT_THROWN)
 	_check("two weapons in the thrown slot", slots.size() == 2)
 
-	# The death reactions' params (read by dot-player-char by name): the two heaviest hits
+	# The death reactions' params (read by gs-player-char by name): the two heaviest hits
 	# always throw the body, and nothing light can.
 	var table := ZeeWeaponPack.table()
 	_check("the sniper and the launcher name the power launch",
@@ -304,14 +304,14 @@ func _workshop() -> void:
 		_check_quiet("%s: loads as a GSWeaponDef with the entry's id" % id, loaded != null and String(loaded.id) == e["id"])
 		if loaded != null and def != null:
 			_check_quiet("%s: the .tres equals the code row" % id, _same(loaded, def, id))
-			_check_quiet("%s: behaviour stays in the host build" % id, loaded.behaviour_path.begins_with("res://addons/dot_weapon/"))
+			_check_quiet("%s: behaviour stays in the host build" % id, loaded.behaviour_path.begins_with("res://addons/gs_weapon/"))
 		_check_quiet("%s: asset_root is declared" % id, (e.get("meta", {}) as Dictionary).has("asset_root"))
 
 	# Fed the way a mounted pack is: the index holds the document, the catalogue follows it.
 	var index := GSContentIndex.new()
 	index.set_session(GSContentIndex.SESSION_SOLO)
 	var added := index.add_pack({
-		"content_id": "gamemann/zee-dot-weapons", "version": "1.0.0", "prefix": "res://",
+		"content_id": "gamemann/zee-gs-weapons", "version": "1.0.0", "prefix": "res://",
 		"session": "solo", "source": "subscription", "provides": provides,
 	})
 	_check("the index takes the pack", added.ok)
@@ -436,7 +436,7 @@ func _arsenal() -> void:
 	_check("holding the trigger fires an automatic weapon", shots > 3)
 	_check("and spends the magazine", rifle.magazine < before)
 
-	# The bug dot-weapon's CLAUDE.md is loudest about: a held trigger on an empty
+	# The bug gs-weapon's CLAUDE.md is loudest about: a held trigger on an empty
 	# weapon must not cancel the reload it just started, for ever.
 	rifle.magazine = 0
 

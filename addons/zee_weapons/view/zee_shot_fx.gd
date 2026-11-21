@@ -6,7 +6,7 @@ extends "zee_shot_fx_audio.gd"
 ##
 ## [b]It existed nowhere, and that is why every weapon in the pack "fired nothing".[/b] The
 ## rig decided the use, the ammunition went down, the server resolved the hit — and the
-## only thing a player saw was the gun kick. dot-weapon refuses to draw a shot, correctly;
+## only thing a player saw was the gun kick. gs-weapon refuses to draw a shot, correctly;
 ## this pack is the half that draws, and it drew the gun and stopped there, leaving the
 ## rest to "a game hanging a muzzle flash off [signal ZeeViewModel.model_ready]". No game
 ## did. Two games carried the pack and both were silent and tracerless.
@@ -76,7 +76,7 @@ const FLASH := {
 
 @export_group("Muzzle flash")
 
-## Draw dot-fx's `GSMuzzleFlash` (sized by the profile's `extra.muzzle_flash`, else the weapon class) when dot-fx is linked; off, or without dot-fx, the procedural flash below is drawn.
+## Draw gs-fx's `GSMuzzleFlash` (sized by the profile's `extra.muzzle_flash`, else the weapon class) when gs-fx is linked; off, or without gs-fx, the procedural flash below is drawn.
 @export var binbun_flash: bool = true
 
 ## The charged weapon's draw when the shot left, for the beam. The rig sets it before play_use.
@@ -133,7 +133,7 @@ var exclude: Array[RID] = []
 ## What each effect still alive is: {node, age, life, kind, ...}.
 var _live: Array[Dictionary] = []
 
-## Pooled dot-fx flashes by `category/size name/first person`.
+## Pooled gs-fx flashes by `category/size name/first person`.
 var _pack_flashes: Dictionary = {}
 
 ## Spent cases in the air: {node, pos, vel, spin, basis, age, delay}. Finished nodes wait,
@@ -691,7 +691,7 @@ func _pack_flash_light(muzzle: Transform3D, size: float, weapon_class: StringNam
 			"energy": light.light_energy, "has_light": true})
 
 
-## Weapon class to the dot-fx category `GSMuzzleFlash.size_for` sizes by.
+## Weapon class to the gs-fx category `GSMuzzleFlash.size_for` sizes by.
 const CLASS_CATEGORY := {
 	ZeeWeaponSound.LIGHT: "pistol", ZeeWeaponSound.MAGNUM: "magnum", ZeeWeaponSound.SMG: "smg",
 	ZeeWeaponSound.RIFLE: "rifle", ZeeWeaponSound.HEAVY: "dmr", ZeeWeaponSound.SNIPER: "sniper",
@@ -699,7 +699,7 @@ const CLASS_CATEGORY := {
 	ZeeWeaponSound.CHARGE: "rifle",
 }
 
-## One pooled flash per size and view, moved to the muzzle for each shot. False only when dot-fx is not linked; size none, quality off and a headless server draw nothing and count as handled.
+## One pooled flash per size and view, moved to the muzzle for each shot. False only when gs-fx is not linked; size none, quality off and a headless server draw nothing and count as handled.
 func _pack_flash(muzzle: Transform3D, size: float, weapon_class: StringName, id: StringName, first_person: bool) -> bool:
 	if not ResourceLoader.exists(GSWeaponMuzzle.SCRIPT_PATH):
 		return false

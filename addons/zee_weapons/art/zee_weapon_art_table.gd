@@ -8,7 +8,7 @@ const Listing := preload("zee_art_listing.gd")
 ## [b]The only file in the pack that knows a filename.[/b] Everything else names a role
 ## — [constant ZeeWeaponIds.SNIPER], not `blaster-e.glb` — so a game that wants its own
 ## art replaces this one table and changes no rule, no loadout and no save. That is the
-## same seam dot-fx draws between a catalogue and a scene, and dot-props between a
+## same seam gs-fx draws between a catalogue and a scene, and gs-props between a
 ## definition and a script.
 ##
 ## [b]Built in code rather than as `.tres` files, and only because this is a pack.[/b]

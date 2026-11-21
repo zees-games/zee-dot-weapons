@@ -1,6 +1,6 @@
-# zee-dot-weapons docs
+# zee-gs-weapons docs
 
-The detail behind [CLAUDE.md](../CLAUDE.md). One subject per file. Family-wide rules are in the family's [CLAUDE.md](../../../CLAUDE.md) and [docs/](../../../docs/); dot-weapon's own rules are in [its CLAUDE.md](../../dot-weapon/CLAUDE.md).
+The detail behind [CLAUDE.md](../CLAUDE.md). One subject per file. Family-wide rules are in the family's [CLAUDE.md](../../../CLAUDE.md) and [docs/](../../../docs/); gs-weapon's own rules are in [its CLAUDE.md](../../gs-weapon/CLAUDE.md).
 
 | File | Read it before |
 | --- | --- |

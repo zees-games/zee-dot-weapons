@@ -105,7 +105,7 @@ static func vertical_from_horizontal_4_3(horizontal: float) -> float:
 
 
 func _init() -> void:
-	add_to_group(&"dot_view_model")
+	add_to_group(&"gs_view_model")
 
 
 func _ready() -> void:

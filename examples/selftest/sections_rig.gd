@@ -10,7 +10,7 @@ func _net() -> void:
 	_check("seven replicated properties", specs.size() == 7)
 
 	var names := ZeeWeaponNet.properties()
-	_check("the slot comes from dot-weapon", names.has(&"net_slot"))
+	_check("the slot comes from gs-weapon", names.has(&"net_slot"))
 	_check("the fire counter is this pack's", names.has(&"net_fire_seq"))
 
 	var public := 0
@@ -73,7 +73,7 @@ func _rig() -> void:
 	var given := rig.give_everything()
 	_check("every weapon in the pack can be given", given == 27)
 	# Twenty-seven given, five carried: a slot holds one weapon, so each `give` in a
-	# slot replaces the last. That is dot-weapon's rule and not a bug here, but it is
+	# slot replaces the last. That is gs-weapon's rule and not a bug here, but it is
 	# exactly the sort of thing a reader assumes the other way round.
 	_check(
 		"and five are carried, because a slot holds one weapon",
@@ -553,7 +553,7 @@ func _ads_rules() -> void:
 	_run_rig(rig, 0, 60, 0)
 	var tuning := rig.arsenal.current_def().tuning as GSWeaponBallistics
 	tuning.bloom = 0.0
-	# The neutral class isolates this pack's multiplier from dot-weapon's per-class aim factors.
+	# The neutral class isolates this pack's multiplier from gs-weapon's per-class aim factors.
 	tuning.accuracy_class = "none"
 	var plain := _first_spread(rig, 60, 0)
 	rig.ads_rules = rules

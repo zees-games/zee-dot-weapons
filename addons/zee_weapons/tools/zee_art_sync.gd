@@ -2,7 +2,7 @@ extends SceneTree
 ## Copies the weapon art a game needs into the game, exactly the models
 ## [method ZeeWeaponArtTable.model_paths] names, or checks that it is all there.
 ##
-## Run through `zee-dot-weapons/tools/sync-art.sh <game-dir>`, which finds the source
+## Run through `zee-gs-weapons/tools/sync-art.sh <game-dir>`, which finds the source
 ## directories from the game's own `addons/` links. By hand:
 ##
 ##   godot --headless --path <game> --script res://addons/zee_weapons/tools/zee_art_sync.gd \

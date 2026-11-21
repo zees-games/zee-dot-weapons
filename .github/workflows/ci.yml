@@ -26,4 +26,4 @@ jobs:
             profiles: true
             suite-timeout: 900
         secrets:
-            DEPS_TOKEN: ${{ secrets.DOT_DEPS_TOKEN }}
+            DEPS_TOKEN: ${{ secrets.GS_DEPS_TOKEN }}

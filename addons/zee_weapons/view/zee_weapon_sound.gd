@@ -9,7 +9,7 @@ extends RefCounted
 ## synthesised shot is a stand-in, but it is the stand-in that tells a player the trigger
 ## did something — the one thing a silent weapon cannot.
 ##
-## [b]Why not dot-audio's synthesiser.[/b] It is one sine sweep with unfiltered noise and
+## [b]Why not gs-audio's synthesiser.[/b] It is one sine sweep with unfiltered noise and
 ## three shot voices, which is right for what it is (a placeholder for every kind of sound
 ## a game makes) and wrong for this: twenty-seven weapons need a crack, a body and a tail
 ## that can be told apart, and white noise with nothing filtered out of it is a hiss rather
@@ -23,7 +23,7 @@ extends RefCounted
 ## @GlobalScope.randf], so every machine bakes the same bytes, which is what lets the suite
 ## assert about a sound instead of listening to one.
 
-## 22 kHz mono, for the reason dot-audio gives: short noises with nothing worth keeping
+## 22 kHz mono, for the reason gs-audio gives: short noises with nothing worth keeping
 ## above a few kilohertz, at half the memory of 44.
 const RATE := 22050
 
@@ -266,7 +266,7 @@ static func set_stage_stream(id: StringName, stage: StringName, audio: AudioStre
 
 
 ## A report heard from far away (another recording with more air), or null when the class has
-## none or dot-audio is not linked.
+## none or gs-audio is not linked.
 static func far_stream(sound_class: StringName) -> AudioStream:
 	if _overrides.has(sound_class):
 		return null
@@ -274,7 +274,7 @@ static func far_stream(sound_class: StringName) -> AudioStream:
 
 
 ## The distant recording of [param id]'s report, or null (an override of the id, no such
-## recording, or dot-audio not linked): the caller plays [method stream_for] then.
+## recording, or gs-audio not linked): the caller plays [method stream_for] then.
 static func far_for(id: StringName, kind: StringName) -> AudioStream:
 	if _overrides.has(id):
 		return null
@@ -363,7 +363,7 @@ static func stream(sound_class: StringName) -> AudioStream:
 	if _overrides.has(sound_class):
 		return _overrides[sound_class]
 
-	# Recordings from dot-audio's stock when a game links it; null (and the bake) when not.
+	# Recordings from gs-audio's stock when a game links it; null (and the bake) when not.
 	var real := GSWeaponSound.pick_class(sound_class, randi())
 	if real != null:
 		return real

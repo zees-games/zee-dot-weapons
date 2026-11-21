@@ -2,7 +2,7 @@
 name: "Launcher"
 description: ""
 tags: ["heavy", "explosive"]
-behaviour: "res://addons/dot_weapon/behaviour/dot_weapon_projectile.gd"
+behaviour: "res://addons/gs_weapon/behaviour/gs_weapon_projectile.gd"
 slot: 4
 authored_tick_rate: 64
 deploy_ticks: 32

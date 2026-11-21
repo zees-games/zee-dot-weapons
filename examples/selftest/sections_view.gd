@@ -333,9 +333,9 @@ func _effects_heard() -> void:
 	_end()
 
 
-## A flash (dot-fx's when linked, else ours) still makes the one capped muzzle light, and the art's own is off (no double).
+## A flash (gs-fx's when linked, else ours) still makes the one capped muzzle light, and the art's own is off (no double).
 func _effects_pack_light() -> void:
-	_begin("dot-fx muzzle light")
+	_begin("gs-fx muzzle light")
 	var linked := ResourceLoader.exists(GSWeaponMuzzle.SCRIPT_PATH)
 	var script: GDScript = load(GSWeaponMuzzle.SCRIPT_PATH) if linked else null
 	if linked:
@@ -345,20 +345,20 @@ func _effects_pack_light() -> void:
 	var at := Transform3D(Basis.IDENTITY, Vector3(0, 0, -1))
 	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
 	var lights := int(fx.call(&"_lights_live"))
-	_check("a dot-fx flash makes a muzzle light (%d)" % lights, lights == 1)
+	_check("a gs-fx flash makes a muzzle light (%d)" % lights, lights == 1)
 	var lit := _lit_lights(fx)
-	_check("a dot-fx flash adds only our light, the art's is off (%d lit)" % lit, lit == 1)
+	_check("a gs-fx flash adds only our light, the art's is off (%d lit)" % lit, lit == 1)
 	for i in 40:
 		fx.call(&"_flash", at, 1.0, ZeeWeaponSound.MINIGUN, &"", false)
 	lights = int(fx.call(&"_lights_live"))
-	_check("dot-fx flash lights stay under the cap (%d of %d)" % [lights, fx.max_flash_lights],
+	_check("gs-fx flash lights stay under the cap (%d of %d)" % [lights, fx.max_flash_lights],
 		lights >= 1 and lights <= fx.max_flash_lights)
 	var found := fx.find_children("*", "OmniLight3D", true, false)
 	_check("the muzzle light exists and has no shadows", not found.is_empty() and not (found[0] as OmniLight3D).shadow_enabled)
 	fx.flash_light_scale = 0.0
 	fx.advance(1.0)
 	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
-	_check("flash_light_scale 0 draws no light with a dot-fx flash",
+	_check("flash_light_scale 0 draws no light with a gs-fx flash",
 		int(fx.call(&"_lights_live")) == 0 and _lit_lights(fx) == 0)
 	fx.flash_light_scale = 1.0
 	fx.call(&"_flash", at, 1.0, ZeeWeaponSound.RIFLE, &"", false)
@@ -481,7 +481,7 @@ func _effects_sound() -> void:
 	var clicks: Array[String] = []
 
 	for sound_class in ZeeWeaponSound.RECIPES.keys():
-		# The bake itself (the fallback when dot-audio is not linked); the stock is checked in its own section.
+		# The bake itself (the fallback when gs-audio is not linked); the stock is checked in its own section.
 		var wav := ZeeWeaponSound.bake(ZeeWeaponSound.RECIPES[sound_class], hash(sound_class))
 		if wav == null or wav.data.size() < 200 or _wav_peak(wav) < 0.2:
 			silent.append(String(sound_class))

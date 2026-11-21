@@ -130,7 +130,7 @@ func _stock_path(stream: AudioStream, sound: String) -> bool:
 func _stock_sounds() -> void:
 	_begin("the stock recordings are what plays")
 
-	_check("dot-audio's weapon stock is linked", GSWeaponSound.count(&"light_fire") == 5)
+	_check("gs-audio's weapon stock is linked", GSWeaponSound.count(&"light_fire") == 5)
 
 	var wrong := PackedStringArray()
 	for sound_class: StringName in GSWeaponSound.FIRE:
@@ -225,7 +225,7 @@ func _stock_overrides() -> void:
 
 
 func _layered_sounds() -> void:
-	_check("dot-audio's shot player is linked", ZeeShotLayers.available())
+	_check("gs-audio's shot player is linked", ZeeShotLayers.available())
 	_check("a stock class maps to its shot, suppressed to light, a launcher to its own, a charge rifle to none",
 		ZeeShotLayers.shot_class(ZeeWeaponSound.SNIPER) == &"sniper"
 		and ZeeShotLayers.shot_class(ZeeWeaponSound.SUPPRESSED) == &"light"

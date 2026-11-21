@@ -3,14 +3,14 @@ extends RefCounted
 ## Tick constants, behaviour paths and row builders of ZeeWeaponPack, split out for file size.
 
 ## The tick rate everything below is tuned for; every row says so in [member GSWeaponDef.authored_tick_rate].
-## dot-weapon scales each count to the rate it runs at. Set on the row by every builder, so [code]ZeeWeaponPack.rifle()[/code] alone gets it too.
+## gs-weapon scales each count to the rate it runs at. Set on the row by every builder, so [code]ZeeWeaponPack.rifle()[/code] alone gets it too.
 const TICK_RATE := 64
 
-const HITSCAN := "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
-const PROJECTILE := "res://addons/dot_weapon/behaviour/dot_weapon_projectile.gd"
-const THROWN := "res://addons/dot_weapon/behaviour/dot_weapon_thrown.gd"
-const BEAM := "res://addons/dot_weapon/behaviour/dot_weapon_beam.gd"
-const MELEE := "res://addons/dot_weapon/behaviour/dot_weapon_melee.gd"
+const HITSCAN := "res://addons/gs_weapon/behaviour/gs_weapon_hitscan.gd"
+const PROJECTILE := "res://addons/gs_weapon/behaviour/gs_weapon_projectile.gd"
+const THROWN := "res://addons/gs_weapon/behaviour/gs_weapon_thrown.gd"
+const BEAM := "res://addons/gs_weapon/behaviour/gs_weapon_beam.gd"
+const MELEE := "res://addons/gs_weapon/behaviour/gs_weapon_melee.gd"
 
 
 ## Ticks between uses for a weapon quoted in rounds per minute.

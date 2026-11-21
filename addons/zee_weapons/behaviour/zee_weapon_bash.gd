@@ -3,12 +3,12 @@ extends GSWeaponBehaviour
 
 ## Hitting somebody with the weapon you are already holding.
 ##
-## [b]Why this is not a fire mode on [GSWeaponDef].[/b] dot-weapon's arsenal routes
+## [b]Why this is not a fire mode on [GSWeaponDef].[/b] gs-weapon's arsenal routes
 ## exactly one button — [constant GSWeaponCommand.BUTTON_ATTACK] — into a behaviour,
 ## and that is the arsenal being right rather than the arsenal being incomplete: an
 ## alt-fire is a second, independent state machine with its own cadence, its own
 ## refusals and its own animation, and folding it into the first one means every weapon
-## in every game built on dot-weapon pays for a feature most of them do not have.
+## in every game built on gs-weapon pays for a feature most of them do not have.
 ##
 ## So the second state machine lives here and in [ZeeWeaponRig], which owns its
 ## cooldown, includes it in its snapshot and rolls it back with everything else. The

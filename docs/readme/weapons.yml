@@ -3,7 +3,7 @@
 # order: the README order, by slot (missing ids are appended alphabetically). class: the summary's Class column.
 # no_image: ids with no model to render (fists are the bare hands).
 id_prefix: ""
-summary_before: "## What it adds to dot-weapon"
+summary_before: "## What it adds to gs-weapon"
 weapons_before: "## Credits"
 no_image: [fists]
 order: [fists, knife, shiv, hatchet, mallet, pickaxe, spade, pistol, revolver, machine_pistol, derringer,

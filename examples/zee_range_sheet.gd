@@ -4,7 +4,7 @@ extends "res://examples/zee_range_world.gd"
 ## zee_range.gd for file size.
 
 const Frames := preload("res://examples/zee_range_frames.gd")
-const ReloadShots := preload("res://addons/dot_weapon/view/dot_weapon_reload_shots.gd")
+const ReloadShots := preload("res://addons/gs_weapon/view/gs_weapon_reload_shots.gd")
 
 ## The fixed step the sheet advances the view model by: 60 frames a second, so "fire 4"
 ## is 67 ms after the shot on any machine and under any renderer.
@@ -85,7 +85,7 @@ func _run_sheet(prefix: String) -> void:
 			_sheet_wall_body.queue_free()
 			_sheet_wall_body = null
 
-	# A reload sheet is dot-weapon's contact sheet (three across), which the shell script uses in place of its own tiling.
+	# A reload sheet is gs-weapon's contact sheet (three across), which the shell script uses in place of its own tiling.
 	if _argument("--reloads") != "":
 		var sheet := ReloadShots.sheet(_reload_tiles, 3, Vector2i(640, 360))
 		if sheet != null:

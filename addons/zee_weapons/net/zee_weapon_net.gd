@@ -3,7 +3,7 @@ extends RefCounted
 
 ## What has to travel so that somebody else's weapon looks right on your screen.
 ##
-## [b]dot-weapon already replicates the simulation; this replicates the picture.[/b]
+## [b]gs-weapon already replicates the simulation; this replicates the picture.[/b]
 ## [GSWeaponNetSync] sends the slot, the magazine and the reserve — everything needed to
 ## keep a carrier's state correct. None of that tells a watcher that a shot just
 ## happened, and a watcher who is not told sees a silent gun that never moves. So this
@@ -25,8 +25,8 @@ extends RefCounted
 ## makes that call and this changes none of it — what is added here is public because
 ## "that player is firing" is something anybody in the room can see anyway.
 ##
-## [b]dot-net is not a dependency and is not named here[/b], the same rule dot-weapon and
-## dot-combat both follow: a script that so much as mentions a `class_name` the project
+## [b]gs-net is not a dependency and is not named here[/b], the same rule gs-weapon and
+## gs-combat both follow: a script that so much as mentions a `class_name` the project
 ## does not have fails to parse, and takes every script that references it down as well.
 ## So the bridge lives in the host game and this is everything it would otherwise have
 ## had to work out.
@@ -125,7 +125,7 @@ static func held_specs() -> Array[Dictionary]:
 	]
 
 
-## Every spec a carrier with weapons needs: dot-weapon's, then these.
+## Every spec a carrier with weapons needs: gs-weapon's, then these.
 ##
 ## The one call a game should make. Concatenating the two lists by hand is the same
 ## work and is one more place for a game to forget the second half, which presents as
@@ -242,7 +242,7 @@ static func apply(
 	return {"seq": seq, "fired": fired, "kind": kind}
 
 
-## Which of dot-weapon's outcome kinds a number means, and back.
+## Which of gs-weapon's outcome kinds a number means, and back.
 ##
 ## [b]Numbers on the wire, names in the code.[/b] [member GSWeaponOutcome.kind] is a
 ## [StringName] precisely so a game can invent a nineteenth kind without editing an addon

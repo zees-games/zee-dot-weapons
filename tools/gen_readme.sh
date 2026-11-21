@@ -8,7 +8,7 @@
 #
 # The capture is tools/readme_shot.sh (tools/readme_shot.tscn, settings in tools/readme.cfg). It must render on a
 # real GPU, never llvmpipe or --headless, so it goes through `heavy`, which hands tools/*_shot.sh to a GPU box
-# (dot-bootstrap tools/gpu.sh) and copies the new PNGs back into screenshots/readme/. Each PNG becomes
+# (gs-bootstrap tools/gpu.sh) and copies the new PNGs back into screenshots/readme/. Each PNG becomes
 # docs/img/<id>.webp (1280 px) and docs/img/<id>_thumb.webp (320 px) for the summary table.
 # Text and stats: tools/gen_readme.py, words from docs/readme/weapons.yml. Look at every image before committing.
 set -euo pipefail

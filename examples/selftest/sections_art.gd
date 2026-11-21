@@ -163,16 +163,16 @@ func _art_meshes() -> void:
 
 
 func _art_asset_root(table: Dictionary) -> void:
-	# A delivered game mounts its copy of the art under `res://dot_cloud/<id>/<version>/`, and
+	# A delivered game mounts its copy of the art under `res://gs_cloud/<id>/<version>/`, and
 	# `set_asset_root` is how it says so. Armed: with `scene()` loading `path` rather than the
 	# resolved one, the load under a root that holds nothing succeeds and the fourth check fails.
 	var pistol: ZeeWeaponArt = table[ZeeWeaponIds.PISTOL]
 	_check("built in, a path resolves to itself", ZeeModelCache.resolve(pistol.model_path) == pistol.model_path)
 
-	ZeeModelCache.set_asset_root("res://dot_cloud/x/1.0")
+	ZeeModelCache.set_asset_root("res://gs_cloud/x/1.0")
 	_check(
 		"under a root, res://assets/ moves there (and the root gains its slash)",
-		ZeeModelCache.resolve("res://assets/a.glb") == "res://dot_cloud/x/1.0/assets/a.glb"
+		ZeeModelCache.resolve("res://assets/a.glb") == "res://gs_cloud/x/1.0/assets/a.glb"
 	)
 	_check("a path outside res://assets/ is left alone", ZeeModelCache.resolve("res://addons/a.glb") == "res://addons/a.glb")
 	_check("a model is looked for under the root, not where the table says", not ZeeModelCache.scene(pistol.model_path).ok)

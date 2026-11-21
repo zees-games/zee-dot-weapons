@@ -428,7 +428,7 @@ static func shotgun(t: Dictionary = {}) -> GSWeaponDef:
 	b.recoil_pitch = 2.4
 	b.max_range = 26.0
 	def.tuning = b
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): Point-blank buckshot carries a body: half the time or so, by the server's weights.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): Point-blank buckshot carries a body: half the time or so, by the server's weights.
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
@@ -458,7 +458,7 @@ static func drum_shotgun(t: Dictionary = {}) -> GSWeaponDef:
 	b.recoil_pitch = 1.1
 	b.max_range = 20.0
 	def.tuning = b
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): As the pump: a close kill may carry the body.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): As the pump: a close kill may carry the body.
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
@@ -522,7 +522,7 @@ static func sniper(t: Dictionary = {}) -> GSWeaponDef:
 	b.recoil_pitch = 4.0
 	b.max_range = 1000.0
 	def.tuning = b
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): The heaviest single hit in the pack: a kill always throws the body.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): The heaviest single hit in the pack: a kill always throws the body.
 	def.params[ZeeWeaponIds.PARAM_DEATH_REACTION] = &"power_launch"
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 1.0
 	return def
@@ -530,7 +530,7 @@ static func sniper(t: Dictionary = {}) -> GSWeaponDef:
 
 ## Belt-fed: no magazine at all, so it never reloads and simply runs out.
 ##
-## [b]`magazine = 0` is not an oversight.[/b] dot-weapon reads a zero magazine as "feeds
+## [b]`magazine = 0` is not an oversight.[/b] gs-weapon reads a zero magazine as "feeds
 ## straight from the reserve", which is exactly what a belt is, and it means the weapon
 ## has no reload animation and no reload pause — the trade being that when the belt is
 ## gone, it is gone until somebody finds more.
@@ -607,7 +607,7 @@ static func launcher(t: Dictionary = {}) -> GSWeaponDef:
 	b.recoil_pitch = 3.0
 	b.max_range = 260.0
 	def.tuning = b
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): A rocket kill always throws the body.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): A rocket kill always throws the body.
 	def.params[ZeeWeaponIds.PARAM_DEATH_REACTION] = &"power_launch"
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 1.0
 	return def
@@ -685,7 +685,7 @@ static func charge_rifle(t: Dictionary = {}) -> GSWeaponDef:
 	b.recoil_pitch = 2.6
 	b.max_range = 500.0
 	def.tuning = b
-	# Death reactions (dot-player-char's GSPlayerDeathReactions): A full draw usually carries the body.
+	# Death reactions (gs-player-char's GSPlayerDeathReactions): A full draw usually carries the body.
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.9
 	return def
 
@@ -729,7 +729,7 @@ static func sticky(t: Dictionary = {}) -> GSWeaponDef:
 static func describe_lines(types: Dictionary = {}) -> PackedStringArray:
 	var out := PackedStringArray()
 	var built := weapons(types)
-	out.append("zee-dot-weapons: %d weapons at %d Hz" % [built.size(), TICK_RATE])
+	out.append("zee-gs-weapons: %d weapons at %d Hz" % [built.size(), TICK_RATE])
 
 	for def in built:
 		var b := def.tuning as GSWeaponBallistics

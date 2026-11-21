@@ -2,7 +2,7 @@ class_name ZeeDefExport
 extends RefCounted
 
 ## Writes the pack's weapons as Workshop files: one [GSWeaponDef] `.tres` per weapon and the
-## `provides.json` that lists them (the contract is dot-cloud's docs/workshop.md).
+## `provides.json` that lists them (the contract is gs-cloud's docs/workshop.md).
 ##
 ## [b]The code table stays the source of truth.[/b] The `.tres` files are generated from
 ## [method ZeeWeaponPack.weapons], never hand-edited, so the two cannot drift by an author
