@@ -3,7 +3,7 @@ extends RefCounted
 
 ## The four damage types this pack's weapons produce, built in code.
 ##
-## [b]Built once and shared, not built per weapon.[/b] A [DotDamageType] is a document
+## [b]Built once and shared, not built per weapon.[/b] A [GSDamageType] is a document
 ## describing a rule — how armour behaves, whether hit groups apply, what falloff looks
 ## like — and twenty-seven weapons that each build their own copy of "dart" are
 ## twenty-seven places for that rule to drift. [method table] builds them once and every
@@ -23,8 +23,8 @@ const CHANNEL := "zee.damage"
 ## punishes cross-map plinking, and a floor of 0.6 means a long shot is worth taking and
 ## is not worth spamming. A floor of zero would be the same weapon with a hard range
 ## limit nobody can see, which players read as the gun being broken.
-static func dart() -> DotDamageType:
-	var type := DotDamageType.make(ZeeWeaponIds.DAMAGE_DART, "Dart")
+static func dart() -> GSDamageType:
+	var type := GSDamageType.make(ZeeWeaponIds.DAMAGE_DART, "Dart")
 	type.armour_share = 0.5
 	type.armour_wear = 1.0
 	type.falloff_start = 30.0
@@ -37,8 +37,8 @@ static func dart() -> DotDamageType:
 
 
 ## Explosions: the launcher, the rocket, both grenades.
-static func blast() -> DotDamageType:
-	var type := DotDamageType.make(ZeeWeaponIds.DAMAGE_BLAST, "Blast")
+static func blast() -> GSDamageType:
+	var type := GSDamageType.make(ZeeWeaponIds.DAMAGE_BLAST, "Blast")
 	type.armour_share = 0.75
 	type.armour_wear = 1.5
 	# [b]Hit groups off.[/b] A splash sphere touches whatever hitbox is nearest, and a
@@ -58,8 +58,8 @@ static func blast() -> DotDamageType:
 ## [b]Armour barely helps and there is no falloff[/b], because a melee weapon already
 ## has the shortest range in the game and taking damage off it for distance would be
 ## charging it twice for the same weakness.
-static func strike() -> DotDamageType:
-	var type := DotDamageType.make(ZeeWeaponIds.DAMAGE_STRIKE, "Strike")
+static func strike() -> GSDamageType:
+	var type := GSDamageType.make(ZeeWeaponIds.DAMAGE_STRIKE, "Strike")
 	type.armour_share = 0.15
 	type.armour_wear = 0.5
 	type.self_scale = 0.0
@@ -71,8 +71,8 @@ static func strike() -> DotDamageType:
 ## Shares the dart's armour behaviour and has no falloff at all: a beam that weakened
 ## with distance would be a beam whose damage depends on a number the player cannot see,
 ## and the beam's whole cost is already that it has to be held on a target.
-static func energy() -> DotDamageType:
-	var type := DotDamageType.make(ZeeWeaponIds.DAMAGE_ENERGY, "Energy")
+static func energy() -> GSDamageType:
+	var type := GSDamageType.make(ZeeWeaponIds.DAMAGE_ENERGY, "Energy")
 	type.armour_share = 0.5
 	type.armour_wear = 2.0
 	type.self_scale = 0.0
@@ -92,7 +92,7 @@ static func table() -> Dictionary:
 
 
 ## Every type as a list, for dot-combat's manager, which registers them that way.
-static func all() -> Array[DotDamageType]:
+static func all() -> Array[GSDamageType]:
 	return [dart(), blast(), strike(), energy()]
 
 
@@ -101,13 +101,13 @@ static func all() -> Array[DotDamageType]:
 ## [b]A missing type is a warning rather than a failure.[/b] A game that supplies three
 ## of the four has made a mistake worth hearing about, and refusing to build the
 ## catalogue over it would mean a game cannot adopt the pack one damage type at a time.
-static func from(table_in: Dictionary, id: StringName) -> DotDamageType:
+static func from(table_in: Dictionary, id: StringName) -> GSDamageType:
 	var found: Variant = table_in.get(id, null)
 
-	if found is DotDamageType:
+	if found is GSDamageType:
 		return found
 
-	DotLog.warn(
+	GSLog.warn(
 		CHANNEL,
 		"no damage type supplied for '%s'; using the pack's own" % String(id),
 		{"supplied": table_in.keys().size()}

@@ -1,7 +1,7 @@
 class_name ZeeShotLayers
 extends Node
 
-## dot-audio's layered, room-aware shot (DotShotPlayer) for ZeeShotFx. Duck-typed by script path so a project without dot-audio, or a class with no stock shot, falls back to ZeeShotFx's single sound.
+## dot-audio's layered, room-aware shot (GSShotPlayer) for ZeeShotFx. Duck-typed by script path so a project without dot-audio, or a class with no stock shot, falls back to ZeeShotFx's single sound.
 
 const CHANNEL := "zee.shot_layers"
 const ROOT := "res://addons/dot_audio/"
@@ -54,9 +54,9 @@ func setup(send_bus: StringName) -> bool:
 	manager.set(&"apply_mixer_to_buses", false)
 	manager.set(&"limit_master", false)
 	add_child(manager)
-	var made: DotResult = manager.call(&"setup")
+	var made: GSResult = manager.call(&"setup")
 	if not made.ok:
-		DotLog.warn(CHANNEL, "the audio manager did not start", {"cause": str(made)})
+		GSLog.warn(CHANNEL, "the audio manager did not start", {"cause": str(made)})
 		return false
 	enclosure = (load(ENCLOSURE) as GDScript).new()
 	enclosure.set(&"send_bus", send_bus)
@@ -66,9 +66,9 @@ func setup(send_bus: StringName) -> bool:
 	player.set(&"enclosure", enclosure)
 	add_child(player)
 	for weapon_class in STOCK_CLASSES:
-		var res: DotResult = player.call(&"register", _stock.call(&"shot", weapon_class))
+		var res: GSResult = player.call(&"register", _stock.call(&"shot", weapon_class))
 		if not res.ok:
-			DotLog.warn(CHANNEL, "a stock shot did not register", {"class": weapon_class, "cause": str(res)})
+			GSLog.warn(CHANNEL, "a stock shot did not register", {"class": weapon_class, "cause": str(res)})
 			return false
 	_ready_ok = true
 	return true
@@ -81,7 +81,7 @@ func fire(weapon_class: StringName, at: Vector3, listener: Vector3) -> bool:
 		return false
 	manager.set(&"listener_position", listener)
 	var id: StringName = _stock.call(&"id_of", stock_class)
-	var res: DotResult = player.call(&"fire", id, at, weapon_class == ZeeWeaponSound.SUPPRESSED)
+	var res: GSResult = player.call(&"fire", id, at, weapon_class == ZeeWeaponSound.SUPPRESSED)
 	return res.ok and int(res.value_or(0)) > 0
 
 

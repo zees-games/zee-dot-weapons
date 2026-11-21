@@ -217,7 +217,7 @@ static func _place_along(
 
 
 ## Builds every shared mesh, texture and material now and returns them for a draw under the load
-## gate (DotLoadGate.warm_up), so the first shot compiles nothing.
+## gate (GSLoadGate.warm_up), so the first shot compiles nothing.
 static func warm() -> Array:
 	return [
 		_streak_mesh(), _quad_mesh(), _shell_mesh_unit(), _soft_disc(),

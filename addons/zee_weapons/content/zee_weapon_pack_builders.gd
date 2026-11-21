@@ -2,7 +2,7 @@ extends RefCounted
 
 ## Tick constants, behaviour paths and row builders of ZeeWeaponPack, split out for file size.
 
-## The tick rate everything below is tuned for; every row says so in [member DotWeaponDef.authored_tick_rate].
+## The tick rate everything below is tuned for; every row says so in [member GSWeaponDef.authored_tick_rate].
 ## dot-weapon scales each count to the rate it runs at. Set on the row by every builder, so [code]ZeeWeaponPack.rifle()[/code] alone gets it too.
 const TICK_RATE := 64
 
@@ -33,17 +33,17 @@ static func _gun(
 	id: StringName,
 	name: String,
 	slot: int,
-	fire: DotWeaponDef.Fire,
+	fire: GSWeaponDef.Fire,
 	interval: int
-) -> DotWeaponDef:
-	var def := DotWeaponDef.new()
+) -> GSWeaponDef:
+	var def := GSWeaponDef.new()
 	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = HITSCAN
 	def.slot = slot
 	def.fire_mode = fire
-	def.fire_modes = DotWeaponDef.selector_modes(fire, id in BURST_SELECTOR)
+	def.fire_modes = GSWeaponDef.selector_modes(fire, id in BURST_SELECTOR)
 	def.use_interval_ticks = interval
 	def.cost_per_use = 1
 	# Every blaster can bash, and the bash is the same for all of them bar the reach and
@@ -67,14 +67,14 @@ static func _melee(
 	interval: int,
 	arc: float,
 	rays: int
-) -> DotWeaponDef:
-	var def := DotWeaponDef.new()
+) -> GSWeaponDef:
+	var def := GSWeaponDef.new()
 	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = MELEE
 	def.slot = ZeeWeaponIds.SLOT_MELEE
-	def.fire_mode = DotWeaponDef.Fire.SEMI
+	def.fire_mode = GSWeaponDef.Fire.SEMI
 	def.use_interval_ticks = interval
 	def.tags = [ZeeWeaponIds.TAG_MELEE]
 	# No pool, no magazine, no reload. A melee weapon that could run out would be a
@@ -104,14 +104,14 @@ static func _melee(
 ## The fields both grenades share.
 static func _thrown(
 	t: Dictionary, id: StringName, name: String, fuse_seconds: float
-) -> DotWeaponDef:
-	var def := DotWeaponDef.new()
+) -> GSWeaponDef:
+	var def := GSWeaponDef.new()
 	def.authored_tick_rate = TICK_RATE
 	def.id = id
 	def.display_name = name
 	def.behaviour_path = THROWN
 	def.slot = ZeeWeaponIds.SLOT_THROWN
-	def.fire_mode = DotWeaponDef.Fire.CHARGE
+	def.fire_mode = GSWeaponDef.Fire.CHARGE
 	def.use_interval_ticks = sec_ticks(1.0)
 	def.tags = [ZeeWeaponIds.TAG_THROWN, ZeeWeaponIds.TAG_EXPLOSIVE]
 	def.ammo_type = ZeeWeaponIds.AMMO_GRENADE
@@ -143,8 +143,8 @@ static func _thrown(
 
 static func _ballistics(
 	t: Dictionary, damage: float, type: StringName = ZeeWeaponIds.DAMAGE_DART
-) -> DotWeaponBallistics:
-	var b := DotWeaponBallistics.new()
+) -> GSWeaponBallistics:
+	var b := GSWeaponBallistics.new()
 	b.damage = damage
 	b.damage_type = ZeeWeaponDamage.from(
 		t if not t.is_empty() else ZeeWeaponDamage.table(), type
@@ -156,7 +156,7 @@ static func _ballistics(
 ## floor, penetration (m of soft material), tracer interval and bullet mass (kg). A game that
 ## leaves sv_ballistics off still sees hitscan; this only fills the profile fields.
 static func flight(
-	b: DotWeaponBallistics, velocity: float, drag: float, falloff_start: float,
+	b: GSWeaponBallistics, velocity: float, drag: float, falloff_start: float,
 	falloff_min: float, penetration: float, tracer: int, mass: float
 ) -> void:
 	b.muzzle_velocity = velocity

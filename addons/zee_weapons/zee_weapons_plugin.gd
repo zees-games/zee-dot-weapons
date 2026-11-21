@@ -6,7 +6,7 @@ extends EditorPlugin
 ## [b]No autoloads[/b], the same as every addon in this family and for the same reason:
 ## a server simulating thirty carriers and a client predicting one are many rigs in one
 ## process, and a global would make them one. A game places a [ZeeWeaponRig] per player
-## and the rig finds what it needs through [DotNodeRef].
+## and the rig finds what it needs through [GSNodeRef].
 
 const _ICON := "res://icon.svg"
 

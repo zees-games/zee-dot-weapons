@@ -42,8 +42,8 @@ func _recoil_climbs() -> void:
 	# Every gun's single-shot climb, at its real weight and its real recoil.
 	var climbs := {}
 
-	for def: DotWeaponDef in ZeeWeaponPack.weapons():
-		var b := def.tuning as DotWeaponBallistics
+	for def: GSWeaponDef in ZeeWeaponPack.weapons():
+		var b := def.tuning as GSWeaponBallistics
 		if b == null or b.recoil_pitch <= 0.0:
 			continue
 

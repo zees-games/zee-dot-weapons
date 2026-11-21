@@ -8,7 +8,7 @@ extends "zee_weapon_pack_builders.gd"
 
 ## Always carried, so a player is never holding nothing — after a drop, during a
 ## respawn, in a mode with no loadout.
-static func fists(t: Dictionary = {}) -> DotWeaponDef:
+static func fists(t: Dictionary = {}) -> GSWeaponDef:
 	return _melee(
 		t, ZeeWeaponIds.FISTS, "Fists", 22.0, 1.6, rpm_ticks(120.0), 30.0, 3
 	)
@@ -16,7 +16,7 @@ static func fists(t: Dictionary = {}) -> DotWeaponDef:
 
 ## The fastest weapon in the pack, and the only one that can out-trade a sidearm inside
 ## two metres.
-static func knife(t: Dictionary = {}) -> DotWeaponDef:
+static func knife(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _melee(
 		t, ZeeWeaponIds.KNIFE, "Knife", 45.0, 1.9, rpm_ticks(150.0), 24.0, 3
 	)
@@ -26,7 +26,7 @@ static func knife(t: Dictionary = {}) -> DotWeaponDef:
 
 
 ## Faster still and weaker: the weapon for finishing rather than for starting.
-static func shiv(t: Dictionary = {}) -> DotWeaponDef:
+static func shiv(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _melee(
 		t, ZeeWeaponIds.SHIV, "Shiv", 34.0, 1.8, rpm_ticks(190.0), 20.0, 2
 	)
@@ -35,26 +35,26 @@ static func shiv(t: Dictionary = {}) -> DotWeaponDef:
 	return def
 
 
-static func hatchet(t: Dictionary = {}) -> DotWeaponDef:
+static func hatchet(t: Dictionary = {}) -> GSWeaponDef:
 	return _melee(
 		t, ZeeWeaponIds.HATCHET, "Hatchet", 62.0, 2.0, rpm_ticks(80.0), 40.0, 4
 	)
 
 
 ## The hardest single hit in the pack, and the slowest. A miss costs a second.
-static func mallet(t: Dictionary = {}) -> DotWeaponDef:
+static func mallet(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _melee(
 		t, ZeeWeaponIds.MALLET, "Mallet", 85.0, 1.9, rpm_ticks(55.0), 50.0, 5
 	)
 	def.deploy_ticks = sec_ticks(0.5)
 	def.holster_ticks = sec_ticks(0.4)
-	# Death reactions (dot-player-char's DotPlayerDeathReactions): A swing that kills may knock the body over backwards.
+	# Death reactions (dot-player-char's GSPlayerDeathReactions): A swing that kills may knock the body over backwards.
 	def.params[ZeeWeaponIds.PARAM_DEATH_POWER] = 0.6
 	return def
 
 
 ## The longest reach of anything without a barrel.
-static func pickaxe(t: Dictionary = {}) -> DotWeaponDef:
+static func pickaxe(t: Dictionary = {}) -> GSWeaponDef:
 	return _melee(
 		t, ZeeWeaponIds.PICKAXE, "Pickaxe", 68.0, 2.4, rpm_ticks(70.0), 26.0, 3
 	)
@@ -62,7 +62,7 @@ static func pickaxe(t: Dictionary = {}) -> DotWeaponDef:
 
 ## The widest arc: five rays across fifty-five degrees, so it is the one that reliably
 ## catches somebody strafing past.
-static func spade(t: Dictionary = {}) -> DotWeaponDef:
+static func spade(t: Dictionary = {}) -> GSWeaponDef:
 	return _melee(
 		t, ZeeWeaponIds.SPADE, "Spade", 56.0, 2.3, rpm_ticks(85.0), 55.0, 5
 	)
@@ -72,13 +72,13 @@ static func spade(t: Dictionary = {}) -> DotWeaponDef:
 
 ## The one everybody starts with. Never runs out, always loses a fair fight — which is
 ## what makes picking something up worth doing.
-static func pistol(t: Dictionary = {}) -> DotWeaponDef:
+static func pistol(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _gun(
 		ZeeWeaponIds.PISTOL, "Dart Pistol", ZeeWeaponIds.SLOT_SIDEARM,
-		DotWeaponDef.Fire.SEMI, rpm_ticks(400.0)
+		GSWeaponDef.Fire.SEMI, rpm_ticks(400.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_SIDEARM]
-	def.mounts = [DotWeaponAttachment.MOUNT_MUZZLE, DotWeaponAttachment.MOUNT_MAGAZINE]
+	def.mounts = [GSWeaponAttachment.MOUNT_MUZZLE, GSWeaponAttachment.MOUNT_MAGAZINE]
 	def.ammo_type = ZeeWeaponIds.AMMO_LIGHT
 	def.magazine = 15
 	def.reserve = 60
@@ -101,10 +101,10 @@ static func pistol(t: Dictionary = {}) -> DotWeaponDef:
 
 ## Six shots that each hurt, and a reload that takes as long as a fight. The sidearm for
 ## somebody who expects to hit.
-static func revolver(t: Dictionary = {}) -> DotWeaponDef:
+static func revolver(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _gun(
 		ZeeWeaponIds.REVOLVER, "Revolver", ZeeWeaponIds.SLOT_SIDEARM,
-		DotWeaponDef.Fire.SEMI, rpm_ticks(140.0)
+		GSWeaponDef.Fire.SEMI, rpm_ticks(140.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_SIDEARM]
 	def.ammo_type = ZeeWeaponIds.AMMO_LIGHT
@@ -131,10 +131,10 @@ static func revolver(t: Dictionary = {}) -> DotWeaponDef:
 
 
 ## Quiet, and the only automatic weapon that fits in the sidearm slot.
-static func machine_pistol(t: Dictionary = {}) -> DotWeaponDef:
+static func machine_pistol(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _gun(
 		ZeeWeaponIds.MACHINE_PISTOL, "Machine Pistol", ZeeWeaponIds.SLOT_SIDEARM,
-		DotWeaponDef.Fire.AUTO, rpm_ticks(900.0)
+		GSWeaponDef.Fire.AUTO, rpm_ticks(900.0)
 	)
 	def.tags = [
 		ZeeWeaponIds.TAG_SIDEARM, ZeeWeaponIds.TAG_AUTOMATIC, ZeeWeaponIds.TAG_SILENCED
@@ -163,10 +163,10 @@ static func machine_pistol(t: Dictionary = {}) -> DotWeaponDef:
 
 
 ## Two shots, both of them enormous, and nothing at range. The last-resort weapon.
-static func derringer(t: Dictionary = {}) -> DotWeaponDef:
+static func derringer(t: Dictionary = {}) -> GSWeaponDef:
 	var def := _gun(
 		ZeeWeaponIds.DERRINGER, "Derringer", ZeeWeaponIds.SLOT_SIDEARM,
-		DotWeaponDef.Fire.SEMI, rpm_ticks(90.0)
+		GSWeaponDef.Fire.SEMI, rpm_ticks(90.0)
 	)
 	def.tags = [ZeeWeaponIds.TAG_SIDEARM]
 	def.ammo_type = ZeeWeaponIds.AMMO_LIGHT

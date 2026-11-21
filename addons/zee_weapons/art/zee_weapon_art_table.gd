@@ -24,7 +24,7 @@ const Listing := preload("zee_art_listing.gd")
 ## one became the sniper, and the 0.42 m one became the derringer. A role assigned from
 ## a filename would have been a coin flip eighteen times.
 
-# No CHANNEL: a table of filenames. validate() returns a DotResult for the caller to log,
+# No CHANNEL: a table of filenames. validate() returns a GSResult for the caller to log,
 # and the one runtime that can fail against the disk, ZeeModelCache, logs its own misses.
 
 
@@ -461,9 +461,9 @@ static func attachment_art(id: StringName) -> Dictionary:
 ## measured off each mesh's top rail and barrel end); [constant Vector3.INF] leaves that mount without one.
 static func _mounted(art: ZeeWeaponArt, optic: Vector3, muzzle: Vector3) -> ZeeWeaponArt:
 	if optic != Vector3.INF:
-		art.sockets[DotWeaponAttachment.MOUNT_OPTIC] = Transform3D(Basis.from_scale(OPTIC_SIZE), optic)
+		art.sockets[GSWeaponAttachment.MOUNT_OPTIC] = Transform3D(Basis.from_scale(OPTIC_SIZE), optic)
 	if muzzle != Vector3.INF:
-		art.sockets[DotWeaponAttachment.MOUNT_MUZZLE] = Transform3D(Basis.from_scale(MUZZLE_SIZE), muzzle)
+		art.sockets[GSWeaponAttachment.MOUNT_MUZZLE] = Transform3D(Basis.from_scale(MUZZLE_SIZE), muzzle)
 	return art
 
 
@@ -575,7 +575,7 @@ static func _thrown(id: StringName, model: String) -> ZeeWeaponArt:
 
 ## Checks every entry, and that the table covers exactly the ids the pack defines.
 ## Loads no mesh: a dedicated server runs it without `assets/`, so file presence is [method validate_models]'s question.
-static func validate() -> DotResult:
+static func validate() -> GSResult:
 	var built := table()
 
 	for art: ZeeWeaponArt in built.values():
@@ -585,8 +585,8 @@ static func validate() -> DotResult:
 
 	for id in ZeeWeaponIds.all():
 		if not built.has(id):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"No art for '%s'. It would work perfectly and draw nothing, " % String(id)
 				+ "which is a bug nobody notices on a server and everybody notices "
 				+ "in a screenshot.",
@@ -605,13 +605,13 @@ static func validate() -> DotResult:
 
 	for id: StringName in built.keys():
 		if not ZeeWeaponIds.all().has(id) and not sourced.has(id):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"Art for '%s', which is not a weapon in this pack." % String(id),
 				String(id)
 			)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Every model file the table names, once each, sorted: the weapon, its magazine and its attachments, from this pack and every registered source.
@@ -622,7 +622,7 @@ static func model_paths(with_arms: bool = false) -> Array[String]:
 
 ## Checks that every named model resolves, through [method ZeeModelCache.resolve] so a game's asset root applies. Loads scenes, so it is not the boot check.
 ## A game's suite calls this one line; it reports every missing model, not the first.
-static func validate_models(with_arms: bool = false) -> DotResult:
+static func validate_models(with_arms: bool = false) -> GSResult:
 	return Listing.missing_result(model_paths(with_arms))
 
 

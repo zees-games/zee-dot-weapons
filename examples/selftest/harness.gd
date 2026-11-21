@@ -67,10 +67,10 @@ func _heard_reloads(role: ZeeWeaponRig.Role, replay: bool) -> Array[StringName]:
 	r.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
 	r.reload_sound.connect(func(stage: StringName) -> void: heard.append(stage))
 	_run_rig(r, 0, 60, 0)
-	_run_rig(r, 60, 75, DotWeaponCommand.BUTTON_ATTACK)
+	_run_rig(r, 60, 75, GSWeaponCommand.BUTTON_ATTACK)
 	if replay:
 		r.begin_replay()
-	_run_rig(r, 75, 77, DotWeaponCommand.BUTTON_RELOAD)
+	_run_rig(r, 75, 77, GSWeaponCommand.BUTTON_RELOAD)
 	_run_rig(r, 77, 500, 0)
 	if replay:
 		r.end_replay()
@@ -94,7 +94,7 @@ func _heard_mode_clicks(role: ZeeWeaponRig.Role, replay: bool, weapon: StringNam
 		r.begin_replay()
 	var tick := 60
 	for i in range(presses):
-		_run_rig(r, tick, tick + 1, DotWeaponCommand.BUTTON_FIRE_MODE)
+		_run_rig(r, tick, tick + 1, GSWeaponCommand.BUTTON_FIRE_MODE)
 		_run_rig(r, tick + 1, tick + 3, 0)
 		tick += 3
 	if replay:
@@ -103,8 +103,8 @@ func _heard_mode_clicks(role: ZeeWeaponRig.Role, replay: bool, weapon: StringNam
 	return heard
 
 
-func _make_arsenal() -> DotWeaponArsenal:
-	var arsenal := DotWeaponArsenal.new()
+func _make_arsenal() -> GSWeaponArsenal:
+	var arsenal := GSWeaponArsenal.new()
 	arsenal.catalogue = ZeeWeaponPack.catalogue()
 	arsenal.tick_rate = ZeeWeaponPack.TICK_RATE
 	arsenal.authority = true
@@ -122,15 +122,15 @@ func _make_rig() -> ZeeWeaponRig:
 
 
 ## Runs an arsenal for a range of ticks with one button held, counting the uses.
-func _run(arsenal: DotWeaponArsenal, from: int, to: int, buttons: int) -> int:
+func _run(arsenal: GSWeaponArsenal, from: int, to: int, buttons: int) -> int:
 	var used := 0
-	var previous: DotWeaponCommand = null
+	var previous: GSWeaponCommand = null
 
 	for tick in range(from, to):
-		var command := DotWeaponCommand.new()
+		var command := GSWeaponCommand.new()
 		command.buttons = buttons
 
-		var ctx := DotWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
+		var ctx := GSWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
 		ctx.authority = true
 
 		var out := arsenal.simulate_tick(command, ctx, previous)
@@ -145,11 +145,11 @@ func _run(arsenal: DotWeaponArsenal, from: int, to: int, buttons: int) -> int:
 
 func _first_spread(rig: ZeeWeaponRig, from: int, buttons: int) -> float:
 	for tick in range(from, from + 120):
-		var command := DotWeaponCommand.new()
-		command.buttons = (DotWeaponCommand.BUTTON_ATTACK if tick % 2 == 0 else 0) | buttons
+		var command := GSWeaponCommand.new()
+		command.buttons = (GSWeaponCommand.BUTTON_ATTACK if tick % 2 == 0 else 0) | buttons
 		var outcome := rig.simulate_tick(command, tick)
 		if outcome != null and not outcome.shots.is_empty():
-			return (outcome.shots[0] as DotShot).spread
+			return (outcome.shots[0] as GSShot).spread
 	return -1.0
 
 
@@ -157,10 +157,10 @@ func _run_rig(rig: ZeeWeaponRig, from: int, to: int, buttons: int) -> int:
 	var used := 0
 
 	for tick in range(from, to):
-		var command := DotWeaponCommand.new()
+		var command := GSWeaponCommand.new()
 		command.buttons = buttons
 
-		var ctx := DotWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
+		var ctx := GSWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
 		ctx.authority = true
 
 		if rig.simulate_tick(command, tick, ctx).used:
@@ -174,7 +174,7 @@ func _cleanup(node: Node) -> void:
 	node.queue_free()
 
 
-func _why(res: DotResult) -> String:
+func _why(res: GSResult) -> String:
 	return "" if res.ok else res.error.message
 
 
@@ -186,7 +186,7 @@ func _profile_file(root: String, rel: String, text: String) -> void:
 	f.close()
 
 
-func _by_id(defs: Array[DotWeaponDef]) -> Dictionary:
+func _by_id(defs: Array[GSWeaponDef]) -> Dictionary:
 	var out := {}
 	for d in defs:
 		out[String(d.id)] = d

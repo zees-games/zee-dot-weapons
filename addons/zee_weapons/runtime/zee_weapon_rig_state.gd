@@ -34,23 +34,23 @@ enum Role {
 @export_group("Content")
 
 ## Every weapon this carrier could hold. Left null, the pack's own catalogue is built.
-@export var catalogue: DotWeaponCatalogue = null
+@export var catalogue: GSWeaponCatalogue = null
 
 @export_group("Wiring")
 
 ## The arsenal. Left null, the rig creates one as its own child.
-@export var arsenal_ref: DotNodeRef = null
+@export var arsenal_ref: GSNodeRef = null
 
 ## The first-person rig, usually a child of the camera. Ignored unless
 ## [member role] is [constant Role.LOCAL].
-@export var view_model_ref: DotNodeRef = null
+@export var view_model_ref: GSNodeRef = null
 
 ## The third-person weapon. Drawn in every role but [constant Role.SERVER].
-@export var world_model_ref: DotNodeRef = null
+@export var world_model_ref: GSNodeRef = null
 
 ## The player this carrier is, for the origin and the aim direction.
-## Duck-typed through [DotWeaponPlayerBridge], so this addon names no player class.
-@export var player_ref: DotNodeRef = null
+## Duck-typed through [GSWeaponPlayerBridge], so this addon names no player class.
+@export var player_ref: GSNodeRef = null
 
 @export_group("Rules")
 
@@ -65,9 +65,9 @@ enum Role {
 
 @export_group("Aiming")
 
-## The aim button in the command (a `DotWeaponCommand.BUTTON_USER_*` bit set while the aim key is held), so the server sees aiming
+## The aim button in the command (a `GSWeaponCommand.BUTTON_USER_*` bit set while the aim key is held), so the server sees aiming
 ## and scales spread and walk speed. 0 leaves both alone. Pick a bit nothing else in the game's command uses.
-@export var ads_button: int = DotWeaponCommand.BUTTON_USER_0
+@export var ads_button: int = GSWeaponCommand.BUTTON_USER_0
 
 ## Aiming rules: assign a [ZeeAdsRules] (usually `ZeeAdsRules.load_config()`); null keeps the art's own.
 var ads_rules: ZeeAdsRules = null:
@@ -79,7 +79,7 @@ var ads_rules: ZeeAdsRules = null:
 
 ## The arsenal, once [method setup] has run.
 ## Public because [ZeeWeaponNet] reads it by name and a HUD asks it about ammunition.
-var arsenal: DotWeaponArsenal = null
+var arsenal: GSWeaponArsenal = null
 
 ## Uses so far, for the replication counter. Wraps in [ZeeWeaponNet], not here.
 var fire_seq: int = 0
@@ -135,6 +135,6 @@ var _last_tick: int = 0
 ## Whether the arsenal was mid-switch last tick, so the holster half can be noticed.
 var _was_switching: bool = false
 
-var _previous_command: DotWeaponCommand = null
+var _previous_command: GSWeaponCommand = null
 var _replaying: bool = false
 var _ready_for_use: bool = false

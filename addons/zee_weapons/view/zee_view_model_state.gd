@@ -17,7 +17,7 @@ var _attachments: Array[Node3D] = []
 var _sight: Node3D = null
 
 ## The fitted attachments (what the rig was told) and what [code]zee_attachment_dress.gd[/code] drew for them.
-var _fitting: DotWeaponFitting = null
+var _fitting: GSWeaponFitting = null
 var _dressed: Dictionary = {}
 
 ## The iron sight's line, measured at equip in the holder's (model) space: `rear` and `front`
@@ -131,11 +131,11 @@ var _aim_fraction: float = 0.0
 @export_range(0.0, 1.0, 0.05) var hands_depth_comp: float = 1.0
 
 ## The field of view the pack's poses were authored under, vertical degrees.
-const REFERENCE_FOV := DotViewLens.REFERENCE_FOV
+const REFERENCE_FOV := GSViewLens.REFERENCE_FOV
 ## The depth the gun's middle sits at under the reference lens, in metres.
-const REFERENCE_DEPTH := DotViewLens.REFERENCE_DEPTH
+const REFERENCE_DEPTH := GSViewLens.REFERENCE_DEPTH
 ## The most the hands are drawn closer than authored, in metres.
-const MAX_PULL_IN := DotViewLens.MAX_PULL_IN
+const MAX_PULL_IN := GSViewLens.MAX_PULL_IN
 
 ## Seconds to blend the sprint carry in or out (smoothstepped); 0.2 hopped 0.2 m in three frames at 15 fps.
 const SPRINT_SECONDS := 0.4

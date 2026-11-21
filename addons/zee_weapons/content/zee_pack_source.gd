@@ -30,7 +30,7 @@ static func stand_in_art(defs: Array, provider: Script) -> Array[ZeeWeaponArt]:
 	var out: Array[ZeeWeaponArt] = []
 	var rows: Dictionary = provider.call(&"art_rows") if provider.has_method(&"art_rows") else {}
 
-	for def: DotWeaponDef in defs:
+	for def: GSWeaponDef in defs:
 		var copy := _base_for(def)
 		copy.id = def.id
 		ZeeArtDress.apply(copy, rows.get(def.id, {}))
@@ -39,7 +39,7 @@ static func stand_in_art(defs: Array, provider: Script) -> Array[ZeeWeaponArt]:
 	return out
 
 
-static func _base_for(def: DotWeaponDef) -> ZeeWeaponArt:
+static func _base_for(def: GSWeaponDef) -> ZeeWeaponArt:
 	if def.tags.has(&"sidearm"):
 		return ZeeWeaponArtTable.pistol()
 	if def.tags.has(&"heavy"):

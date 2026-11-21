@@ -82,7 +82,7 @@ Copy `addons/zee_weapons/` and `assets/` into your project, next to `dot_core`, 
 var rig := ZeeWeaponRig.new()
 rig.role = ZeeWeaponRig.Role.LOCAL
 rig.authority = true                       # false on a client that only predicts
-rig.view_model_ref = DotNodeRef.of_path(view_model.get_path())
+rig.view_model_ref = GSNodeRef.of_path(view_model.get_path())
 player.add_child(rig)
 rig.setup()
 
@@ -110,7 +110,7 @@ fps_view.external_angles = Vector3(punch.x, punch.y, 0.0)
 
 Add the punch to the camera after your controller has positioned it. Do not add it to the command's angles: the shot has already gone where the command pointed.
 
-Tracers, flashes, impacts and sounds come with the rig. Set `rig.effects = false` if your game draws its own from the `used` signal. The rig finds the player through `DotWeaponPlayerBridge`, which names no player or netcode class, so it works with dot-player or your own.
+Tracers, flashes, impacts and sounds come with the rig. Set `rig.effects = false` if your game draws its own from the `used` signal. The rig finds the player through `GSWeaponPlayerBridge`, which names no player or netcode class, so it works with dot-player or your own.
 
 ### Networking
 

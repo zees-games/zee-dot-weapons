@@ -1,10 +1,10 @@
 class_name ZeeWeaponBash
-extends DotWeaponBehaviour
+extends GSWeaponBehaviour
 
 ## Hitting somebody with the weapon you are already holding.
 ##
-## [b]Why this is not a fire mode on [DotWeaponDef].[/b] dot-weapon's arsenal routes
-## exactly one button — [constant DotWeaponCommand.BUTTON_ATTACK] — into a behaviour,
+## [b]Why this is not a fire mode on [GSWeaponDef].[/b] dot-weapon's arsenal routes
+## exactly one button — [constant GSWeaponCommand.BUTTON_ATTACK] — into a behaviour,
 ## and that is the arsenal being right rather than the arsenal being incomplete: an
 ## alt-fire is a second, independent state machine with its own cadence, its own
 ## refusals and its own animation, and folding it into the first one means every weapon
@@ -18,7 +18,7 @@ extends DotWeaponBehaviour
 ## [b]One instance serves every blaster.[/b] A bash has no per-weapon state: the reach
 ## and the damage come from the definition of whatever is in hand, which is handed in
 ## through [method for_def] on each use rather than bound once by
-## [method DotWeaponBehaviour.setup]. That is the one place this behaviour deliberately
+## [method GSWeaponBehaviour.setup]. That is the one place this behaviour deliberately
 ## differs from every other one in the family, and it is why [member def] is re-pointed
 ## rather than fixed.
 
@@ -40,14 +40,14 @@ const RAYS := 3
 ## [b]Built here rather than taken from the pack's table[/b] so that a bash still deals
 ## strike damage in a game that supplied its own damage tables and never thought about
 ## the alt-fire. A game that wants its own assigns this.
-var strike_type: DotDamageType = null
+var strike_type: GSDamageType = null
 
 
 ## The weapon whose numbers this bash is using, and the damage type it deals.
 ##
 ## Re-pointed on every use rather than set once, because the same instance serves
 ## whatever the carrier happens to be holding.
-func for_def(weapon: DotWeaponDef) -> void:
+func for_def(weapon: GSWeaponDef) -> void:
 	def = weapon
 
 
@@ -55,7 +55,7 @@ func for_def(weapon: DotWeaponDef) -> void:
 ##
 ## Read from the weapon in hand rather than fixed here, so a minigun can be slower to
 ## bring round than a machine pistol.
-func cooldown_for(weapon: DotWeaponDef) -> int:
+func cooldown_for(weapon: GSWeaponDef) -> int:
 	if weapon == null:
 		return DEFAULT_COOLDOWN
 	return maxi(1, weapon.param_int(&"bash_cooldown_ticks", DEFAULT_COOLDOWN))
@@ -67,24 +67,24 @@ func cooldown_for(weapon: DotWeaponDef) -> int:
 ## giving it a second, worse swing on another button is two buttons doing one thing.
 ## A weapon with no `bash_damage` in its parameters is one this pack did not mean to
 ## give a bash to, which is exactly the melee weapons and the grenades.
-static func can_bash(weapon: DotWeaponDef) -> bool:
+static func can_bash(weapon: GSWeaponDef) -> bool:
 	if weapon == null:
 		return false
 	return weapon.param_float(&"bash_damage", 0.0) > 0.0
 
 
-func _use(ctx: DotWeaponContext) -> DotWeaponOutcome:
+func _use(ctx: GSWeaponContext) -> GSWeaponOutcome:
 	var damage := DEFAULT_DAMAGE
 	var reach := DEFAULT_REACH
-	var type: DotDamageType = null
+	var type: GSDamageType = null
 
 	if def != null:
 		damage = def.param_float(&"bash_damage", DEFAULT_DAMAGE)
 		reach = def.param_float(&"bash_reach", DEFAULT_REACH)
 
-	var out := DotWeaponOutcome.of(DotWeaponOutcome.KIND_SWING)
+	var out := GSWeaponOutcome.of(GSWeaponOutcome.KIND_SWING)
 
-	var shot := DotShot.make(_shot_id(), ctx.entity, ctx.tick, ctx.index)
+	var shot := GSShot.make(_shot_id(), ctx.entity, ctx.tick, ctx.index)
 	shot.origin = ctx.origin
 	shot.direction = ctx.direction
 	shot.damage = damage
@@ -125,7 +125,7 @@ func _shot_id() -> StringName:
 
 
 
-func _strike_type() -> DotDamageType:
+func _strike_type() -> GSDamageType:
 	if strike_type == null:
 		strike_type = ZeeWeaponDamage.strike()
 	return strike_type

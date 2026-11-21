@@ -70,13 +70,13 @@ Each of these is its own line in `ZeeWeaponPose`:
 - **The gun turns about the grip, not the eye.** `Animated` sits at the camera, so a rotation there carries the whole weapon up the screen. `pivot` is the holder's rest origin, the grip, and the kick turns about that.
 - **The yaw picks a side per shot** (`punch()`). Every behaviour hands over a positive `recoil_yaw`.
 
-**The camera's half is the game's to apply**, through `rig.view_punch()` (30% of the climb). The view model is a child of the camera, and every controller in the family writes the camera's angles from scratch each frame, so anything the pack added there would be overwritten. dot-player-controller's `DotFpsView.external_angles` exists for it. It is never added to a command: the shot went where the command pointed.
+**The camera's half is the game's to apply**, through `rig.view_punch()` (30% of the climb). The view model is a child of the camera, and every controller in the family writes the camera's angles from scratch each frame, so anything the pack added there would be overwritten. dot-player-controller's `GSFpsView.external_angles` exists for it. It is never added to a command: the shot went where the command pointed.
 
 ## Aiming is presentation, and the game decides the button
 
 `ZeeViewModel.aim(held)` eases the weapon from the hip to `ZeeWeaponArt.aim_offset` over `aim_time`, steadies sway and bob by `ZeeWeaponPose.aim_steadiness`, and reports `flash_scale()` (the muzzle flash is shrunk by the zoom while scoped, so the optics do not magnify it into a starburst), `aim_fov_scale()` (the art's `aim_zoom` at full aim) and `is_scoped()`. **It changes nothing the server simulates**: no command bit, no snapshot field. The half of aiming that is a rule (tighter spread, slower walk) is a game's, in its own command.
 
-- The game applies the zoom to its camera (`DotFpsView.external_fov_scale`) and puts a `ZeeScopeOverlay` in its HUD for scoped weapons.
+- The game applies the zoom to its camera (`GSFpsView.external_fov_scale`) and puts a `ZeeScopeOverlay` in its HUD for scoped weapons.
 - Through a scope the view model hides the weapon **and the arms**: the arms are the view model's own child, so hiding the animated node alone leaves an arm across the scope.
 - The scope overlay draws a lens on a black surround: glass tint, dark rim, thin duplex reticle with mil ticks, edge shadow, a slight edge fringe and a gentle breathing sway of the reticle (the HUD stays visible). A weapon's art overrides any of it through `ZeeWeaponArt.scope_style` (`glass_tint`, `rim_colour`, `rim_width`, `mil_ticks`, `breath_sway`, `fringe`). The sniper aims in over 0.08 s by default (`ads.yml` `aim_time`, per weapon).
 - The scope overlay sets its offsets as well as its anchors, or it fills nothing.
@@ -114,7 +114,7 @@ So dot-weapon `view/dot_weapon_iron_sight.gd` measures and builds one per gun at
 
 ## The hands have a lens of their own
 
-**The hands are drawn at `ZeeViewModel.hands_fov` (90 degrees) whatever the game's camera.** Every pose was set under the range's 90-degree camera, and games hold them under 83 to 100, which drew a smaller gun drifting to the middle, or a bigger one, and magnified the gun with the world on an aim zoom. The view model's X and Y are scaled by `tan(camera/2) / tan(hands/2)` (`lens_scale`, which is dot-core's `DotViewLens`, the maths dot-props' `DotToolView` shares; needs dot-core API 25) in the camera's space with Z left alone, which is exactly a perspective projection at the other lens: depth is untouched, so sorting and the muzzle a tracer starts from are unchanged. Applied only when the view model's parent is a `Camera3D`; anywhere else the same scale would be a distortion.
+**The hands are drawn at `ZeeViewModel.hands_fov` (90 degrees) whatever the game's camera.** Every pose was set under the range's 90-degree camera, and games hold them under 83 to 100, which drew a smaller gun drifting to the middle, or a bigger one, and magnified the gun with the world on an aim zoom. The view model's X and Y are scaled by `tan(camera/2) / tan(hands/2)` (`lens_scale`, which is dot-core's `GSViewLens`, the maths dot-props' `GSToolView` shares; needs dot-core API 25) in the camera's space with Z left alone, which is exactly a perspective projection at the other lens: depth is untouched, so sorting and the muzzle a tracer starts from are unchanged. Applied only when the view model's parent is a `Camera3D`; anywhere else the same scale would be a distortion.
 
 ## Where the weapon is held
 

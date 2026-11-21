@@ -29,7 +29,7 @@ func _on_reload_started(slot: int) -> void:
 ## Ticks the reload motion spans: the arsenal's own timeline. A per-round reload lands its first round as the start ends
 ## and one more every round time, so it is over at the start plus a round time per missing round after the first. A motion
 ## one round longer ran to about 60% and was cut there: the gun jumped from the shell push to the hold in one frame.
-func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
+func reload_motion_ticks(def: GSWeaponDef, space: int) -> int:
 	var ticks := def.reload_ticks
 	if def.reload_per_round:
 		ticks = def.reload_start_ticks + def.reload_ticks * maxi(space - 1, 0)
@@ -38,7 +38,7 @@ func reload_motion_ticks(def: DotWeaponDef, space: int) -> int:
 
 ## How much of a per-round reload's motion the opening (the roll to the loading port) takes: the start's part of the start
 ## plus a round time per round, so a one-shell top-up still has room for its fetch and push.
-func reload_start_share(def: DotWeaponDef, space: int) -> float:
+func reload_start_share(def: GSWeaponDef, space: int) -> float:
 	if not def.reload_per_round:
 		return 0.0
 	var whole := def.reload_start_ticks + def.reload_ticks * maxi(space, 1)

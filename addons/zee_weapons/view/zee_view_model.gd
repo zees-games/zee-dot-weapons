@@ -21,8 +21,8 @@ signal model_ready(id: StringName, weapon: Node3D)
 @export_group("Wiring")
 
 ## The arms. Left null, the view model builds its own on first use.
-## A [DotNodeRef], not a path: the host decides per instance.
-@export var arms_ref: DotNodeRef = null
+## A [GSNodeRef], not a path: the host decides per instance.
+@export var arms_ref: GSNodeRef = null
 
 @export_group("Behaviour")
 
@@ -101,7 +101,7 @@ func set_hands_fov_at_4_3(horizontal: float) -> void:
 
 ## The vertical field of view that is [param horizontal] degrees across a 4:3 frame.
 static func vertical_from_horizontal_4_3(horizontal: float) -> float:
-	return DotViewLens.vertical_from_horizontal_4_3(horizontal)
+	return GSViewLens.vertical_from_horizontal_4_3(horizontal)
 
 
 func _init() -> void:
@@ -170,7 +170,7 @@ func _build_arms() -> void:
 	if not res.ok:
 		# Not fatal, and not even an error: a rig with no hands still draws the weapon,
 		# which is what a great many games in this genre ship anyway.
-		DotLog.info(
+		GSLog.info(
 			CHANNEL, "no first-person hands; drawing the weapon alone",
 			{"why": res.error.message}
 		)
@@ -196,12 +196,12 @@ func _build_light() -> void:
 # --- Weapons ----------------------------------------------------------------
 
 ## Draws [param art]'s weapon, replacing whatever was in hand; rebuilt, not hidden, as every model in the tree is culled per player.
-func equip(art: ZeeWeaponArt) -> DotResult:
+func equip(art: ZeeWeaponArt) -> GSResult:
 	_build_structure()
 
 	if art == null:
 		clear()
-		return DotResult.fail(DotError.CODE_INVALID, "No art to equip.")
+		return GSResult.fail(GSError.CODE_INVALID, "No art to equip.")
 
 	_clear_models()
 
@@ -238,13 +238,13 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 		_muzzle = Vector3.ZERO
 		_reach_for(art)
 		model_ready.emit(_id, null)
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	_weapon = art_provider.instantiate(art.model_path)
 
 	if _weapon == null:
-		return DotResult.fail(
-			DotError.CODE_IO, "No model for %s." % String(art.id), art.model_path
+		return GSResult.fail(
+			GSError.CODE_IO, "No model for %s." % String(art.id), art.model_path
 		)
 
 	_weapon.name = "Weapon"
@@ -270,11 +270,11 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	_reach_for(art)
 	model_ready.emit(_id, _weapon)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Draws [param fitting]'s attachments on the weapon in hand, and moves the muzzle and the sight line to suit.
-func set_fitting(fitting: DotWeaponFitting) -> void:
+func set_fitting(fitting: GSWeaponFitting) -> void:
 	_fitting = fitting.duplicate_fitting() if fitting != null else null
 	if _weapon == null:
 		return
@@ -406,18 +406,18 @@ func set_kick_params(params: Dictionary) -> void:
 
 
 ## A use produced [param outcome].
-func on_used(outcome: DotWeaponOutcome) -> void:
+func on_used(outcome: GSWeaponOutcome) -> void:
 	if outcome == null or not outcome.used:
 		return
 
 	_pose.fire_interval = fire_interval
 	_pose.punch(outcome.recoil, outcome.recoil_signed)
-	if _belt != null and outcome.kind == DotWeaponOutcome.KIND_SHOT:
+	if _belt != null and outcome.kind == GSWeaponOutcome.KIND_SHOT:
 		_belt.step()
 	match outcome.kind:
-		DotWeaponOutcome.KIND_SWING:
+		GSWeaponOutcome.KIND_SWING:
 			_pose.swing()
-		DotWeaponOutcome.KIND_THROW:
+		GSWeaponOutcome.KIND_THROW:
 			_pose.throw()
 
 
@@ -433,7 +433,7 @@ func on_swing() -> void:
 
 ## How far recoil should turn the camera this frame, in degrees: x pitch up, y yaw.
 ## This node cannot apply it: controllers write the camera's angles from scratch each frame, so the game adds it
-## where it writes the camera (`DotFpsView.external_angles`).
+## where it writes the camera (`GSFpsView.external_angles`).
 func view_punch() -> Vector2:
 	return _pose.view_punch()
 
@@ -635,7 +635,7 @@ func advance(delta: float) -> void:
 func _apply_hands_lens() -> void:
 	# Only under a camera: the scale is in the camera's own space, and a view model hung
 	# anywhere else is in some other space where this would be a distortion, not a lens.
-	DotViewLens.apply(self, get_parent() as Camera3D, hands_fov, hands_depth_comp)
+	GSViewLens.apply(self, get_parent() as Camera3D, hands_fov, hands_depth_comp)
 
 
 # --- Aiming -----------------------------------------------------------------

@@ -137,8 +137,8 @@ func _effects() -> void:
 	rig.role = ZeeWeaponRig.Role.LOCAL
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
-	rig.view_model_ref = DotNodeRef.of_path(view.get_path())
+	rig.player_ref = GSNodeRef.of_path(^"..")
+	rig.view_model_ref = GSNodeRef.of_path(view.get_path())
 	carrier.add_child(rig)
 
 	var res := rig.setup()
@@ -152,8 +152,8 @@ func _effects() -> void:
 
 	var pellets := 0
 	for tick in range(60, 200):
-		var command := DotWeaponCommand.new()
-		command.buttons = DotWeaponCommand.BUTTON_ATTACK
+		var command := GSWeaponCommand.new()
+		command.buttons = GSWeaponCommand.BUTTON_ATTACK
 		var outcome := rig.simulate_tick(command, tick)
 		if outcome != null and outcome.used and not outcome.shots.is_empty():
 			pellets = outcome.shots[0].pellets.size()
@@ -324,7 +324,7 @@ func _effects_heard() -> void:
 		fx.heard.connect(func(stream: AudioStream) -> void:
 			counts[mode] += 1
 			streams[mode] = stream)
-		fx.call(&"_report", ZeeWeaponIds.RIFLE, DotWeaponOutcome.KIND_SHOT, Vector3(0, 0, -5))
+		fx.call(&"_report", ZeeWeaponIds.RIFLE, GSWeaponOutcome.KIND_SHOT, Vector3(0, 0, -5))
 		fx.queue_free()
 	_check("the single sound emits heard once (%d)" % counts[0], counts[0] >= 1)
 	if ZeeShotLayers.available():
@@ -336,8 +336,8 @@ func _effects_heard() -> void:
 ## A flash (dot-fx's when linked, else ours) still makes the one capped muzzle light, and the art's own is off (no double).
 func _effects_pack_light() -> void:
 	_begin("dot-fx muzzle light")
-	var linked := ResourceLoader.exists(DotWeaponMuzzle.SCRIPT_PATH)
-	var script: GDScript = load(DotWeaponMuzzle.SCRIPT_PATH) if linked else null
+	var linked := ResourceLoader.exists(GSWeaponMuzzle.SCRIPT_PATH)
+	var script: GDScript = load(GSWeaponMuzzle.SCRIPT_PATH) if linked else null
 	if linked:
 		script.set("force_available", true)
 	var fx := ZeeShotFx.new()
@@ -502,14 +502,14 @@ func _effects_sound() -> void:
 	)
 	_check("the same class bakes the same bytes twice", again.data == rifle.data)
 
-	var sound_problems := DotWeaponSound.check_classes(ZeeWeaponSound.WEAPONS)
+	var sound_problems := GSWeaponSound.check_classes(ZeeWeaponSound.WEAPONS)
 	_check("every weapon's sound class has fire, reload and dry files of a fitting length: %s" % "; ".join(sound_problems), sound_problems.is_empty())
-	var shared := DotWeaponSound.check_unique()
+	var shared := GSWeaponSound.check_unique()
 	_check("no two sound classes share a recording: %s" % "; ".join(shared), shared.is_empty())
 
 	# A gun added to the pack without a sound class falls back to the rifle's, silently.
 	var unclassed: Array[String] = []
-	for def: DotWeaponDef in ZeeWeaponPack.weapons():
+	for def: GSWeaponDef in ZeeWeaponPack.weapons():
 		if def.has_tag(ZeeWeaponIds.TAG_MELEE) or def.has_tag(ZeeWeaponIds.TAG_THROWN):
 			continue
 		if not ZeeWeaponSound.WEAPONS.has(def.id):
@@ -518,20 +518,20 @@ func _effects_sound() -> void:
 
 	_check(
 		"a bash from a sniper sounds like a bash, not a sniper",
-		ZeeWeaponSound.class_for(ZeeWeaponIds.SNIPER, DotWeaponOutcome.KIND_SWING)
+		ZeeWeaponSound.class_for(ZeeWeaponIds.SNIPER, GSWeaponOutcome.KIND_SWING)
 		== ZeeWeaponSound.SWING
 	)
 
 	var recorded := AudioStreamWAV.new()
 	ZeeWeaponSound.set_stream(ZeeWeaponIds.PISTOL, recorded)
 	var used_recording := ZeeWeaponSound.stream_for(
-		ZeeWeaponIds.PISTOL, DotWeaponOutcome.KIND_SHOT
+		ZeeWeaponIds.PISTOL, GSWeaponOutcome.KIND_SHOT
 	) == recorded
 	ZeeWeaponSound.set_stream(ZeeWeaponIds.PISTOL, null)
 	_check(
 		"a game's own recording outranks the synthesiser, and comes back out",
 		used_recording
-		and ZeeWeaponSound.stream_for(ZeeWeaponIds.PISTOL, DotWeaponOutcome.KIND_SHOT) != recorded
+		and ZeeWeaponSound.stream_for(ZeeWeaponIds.PISTOL, GSWeaponOutcome.KIND_SHOT) != recorded
 	)
 
 

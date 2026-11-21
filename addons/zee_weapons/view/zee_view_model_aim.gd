@@ -80,7 +80,7 @@ func scope_clear() -> float:
 	return ScopeView.clear(has_scope(), scope_walk_clear, scope_walk_speed, _speed)
 
 
-## The field-of-view multiplier this frame: 1 at the hip, the zoom at full aim; the game applies it (`DotFpsView.external_fov_scale`).
+## The field-of-view multiplier this frame: 1 at the hip, the zoom at full aim; the game applies it (`GSFpsView.external_fov_scale`).
 func aim_fov_scale() -> float:
 	if _art == null:
 		return 1.0
@@ -265,7 +265,7 @@ func _look_delta() -> Vector2:
 ## How much X and Y are scaled to draw at [param hands] degrees under a [param camera]-degree
 ## lens. 1 when either is not a usable field of view.
 static func lens_scale(camera: float, hands: float) -> float:
-	return DotViewLens.lens_scale(camera, hands)
+	return GSViewLens.lens_scale(camera, hands)
 
 
 ## Whether the carrier is sprinting: the weapon lowers and swings to the side, blended over [constant SPRINT_SECONDS].

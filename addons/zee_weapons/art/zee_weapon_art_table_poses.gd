@@ -35,7 +35,7 @@ static func pose_rotation(pose: StringName) -> Vector3:
 
 
 ## How much bigger than life a weapon is drawn in a person's hand, by pose, as a share of the figure's own hand scale
-## (`DotHumanoidFigure.held_scale`, which makes a pistol visible in a fist): a pistol needs all of it, a long gun would be a plank.
+## (`GSHumanoidFigure.held_scale`, which makes a pistol visible in a fist): a pistol needs all of it, a long gun would be a plank.
 static func pose_world_factor(pose: StringName) -> float:
 	match pose:
 		POSE_PISTOL:

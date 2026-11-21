@@ -252,13 +252,13 @@ func _wall_lean() -> void:
 
 
 ## A server rig with no view model sends a shot along the barrel a wall has pushed, from the carrier's own state alone.
-func _wall_barrel_tilt(rig: ZeeWeaponRig, ctx: DotWeaponContext, art: ZeeWeaponArt) -> void:
+func _wall_barrel_tilt(rig: ZeeWeaponRig, ctx: GSWeaponContext, art: ZeeWeaponArt) -> void:
 	var faster := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 6.0, 0.0)
 	var slower := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 0.0)
 	_check("a faster approach pushes back harder and tilts less", faster != slower and (faster * Vector3.FORWARD).y < (slower * Vector3.FORWARD).y)
 	var strafing := rig.wall_barrel(ctx.origin, Vector3.FORWARD, art, 0.0, 0.0, 4.0)
 	_check("strafing into the wall tilts the shot as it tilts the drawn gun", strafing != slower)
-	var via_extra := DotWeaponContext.new()
+	var via_extra := GSWeaponContext.new()
 	via_extra.origin = ctx.origin
 	via_extra.direction = Vector3.FORWARD
 	via_extra.extra[&"strafe"] = 4.0
@@ -266,7 +266,7 @@ func _wall_barrel_tilt(rig: ZeeWeaponRig, ctx: DotWeaponContext, art: ZeeWeaponA
 	var via_arg := Basis.looking_at(Vector3.FORWARD) * (strafing * Vector3.FORWARD)
 	_check("a server hands the strafe in the context and gets the same shot", via_extra.direction.is_equal_approx(via_arg.normalized()))
 	rig.drive_view(Vector2.ZERO, 0.0, true, false, 4.0)
-	var via_drive := DotWeaponContext.new()
+	var via_drive := GSWeaponContext.new()
 	via_drive.origin = ctx.origin
 	via_drive.direction = Vector3.FORWARD
 	rig._aim_along_wall_barrel(via_drive)
@@ -290,7 +290,7 @@ func _wall_barrel() -> void:
 	rig.role = ZeeWeaponRig.Role.SERVER
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.player_ref = GSNodeRef.of_path(^"..")
 	rig.ads_rules = ZeeAdsRules.new()
 	carrier.add_child(rig)
 	_check("the server rig sets up", rig.setup().ok)
@@ -305,7 +305,7 @@ func _wall_barrel() -> void:
 	add_child(wall)
 	var art := rig.current_art()
 	var reach := ZeeWallSlam.reach_of(art.hip_muzzle().length(), ZeeAdsRules.new().view_scale_for(art.id), 1.0)
-	var ctx := DotWeaponContext.new()
+	var ctx := GSWeaponContext.new()
 	ctx.origin = Vector3(0, 1, 0)
 	ctx.direction = Vector3.FORWARD
 	wall.position = Vector3(0, 1, -(reach * 4.0))
@@ -325,7 +325,7 @@ func _wall_barrel() -> void:
 	_check("a closer wall lifts it more (%.3f -> %.3f)" % [tips[0].y, tips[2].y], tips[2].y > tips[0].y)
 	_check("the turned direction is a unit vector", is_equal_approx(tips[2].length(), 1.0))
 	ctx.direction = Vector3.FORWARD
-	var again := DotWeaponContext.new()
+	var again := GSWeaponContext.new()
 	again.origin = ctx.origin
 	again.direction = Vector3.FORWARD
 	rig._aim_along_wall_barrel(ctx)

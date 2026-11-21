@@ -21,10 +21,10 @@ const BASH_BEHAVIOUR := "res://addons/zee_weapons/behaviour/zee_weapon_bash.gd"
 @export_flags_3d_physics var wall_shot_mask: int = 0xFFFFFFFF
 
 ## A use happened. Carries the whole outcome, so a listener can tell a swing from a shot.
-signal used(outcome: DotWeaponOutcome)
+signal used(outcome: GSWeaponOutcome)
 
 ## A bash happened; separate from [signal used] (different animation, sound and statistic).
-signal bashed(outcome: DotWeaponOutcome)
+signal bashed(outcome: GSWeaponOutcome)
 
 ## The weapon in hand changed, once the deploy has finished.
 signal equipped(id: StringName)
@@ -39,9 +39,9 @@ func _ready() -> void:
 
 
 ## Builds everything and validates the catalogue. Safe to call twice.
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if _ready_for_use:
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	var res := _resolve_arsenal()
 	if not res.ok:
@@ -67,28 +67,28 @@ func setup() -> DotResult:
 	_connect_arsenal()
 
 	_ready_for_use = true
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func is_ready() -> bool:
 	return _ready_for_use
 
 
-func _resolve_arsenal() -> DotResult:
+func _resolve_arsenal() -> GSResult:
 	if arsenal_ref != null:
 		var found := arsenal_ref.resolve(self)
-		if found.ok and found.value is DotWeaponArsenal:
+		if found.ok and found.value is GSWeaponArsenal:
 			arsenal = found.value
-			return DotResult.success(null)
+			return GSResult.success(null)
 
-	arsenal = DotWeaponArsenal.new()
+	arsenal = GSWeaponArsenal.new()
 	arsenal.name = "Arsenal"
 	add_child(arsenal)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Who is carrying this: not presentation, so it must not be skipped on a server.
-## A null player makes [method DotWeaponPlayerBridge.context_for] return defaults, so every shot traces from the world origin.
+## A null player makes [method GSWeaponPlayerBridge.context_for] return defaults, so every shot traces from the world origin.
 ## Nothing else reports it: the weapon fires and the counters move, but hit registration finds nothing.
 func _resolve_carrier() -> void:
 	if player_ref == null:
@@ -101,7 +101,7 @@ func _resolve_carrier() -> void:
 		return
 
 	# Loud, because a carrier that cannot be found is a carrier that shoots the map.
-	DotLog.warn(CHANNEL, "the rig could not find the player carrying it", {
+	GSLog.warn(CHANNEL, "the rig could not find the player carrying it", {
 		"why": player.error.message,
 		"consequence": "shots resolve from the world origin",
 	})
@@ -145,9 +145,9 @@ func _connect_arsenal() -> void:
 
 
 ## Gives the carrier a weapon, by id.
-func give(id: StringName, full: bool = true) -> DotResult:
+func give(id: StringName, full: bool = true) -> GSResult:
 	if not _ready_for_use:
-		return DotResult.fail(DotError.CODE_STATE, "setup() has not been called.")
+		return GSResult.fail(GSError.CODE_STATE, "setup() has not been called.")
 
 	return arsenal.give(id, full)
 
@@ -163,7 +163,7 @@ func give_everything() -> int:
 	return given
 
 
-func current_def() -> DotWeaponDef:
+func current_def() -> GSWeaponDef:
 	return arsenal.current_def() if arsenal != null else null
 
 
@@ -173,15 +173,15 @@ func current_art() -> ZeeWeaponArt:
 
 
 ## One tick of one command: the arsenal, then the bash, then the picture.
-## [param ctx] is optional; left null, one is built from the player through [DotWeaponPlayerBridge].
+## [param ctx] is optional; left null, one is built from the player through [GSWeaponPlayerBridge].
 ## The order is load-bearing: presentation first shows the previous tick, and a bash first can fire through a weapon being holstered.
 func simulate_tick(
-	command: DotWeaponCommand,
+	command: GSWeaponCommand,
 	tick: int,
-	ctx: DotWeaponContext = null
-) -> DotWeaponOutcome:
+	ctx: GSWeaponContext = null
+) -> GSWeaponOutcome:
 	if not _ready_for_use:
-		return DotWeaponOutcome.nothing("setup() has not been called.")
+		return GSWeaponOutcome.nothing("setup() has not been called.")
 
 	_last_tick = tick
 
@@ -220,8 +220,8 @@ func simulate_tick(
 	return outcome
 
 
-## Turns [member DotWeaponContext.direction] to where the sprint carry points the barrel (full blend, from the art, so a server and a replay agree without reading the rendered pose). The origin stays the eye.
-func _aim_along_sprint_barrel(context: DotWeaponContext) -> void:
+## Turns [member GSWeaponContext.direction] to where the sprint carry points the barrel (full blend, from the art, so a server and a replay agree without reading the rendered pose). The origin stays the eye.
+func _aim_along_sprint_barrel(context: GSWeaponContext) -> void:
 	if not (context.sprinting and context.sprint_shot_follows_barrel):
 		return
 	var art := current_art()
@@ -238,8 +238,8 @@ func _aim_along_sprint_barrel(context: DotWeaponContext) -> void:
 var _drive_strafe: float = 0.0
 
 
-## Turns [member DotWeaponContext.direction] to where a wall has pushed the barrel, recomputed each tick from the carrier's eye, aim and speed so a server, a prediction and a replay agree without the rendered pose. The origin stays the eye: a muzzle inside the wall would shoot through it.
-func _aim_along_wall_barrel(context: DotWeaponContext) -> void:
+## Turns [member GSWeaponContext.direction] to where a wall has pushed the barrel, recomputed each tick from the carrier's eye, aim and speed so a server, a prediction and a replay agree without the rendered pose. The origin stays the eye: a muzzle inside the wall would shoot through it.
+func _aim_along_wall_barrel(context: GSWeaponContext) -> void:
 	var def := current_def()
 	var art := current_art()
 	if def == null or art == null or ads_rules == null or not ads_rules.wall_shot_for(def.id) or not (_player is Node3D):
@@ -265,12 +265,12 @@ func wall_barrel(origin: Vector3, direction: Vector3, art: ZeeWeaponArt, speed: 
 		ads_rules.wall_for(art.id), 1.0, 1.0, speed, aim, mask, true, exclude, strafe)
 
 
-## What [method simulate_tick] does when [method DotWeaponArsenal.is_idle_for] holds: with no button
+## What [method simulate_tick] does when [method GSWeaponArsenal.is_idle_for] holds: with no button
 ## down there is no aim, bash or use, so only the bookkeeping that every tick does is left.
-func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
+func _idle_tick(command: GSWeaponCommand, tick: int) -> GSWeaponOutcome:
 	# Sprinting is just movement: no button is down, so this is the path a sprint usually takes.
 	if _view != null and _player != null:
-		_view.set_sprinting(DotWeaponPlayerBridge.posture_for(_player, tick).sprinting)
+		_view.set_sprinting(GSWeaponPlayerBridge.posture_for(_player, tick).sprinting)
 	_notice_holster(tick)
 	_ads_move = 1.0
 	_ads_progress = 0.0
@@ -289,7 +289,7 @@ func _idle_tick(command: DotWeaponCommand, tick: int) -> DotWeaponOutcome:
 
 ## The arsenal's tick with the spread scaled while the command holds the aim button. The scale
 ## is put back after, so the def is never left changed; it follows the command, so a replay agrees.
-func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> DotWeaponOutcome:
+func _simulate_aimed(command: GSWeaponCommand, context: GSWeaponContext) -> GSWeaponOutcome:
 	_ads_move = 1.0
 	_ads_progress = 0.0
 	var def := arsenal.current_def()
@@ -299,7 +299,7 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 		_aim_ticks = 0
 		return arsenal.simulate_tick(command, context, _previous_command)
 	var art: ZeeWeaponArt = ZeeWeaponArtTable.table().get(def.id, null)
-	var b := def.tuning as DotWeaponBallistics
+	var b := def.tuning as GSWeaponBallistics
 	if b == null:
 		return arsenal.simulate_tick(command, context, _previous_command)
 	_aim_ticks += 1
@@ -311,9 +311,9 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	var k := lerpf(1.0, ads_rules.spread_for(def.id), ramp)
 	# A shot before the fire threshold is held back; at 1 nothing fires until the sights are up, at 0 a quick scope is allowed.
 	var fire_min := ads_rules.quickscope_fire_min_for(def.id)
-	if ramp < fire_min and (command.buttons & DotWeaponCommand.BUTTON_ATTACK) != 0:
+	if ramp < fire_min and (command.buttons & GSWeaponCommand.BUTTON_ATTACK) != 0:
 		command = command.duplicate_command()
-		command.buttons &= ~DotWeaponCommand.BUTTON_ATTACK
+		command.buttons &= ~GSWeaponCommand.BUTTON_ATTACK
 	var kept := [b.spread, b.spread_moving, b.spread_airborne, b.bloom, b.recoil_pitch, b.recoil_yaw, b.spread_aim, b.recoil_aim]
 	var rk := lerpf(1.0, ads_rules.recoil_for(def.id), ramp)
 	b.recoil_pitch *= rk
@@ -332,14 +332,14 @@ func _simulate_aimed(command: DotWeaponCommand, context: DotWeaponContext) -> Do
 	b.recoil_yaw = kept[5]
 	b.spread_aim = kept[6]
 	b.recoil_aim = kept[7]
-	if outcome.used and outcome.kind == DotWeaponOutcome.KIND_SHOT:
+	if outcome.used and outcome.kind == GSWeaponOutcome.KIND_SHOT:
 		_tag_aimed_shots(outcome, art != null and art.aim_scoped)
 	return outcome
 
 
 ## The class's aim factors and hip spread (dot-weapon switches both the instant the aim bit is set) follow the sights' ramp.
-static func _ease_class_aim(b: DotWeaponBallistics, def: DotWeaponDef, ramp: float) -> void:
-	var klass := DotWeaponAccuracyClass.resolve(b.accuracy_class, def.tags, def.id)
+static func _ease_class_aim(b: GSWeaponBallistics, def: GSWeaponDef, ramp: float) -> void:
+	var klass := GSWeaponAccuracyClass.resolve(b.accuracy_class, def.tags, def.id)
 	var factor := lerpf(1.0, b.accuracy("spread_aim", klass), ramp)
 	b.spread_aim = factor
 	# The factor scales the whole cone, so divide it out of the hip term to leave hip * (1 - ramp).
@@ -348,14 +348,14 @@ static func _ease_class_aim(b: DotWeaponBallistics, def: DotWeaponDef, ramp: flo
 
 
 ## The aim facts [method _tag_aimed_shots] put on a shot, for a stat rule: `ads_progress` (-1 when untagged) and `quickscope`.
-static func aim_facts(shot: DotShot) -> Dictionary:
+static func aim_facts(shot: GSShot) -> Dictionary:
 	if shot == null:
 		return {"ads_progress": -1.0, "quickscope": false}
 	return {"ads_progress": float(shot.get_meta(&"ads_progress", -1.0)), "quickscope": bool(shot.get_meta(&"quickscope", false))}
 
 
 ## Marks each shot fired while the sights were still coming up: `ads_progress` (0 to 1) always, `quickscope` true for a scope fired before it landed. Metadata, because a shot is dot-combat's.
-func _tag_aimed_shots(outcome: DotWeaponOutcome, scoped: bool) -> void:
+func _tag_aimed_shots(outcome: GSWeaponOutcome, scoped: bool) -> void:
 	for shot in outcome.shots:
 		shot.set_meta(&"ads_progress", _ads_progress)
 		shot.set_meta(&"quickscope", scoped and _ads_progress < 1.0)
@@ -363,7 +363,7 @@ func _tag_aimed_shots(outcome: DotWeaponOutcome, scoped: bool) -> void:
 
 ## Whether the aim bit counts: the server does not take it on trust. Needs rules, a weapon that
 ## aims (rules and art), and a rifle that is neither being switched to nor reloaded, and a carrier not sprinting under `sv_sprint_noaim`.
-func _can_aim(command: DotWeaponCommand, def: DotWeaponDef, context: DotWeaponContext = null) -> bool:
+func _can_aim(command: GSWeaponCommand, def: GSWeaponDef, context: GSWeaponContext = null) -> bool:
 	if ads_rules == null or ads_button == 0 or def == null or (command.buttons & ads_button) == 0:
 		return false
 	if context != null and context.sprinting and context.sprint_blocks_aim:
@@ -404,12 +404,12 @@ func is_replaying() -> bool:
 ## The alt-fire, simulated here because dot-weapon's arsenal routes one button (see [ZeeWeaponBash]).
 ## The cooldown lives in [member _bash_ready_tick], travels in [method snapshot] and rolls back, so a correction cannot bash twice.
 func _advance_bash(
-	command: DotWeaponCommand, context: DotWeaponContext, tick: int
-) -> DotWeaponOutcome:
+	command: GSWeaponCommand, context: GSWeaponContext, tick: int
+) -> GSWeaponOutcome:
 	if _bash == null or not allow_bash:
 		return null
 
-	if not command.just_pressed(DotWeaponCommand.BUTTON_ALT, _previous_command):
+	if not command.just_pressed(GSWeaponCommand.BUTTON_ALT, _previous_command):
 		return null
 
 	if arsenal.is_switching() or tick < _bash_ready_tick:
@@ -600,7 +600,7 @@ func _reload_fraction(tick: int) -> float:
 	return fposmod(float(tick - _reload_started) / float(_reload_ticks), 1.0)
 
 
-func _charge_fraction(tick: int, def: DotWeaponDef) -> float:
+func _charge_fraction(tick: int, def: GSWeaponDef) -> float:
 	if _charge_started < 0 or def == null or not def.is_charged():
 		return 0.0
 
@@ -610,14 +610,14 @@ func _charge_fraction(tick: int, def: DotWeaponDef) -> float:
 ## Tracks a charged weapon's draw, so the view model can pull the weapon back.
 ##
 ## The arsenal has this number and does not publish it, for the reason above.
-func _advance_charge(command: DotWeaponCommand, tick: int) -> void:
+func _advance_charge(command: GSWeaponCommand, tick: int) -> void:
 	var def := arsenal.current_def()
 
 	if def == null or not def.is_charged():
 		_charge_started = -1
 		return
 
-	var down := command.is_pressed(DotWeaponCommand.BUTTON_ATTACK)
+	var down := command.is_pressed(GSWeaponCommand.BUTTON_ATTACK)
 
 	if down and _charge_started < 0:
 		_charge_started = tick
@@ -626,8 +626,8 @@ func _advance_charge(command: DotWeaponCommand, tick: int) -> void:
 
 
 ## Catches the start of a switch, which no signal announces.
-## [signal DotWeaponArsenal.switched] fires between holster and deploy, so the holster half is noticed by watching
-## [method DotWeaponArsenal.is_switching] go true on the tick before the arsenal runs.
+## [signal GSWeaponArsenal.switched] fires between holster and deploy, so the holster half is noticed by watching
+## [method GSWeaponArsenal.is_switching] go true on the tick before the arsenal runs.
 func _notice_holster(tick: int) -> void:
 	var switching := arsenal.is_switching()
 
@@ -648,26 +648,26 @@ func _notice_switch_end() -> void:
 		_was_switching = false
 
 
-## The motion-only context an idle tick hands the arsenal (see [member DotWeaponArsenal.idle_posture]).
-func _posture_now() -> DotWeaponContext:
-	var ctx := DotWeaponPlayerBridge.posture_for(_player, _last_tick)
+## The motion-only context an idle tick hands the arsenal (see [member GSWeaponArsenal.idle_posture]).
+func _posture_now() -> GSWeaponContext:
+	var ctx := GSWeaponPlayerBridge.posture_for(_player, _last_tick)
 	ctx.authority = authority
 	return ctx
 
 
-func _context_for(tick: int) -> DotWeaponContext:
+func _context_for(tick: int) -> GSWeaponContext:
 	if _player != null:
-		var ctx := DotWeaponPlayerBridge.context_for(_player, tick)
+		var ctx := GSWeaponPlayerBridge.context_for(_player, tick)
 		ctx.authority = authority
 		return ctx
 
-	var made := DotWeaponContext.new()
+	var made := GSWeaponContext.new()
 	made.tick = tick
 	made.authority = authority
 	return made
 
 
-func _record_use(outcome: DotWeaponOutcome) -> void:
+func _record_use(outcome: GSWeaponOutcome) -> void:
 	fire_seq += 1
 	fire_kind = ZeeWeaponNet.kind_number(outcome.kind)
 
@@ -687,7 +687,7 @@ func _record_use(outcome: DotWeaponOutcome) -> void:
 			_fx.rail_charge = charge_shown
 			_view.note_fired()
 			_fx.play_use(outcome, _view.muzzle_transform(), weapon_id)
-			if outcome.kind == DotWeaponOutcome.KIND_SHOT and _view.has_method(&"ejects") and _view.ejects():
+			if outcome.kind == GSWeaponOutcome.KIND_SHOT and _view.has_method(&"ejects") and _view.ejects():
 				_fx.play_eject(_view.eject_transform(), weapon_id, _view.eject_speed() if _view.has_method(&"eject_speed") else 1.0)
 
 		if _world != null:
@@ -714,9 +714,9 @@ func snapshot() -> Dictionary:
 	}
 
 
-func restore(state: Dictionary) -> DotResult:
+func restore(state: Dictionary) -> GSResult:
 	if not _ready_for_use:
-		return DotResult.fail(DotError.CODE_STATE, "setup() has not been called.")
+		return GSResult.fail(GSError.CODE_STATE, "setup() has not been called.")
 
 	var res := arsenal.restore(state.get("arsenal", {}))
 
@@ -729,7 +729,7 @@ func restore(state: Dictionary) -> DotResult:
 	fire_kind = int(state.get("fire_kind", ZeeWeaponNet.KIND_NONE))
 
 	_aim_ticks = int(state.get("aim_ticks", 0))
-	_previous_command = DotWeaponCommand.new()
+	_previous_command = GSWeaponCommand.new()
 	_previous_command.buttons = int(state.get("prev_buttons", 0))
 	_previous_command.slot = int(state.get("prev_slot", 0))
 
@@ -741,7 +741,7 @@ func restore(state: Dictionary) -> DotResult:
 	var kept := _reload_started
 	_reload_started = (kept if kept >= 0 else _last_tick) if arsenal.is_reloading() else -1
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Copies this rig's state onto a replicating object. See [ZeeWeaponNet].

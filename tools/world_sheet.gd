@@ -14,10 +14,10 @@ extends Node3D
 ## week while everybody watching somebody else's knife saw it ride the arm's slash, rigid in the
 ## hand; nothing but a picture of the third-person model showed it.
 ##
-## The person is driven the way every game drives one: [method DotHumanoidFigure.set_hold] from
-## the art's pose, [method DotHumanoidFigure.swing] on a swing, and [method ZeeWorldModel.on_fired]
+## The person is driven the way every game drives one: [method GSHumanoidFigure.set_hold] from
+## the art's pose, [method GSHumanoidFigure.swing] on a swing, and [method ZeeWorldModel.on_fired]
 ## with the [ZeeWeaponNet] kind, as a game does when the counter moves. Both are stepped by hand
-## ([method DotHumanoidFigure.animate], [method ZeeWorldModel.advance]), so frame 6 is 100 ms
+## ([method GSHumanoidFigure.animate], [method ZeeWorldModel.advance]), so frame 6 is 100 ms
 ## after the use on any machine.
 
 const STEP := 1.0 / 60.0
@@ -25,7 +25,7 @@ const STEP := 1.0 / 60.0
 ## Steps after the use for each frame: 0 is the instant it is used.
 const FRAMES := [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 40, 44, 48, 54, 60]
 
-var _figure: DotHumanoidFigure = null
+var _figure: GSHumanoidFigure = null
 var _model: ZeeWorldModel = null
 var _label: Label = null
 
@@ -51,10 +51,10 @@ func _build_world() -> void:
 	floor_mesh.material_override = floor_material
 	add_child(floor_mesh)
 
-	_figure = DotHumanoidFigure.new()
+	_figure = GSHumanoidFigure.new()
 	_figure.name = "Person"
 	add_child(_figure)
-	_figure.build(DotHumanoidLook.stock(1))
+	_figure.build(GSHumanoidLook.stock(1))
 	# Turned a quarter to the camera's left: the swing crosses the frame instead of coming at it.
 	_figure.rotation = Vector3(0.0, deg_to_rad(-60.0), 0.0)
 
@@ -116,14 +116,14 @@ func _run(id: StringName, prefix: String) -> void:
 		get_tree().quit(2)
 		return
 
-	var hold := DotHumanoidFigure.Hold.GUN
+	var hold := GSHumanoidFigure.Hold.GUN
 	var kind := ZeeWeaponNet.KIND_SHOT
 	match art.pose:
 		ZeeWeaponArtTable.POSE_MELEE:
-			hold = DotHumanoidFigure.Hold.MELEE
+			hold = GSHumanoidFigure.Hold.MELEE
 			kind = ZeeWeaponNet.KIND_SWING
 		ZeeWeaponArtTable.POSE_THROWN:
-			hold = DotHumanoidFigure.Hold.NONE
+			hold = GSHumanoidFigure.Hold.NONE
 			kind = ZeeWeaponNet.KIND_THROW
 	_figure.set_hold(hold)
 

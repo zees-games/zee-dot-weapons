@@ -34,7 +34,7 @@ static func ensure_sockets(weapon: Node3D, art: ZeeWeaponArt) -> void:
 
 
 ## Replaces [param before] with [param fitting]'s models on [param weapon]'s sockets; a mount with no socket or no art draws nothing.
-static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, before: Dictionary) -> Dictionary:
+static func apply(weapon: Node3D, fitting: GSWeaponFitting, forward: Vector3, before: Dictionary) -> Dictionary:
 	clear(before)
 	var out := {"parts": [], "hidden": [], "reach": 0.0, "scoped": false, "zoom": 0.0, "line": {}}
 	if weapon == null or fitting == null:
@@ -53,7 +53,7 @@ static func apply(weapon: Node3D, fitting: DotWeaponFitting, forward: Vector3, b
 			if node != null:
 				node.visible = false
 				out.hidden.append(node)
-		if mount == DotWeaponAttachment.MOUNT_MUZZLE:
+		if mount == GSWeaponAttachment.MOUNT_MUZZLE:
 			out.reach = muzzle_reach_in(weapon, part, f)
 		var aim: StringName = entry.get("aim", &"")
 		# A kit optic has no `*_glass` mesh: its own bounds are the tube to look through.
@@ -79,10 +79,10 @@ static var _reach_cache: Dictionary = {}
 
 
 ## The muzzle attachment's reach on [param art] for [param fitting], measured once per model and attachment (a server draws nothing).
-static func muzzle_reach(art: ZeeWeaponArt, fitting: DotWeaponFitting) -> float:
-	if art == null or fitting == null or not fitting.mounts().has(DotWeaponAttachment.MOUNT_MUZZLE):
+static func muzzle_reach(art: ZeeWeaponArt, fitting: GSWeaponFitting) -> float:
+	if art == null or fitting == null or not fitting.mounts().has(GSWeaponAttachment.MOUNT_MUZZLE):
 		return 0.0
-	var entry := ZeeAttachmentArt.of(fitting.attachment_on(DotWeaponAttachment.MOUNT_MUZZLE))
+	var entry := ZeeAttachmentArt.of(fitting.attachment_on(GSWeaponAttachment.MOUNT_MUZZLE))
 	var path := str(entry.get("path", ""))
 	var key := "%s|%s|%s" % [art.model_path, path, art.model_forward]
 	if _reach_cache.has(key):
@@ -91,7 +91,7 @@ static func muzzle_reach(art: ZeeWeaponArt, fitting: DotWeaponFitting) -> float:
 	var measured := false
 	var weapon := ZeeModelCache.instantiate(art.model_path)
 	ensure_sockets(weapon as Node3D, art)
-	var socket := weapon.find_child(String(ZeeAttachmentArt.socket_name(DotWeaponAttachment.MOUNT_MUZZLE)), true, false) as Node3D if weapon != null else null
+	var socket := weapon.find_child(String(ZeeAttachmentArt.socket_name(GSWeaponAttachment.MOUNT_MUZZLE)), true, false) as Node3D if weapon != null else null
 	var part := ZeeModelCache.instantiate(path) if socket != null else null
 	if part != null:
 		socket.add_child(part)

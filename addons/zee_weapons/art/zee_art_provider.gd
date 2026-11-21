@@ -32,7 +32,7 @@ func sprint_world(pose: StringName) -> Array:
 
 
 ## The document for weapon [param id], or null.
-func def_of(id: StringName) -> DotWeaponDef:
+func def_of(id: StringName) -> GSWeaponDef:
 	return ZeeWeaponPack.catalogue().get_def(id)
 
 

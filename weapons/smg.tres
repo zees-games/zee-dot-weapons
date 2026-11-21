@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DotWeaponDef" format=3]
+[gd_resource type="Resource" script_class="GSWeaponDef" format=3]
 
 [ext_resource type="Script" path="res://addons/dot_weapon/core/dot_weapon_def.gd" id="1_lvfa7"]
 [ext_resource type="Script" path="res://addons/dot_combat/core/dot_damage_type.gd" id="2_385r2"]

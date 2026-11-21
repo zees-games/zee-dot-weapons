@@ -30,7 +30,7 @@ static func model_paths(arts: Array, with_arms: bool) -> Array[String]:
 
 
 ## Fails naming every path in [param paths] that does not resolve, because the usual cause is a whole directory that did not ship.
-static func missing_result(paths: Array[String]) -> DotResult:
+static func missing_result(paths: Array[String]) -> GSResult:
 	var missing: Array[String] = []
 
 	for path in paths:
@@ -38,10 +38,10 @@ static func missing_result(paths: Array[String]) -> DotResult:
 			missing.append(path)
 
 	if missing.is_empty():
-		return DotResult.success(null)
+		return GSResult.success(null)
 
-	return DotResult.fail(
-		DotError.CODE_IO,
+	return GSResult.fail(
+		GSError.CODE_IO,
 		"%d model(s) are missing: %s" % [missing.size(), ", ".join(missing)]
 	)
 

@@ -179,7 +179,7 @@ sheet() {
     grep -E "SCRIPT ERROR|ERROR:" "$tmp/log" >&2
 
     if [ -s "$tmp/f_sheet.png" ]; then
-        # A reload sheet: the range built it with dot-weapon's DotWeaponReloadShots.
+        # A reload sheet: the range built it with dot-weapon's GSWeaponReloadShots.
         cp "$tmp/f_sheet.png" "$dir/sheet_$weapon.png" && echo "wrote $dir/sheet_$weapon.png"
     else
         ffmpeg -v error -y -framerate 1 -i "$tmp/f_%02d.png" \

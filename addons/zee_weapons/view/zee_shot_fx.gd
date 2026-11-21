@@ -76,7 +76,7 @@ const FLASH := {
 
 @export_group("Muzzle flash")
 
-## Draw dot-fx's `DotMuzzleFlash` (sized by the profile's `extra.muzzle_flash`, else the weapon class) when dot-fx is linked; off, or without dot-fx, the procedural flash below is drawn.
+## Draw dot-fx's `GSMuzzleFlash` (sized by the profile's `extra.muzzle_flash`, else the weapon class) when dot-fx is linked; off, or without dot-fx, the procedural flash below is drawn.
 @export var binbun_flash: bool = true
 
 ## The charged weapon's draw when the shot left, for the beam. The rig sets it before play_use.
@@ -84,7 +84,7 @@ const CHARGE_READY := 0.98
 var rail_charge := 0.0
 
 ## Where a weapon's `extra.muzzle_flash` is read from; the rig sets it. Without it the class decides.
-var catalogue: DotWeaponCatalogue = null
+var catalogue: GSWeaponCatalogue = null
 
 ## Multiplier on every flash's size, on top of the weapon class's own ([constant FLASH]).
 @export_range(0.0, 3.0, 0.05) var flash_scale: float = 1.0
@@ -188,7 +188,7 @@ func exclude_carrier(carrier: Node) -> void:
 ##
 ## [param muzzle] is where the effect leaves from — the view model's muzzle in first
 ## person — and [param id] is the weapon, for its sound.
-func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) -> void:
+func play_use(outcome: GSWeaponOutcome, muzzle: Transform3D, id: StringName) -> void:
 	if outcome == null or not outcome.used or not is_inside_tree():
 		return
 
@@ -199,20 +199,20 @@ func play_use(outcome: DotWeaponOutcome, muzzle: Transform3D, id: StringName) ->
 		return
 
 	match kind:
-		DotWeaponOutcome.KIND_SWING, DotWeaponOutcome.KIND_THROW:
+		GSWeaponOutcome.KIND_SWING, GSWeaponOutcome.KIND_THROW:
 			return
-		DotWeaponOutcome.KIND_SPAWN:
+		GSWeaponOutcome.KIND_SPAWN:
 			_flash(muzzle, 1.4, ZeeWeaponSound.LAUNCHER, id, true)
 			return
 
-	var beam := kind == DotWeaponOutcome.KIND_BEAM
+	var beam := kind == GSWeaponOutcome.KIND_BEAM
 	if not beam:
 		_flash(muzzle, 1.0, ZeeWeaponSound.class_for(id, kind), id, true)
 
 	var rail := rail_charge >= CHARGE_READY \
 		and ZeeWeaponSound.class_for(id, kind) == ZeeWeaponSound.CHARGE
 	var drawn := 0
-	for shot: DotShot in outcome.shots:
+	for shot: GSShot in outcome.shots:
 		var directions: Array[Vector3] = shot.pellets
 		if directions.is_empty():
 			directions = [shot.direction]
@@ -306,7 +306,7 @@ func play_eject(port: Transform3D, id: StringName, speed_scale: float = 1.0) -> 
 	if not visuals or not eject_shells or max_shells <= 0 or not is_inside_tree():
 		return
 
-	var profile: Dictionary = FLASH.get(ZeeWeaponSound.class_for(id, DotWeaponOutcome.KIND_SHOT), {})
+	var profile: Dictionary = FLASH.get(ZeeWeaponSound.class_for(id, GSWeaponOutcome.KIND_SHOT), {})
 	if not profile.has("case") or not port.origin.is_finite():
 		return
 
@@ -691,7 +691,7 @@ func _pack_flash_light(muzzle: Transform3D, size: float, weapon_class: StringNam
 			"energy": light.light_energy, "has_light": true})
 
 
-## Weapon class to the dot-fx category `DotMuzzleFlash.size_for` sizes by.
+## Weapon class to the dot-fx category `GSMuzzleFlash.size_for` sizes by.
 const CLASS_CATEGORY := {
 	ZeeWeaponSound.LIGHT: "pistol", ZeeWeaponSound.MAGNUM: "magnum", ZeeWeaponSound.SMG: "smg",
 	ZeeWeaponSound.RIFLE: "rifle", ZeeWeaponSound.HEAVY: "dmr", ZeeWeaponSound.SNIPER: "sniper",
@@ -701,13 +701,13 @@ const CLASS_CATEGORY := {
 
 ## One pooled flash per size and view, moved to the muzzle for each shot. False only when dot-fx is not linked; size none, quality off and a headless server draw nothing and count as handled.
 func _pack_flash(muzzle: Transform3D, size: float, weapon_class: StringName, id: StringName, first_person: bool) -> bool:
-	if not ResourceLoader.exists(DotWeaponMuzzle.SCRIPT_PATH):
+	if not ResourceLoader.exists(GSWeaponMuzzle.SCRIPT_PATH):
 		return false
-	var def: DotWeaponDef = catalogue.get_def(id) if catalogue != null and catalogue.has(id) else null
+	var def: GSWeaponDef = catalogue.get_def(id) if catalogue != null and catalogue.has(id) else null
 	var category: String = CLASS_CATEGORY.get(weapon_class, "rifle")
-	var key := "%s/%s/%s" % [category, DotWeaponMuzzle.flash_name(def), first_person]
+	var key := "%s/%s/%s" % [category, GSWeaponMuzzle.flash_name(def), first_person]
 	if not _pack_flashes.has(key) or (_pack_flashes[key] != null and not is_instance_valid(_pack_flashes[key])):
-		var made := DotWeaponMuzzle.attach(self, category, def, first_person, weapon_class == ZeeWeaponSound.SUPPRESSED)
+		var made := GSWeaponMuzzle.attach(self, category, def, first_person, weapon_class == ZeeWeaponSound.SUPPRESSED)
 		if made != null:
 			made.top_level = true
 		_pack_flashes[key] = made
@@ -716,7 +716,7 @@ func _pack_flash(muzzle: Transform3D, size: float, weapon_class: StringName, id:
 		return true
 	flash.global_transform = muzzle
 	flash.scale = Vector3.ONE * (first_person_flash_scale if first_person else 1.0)
-	DotWeaponMuzzle.fire(flash)
+	GSWeaponMuzzle.fire(flash)
 	_pack_flash_light(muzzle, size, weapon_class, flash)
 	return true
 

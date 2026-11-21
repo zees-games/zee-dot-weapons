@@ -66,12 +66,12 @@ static func resolve(path: String) -> String:
 
 
 ## The scene at [param path], loaded at most once.
-static func scene(path: String) -> DotResult:
+static func scene(path: String) -> GSResult:
 	if path == "":
-		return DotResult.fail(DotError.CODE_INVALID, "No model path.")
+		return GSResult.fail(GSError.CODE_INVALID, "No model path.")
 
 	if _scenes.has(path):
-		return DotResult.success(_scenes[path])
+		return GSResult.success(_scenes[path])
 
 	var real := resolve(path)
 
@@ -79,8 +79,8 @@ static func scene(path: String) -> DotResult:
 		return _scene_from_file(path, real)
 
 	if not ResourceLoader.exists(real):
-		return DotResult.fail(
-			DotError.CODE_IO,
+		return GSResult.fail(
+			GSError.CODE_IO,
 			"No model at %s. A weapon delivered in a content pack needs that pack " % real
 			+ "mounted before it can be drawn."
 		)
@@ -90,39 +90,39 @@ static func scene(path: String) -> DotResult:
 	var loaded: Variant = _pack_glb(ProjectSettings.globalize_path(real)) if _unimported(real) else load(real)
 
 	if not (loaded is PackedScene):
-		return DotResult.fail(
-			DotError.CODE_INVALID, "%s is not a scene." % path
+		return GSResult.fail(
+			GSError.CODE_INVALID, "%s is not a scene." % path
 		)
 
 	_scenes[path] = loaded
-	return DotResult.success(loaded)
+	return GSResult.success(loaded)
 
 
 ## A glb that lives outside the project (a weapon pack only linked into `addons/`, its art in its own checkout), read at run time
 ## and packed, so the rest of the cache treats it like any other scene. There is no import step, so a stale `.godot` cache cannot
 ## show an old model; an exported game never reaches this, a mounted pack's art is under `res://`.
-static func _scene_from_file(path: String, file: String) -> DotResult:
+static func _scene_from_file(path: String, file: String) -> GSResult:
 	var doc := GLTFDocument.new()
 	var state := GLTFState.new()
 
 	if doc.append_from_file(file, state) != OK:
-		return DotResult.fail(DotError.CODE_INVALID, "%s is not a readable glb." % file)
+		return GSResult.fail(GSError.CODE_INVALID, "%s is not a readable glb." % file)
 
 	var root := doc.generate_scene(state)
 
 	if root == null:
-		return DotResult.fail(DotError.CODE_INVALID, "%s has no scene." % file)
+		return GSResult.fail(GSError.CODE_INVALID, "%s has no scene." % file)
 
 	var packed := PackedScene.new()
 	_own_children(root, root)
 
 	if packed.pack(root) != OK:
 		root.free()
-		return DotResult.fail(DotError.CODE_INVALID, "%s could not be packed." % file)
+		return GSResult.fail(GSError.CODE_INVALID, "%s could not be packed." % file)
 
 	root.free()
 	_scenes[path] = packed
-	return DotResult.success(packed)
+	return GSResult.success(packed)
 
 
 ## Every descendant owned by [param root], which [method PackedScene.pack] keeps only for owned nodes.
@@ -155,11 +155,11 @@ static func _pack_glb(file: String) -> PackedScene:
 	var state := GLTFState.new()
 	var err := doc.append_from_file(file, state)
 	if err != OK:
-		DotLog.warn(CHANNEL, "could not read a glb from disk", {"path": file, "error": err})
+		GSLog.warn(CHANNEL, "could not read a glb from disk", {"path": file, "error": err})
 		return null
 	var root := doc.generate_scene(state)
 	if root == null:
-		DotLog.warn(CHANNEL, "a glb read from disk made no scene", {"path": file})
+		GSLog.warn(CHANNEL, "a glb read from disk made no scene", {"path": file})
 		return null
 	_own_all(root, root)
 	var packed := PackedScene.new()
@@ -197,7 +197,7 @@ static func instantiate(path: String) -> Node3D:
 	if not res.ok:
 		if not _complained.has(path):
 			_complained[path] = true
-			DotLog.warn(
+			GSLog.warn(
 				CHANNEL,
 				"could not load a weapon model; the weapon will be invisible",
 				{"path": path, "why": res.error.message}
@@ -212,7 +212,7 @@ static func instantiate(path: String) -> Node3D:
 	# A .glb always instantiates as a Node3D. A .tscn a game substituted might not, and
 	# adding a Control to a 3D rig is a crash several frames later rather than here.
 	made.queue_free()
-	DotLog.warn(
+	GSLog.warn(
 		CHANNEL, "a weapon model is not a Node3D and was discarded", {"path": path}
 	)
 	return null

@@ -4,7 +4,7 @@ extends Resource
 
 ## How one weapon looks and where it sits, in the hand and on the screen.
 ##
-## [b]Separate from [DotWeaponDef] on purpose, and the separation is the point of this
+## [b]Separate from [GSWeaponDef] on purpose, and the separation is the point of this
 ## addon.[/b] A definition is what a server validates at boot with none of the content
 ## installed: a slot, a cadence, a magazine. None of that has a mesh in it, and a
 ## dedicated server must never need one. This resource is everything a server can
@@ -12,7 +12,7 @@ extends Resource
 ## never loads a single one.
 ##
 ## [b]Paths, never [PackedScene] references.[/b] Same rule dot-weapon's
-## [member DotWeaponDef.behaviour_path] follows and for the same reason: a game
+## [member GSWeaponDef.behaviour_path] follows and for the same reason: a game
 ## delivered as a dot-cloud content pack is mounted at runtime and a mounted pack's
 ## `class_name` globals are not registered in the host, so a preloaded resource could
 ## only ever ship inside the build. A path is resolved when the model is first drawn,
@@ -26,7 +26,7 @@ extends Resource
 
 @export_group("Identity")
 
-## The weapon id this art belongs to. Must match a [member DotWeaponDef.id].
+## The weapon id this art belongs to. Must match a [member GSWeaponDef.id].
 @export var id: StringName = &""
 
 @export_group("Model")
@@ -165,7 +165,7 @@ extends Resource
 @export var grip_socket: Vector3 = Vector3.INF
 @export var muzzle_socket: Vector3 = Vector3.INF
 
-## Where a fitted attachment sits, per mount ([constant DotWeaponAttachment.MOUNT_OPTIC] and the rest -> Transform3D in the model's
+## Where a fitted attachment sits, per mount ([constant GSWeaponAttachment.MOUNT_OPTIC] and the rest -> Transform3D in the model's
 ## own space, its basis sizing a kit part to this gun). The dress adds each as a `socket_<mount>` node the model lacks.
 @export var sockets: Dictionary = {}
 
@@ -364,7 +364,7 @@ func view_transform() -> Transform3D:
 
 
 ## The muzzle at the hip in view space, from the art alone (no scene needed beyond the measured bounds), so a server places it where the view model does; a muzzle attachment in [param fitting] lengthens it as it does there.
-func hip_muzzle(fitting: DotWeaponFitting = null) -> Vector3:
+func hip_muzzle(fitting: GSWeaponFitting = null) -> Vector3:
 	var local: Vector3
 	if muzzle_socket.is_finite():
 		local = muzzle_socket
@@ -436,31 +436,31 @@ func _transform(offset: Vector3, rotation: Vector3, scale: float) -> Transform3D
 
 ## Checks the document without loading a single mesh.
 ##
-## [b]Loads nothing, for [DotWeaponDef.validate]'s reason[/b]: this has to be runnable
+## [b]Loads nothing, for [GSWeaponDef.validate]'s reason[/b]: this has to be runnable
 ## on a dedicated server that has no art installed and never will have, so that a typo
 ## in a scale or a zeroed forward vector is caught at boot rather than the first time
 ## somebody with a screen joins.
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "Weapon art needs an id.")
+		return GSResult.fail(GSError.CODE_INVALID, "Weapon art needs an id.")
 
 	var where := String(id)
 
 	if model_forward.length_squared() < 0.000001:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"model_forward is zero, so there is no way to tell which end the muzzle is.",
 			where
 		)
 
 	if view_scale <= 0.0 or world_scale <= 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "A scale of zero draws nothing at all.", where
+		return GSResult.fail(
+			GSError.CODE_INVALID, "A scale of zero draws nothing at all.", where
 		)
 
 	if has_magazine() and not has_model():
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"A magazine with no weapon to come out of.",
 			where
 		)
@@ -468,13 +468,13 @@ func validate() -> DotResult:
 	for i in range(attachments.size()):
 		var entry: Dictionary = attachments[i]
 		if str(entry.get("path", "")) == "":
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"Attachment %d has no path." % i,
 				where
 			)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func describe() -> Dictionary:

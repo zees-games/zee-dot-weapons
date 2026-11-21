@@ -7,7 +7,7 @@ extends RefCounted
 ##
 ## [codeblock]
 ## # server module
-## weapons.feel_rules().bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+## weapons.feel_rules().bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 ## # client, once it has a link
 ## weapons.feel_rules().follow_cvars(link)
 ## [/codeblock]
@@ -15,7 +15,7 @@ extends RefCounted
 ## [b]Presentation, decided by the server.[/b] Nothing here is simulated or replicated state of
 ## a weapon: the pose reads these every frame, so a change applies at once, and a server that
 ## wants a sober, competitive view model sets them to 0 for everyone. A solo game sets the
-## fields directly. The shape (specs, bind, follow, set) is the one `DotPlayerViewRules` uses.
+## fields directly. The shape (specs, bind, follow, set) is the one `GSPlayerViewRules` uses.
 
 const CHANNEL := "zee.feel"
 
@@ -123,7 +123,7 @@ func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	return made
 
 
-## Follows a server's values through [param source] (dot-server's `DotClientLink`, or anything
+## Follows a server's values through [param source] (dot-server's `GSClientLink`, or anything
 ## with `replicated_cvar(name, fallback)` and a `replicated_cvar_changed(name, value)` signal).
 ## False when it cannot (an older shell's link); the fields keep their own.
 func follow_cvars(source: Object) -> bool:
@@ -145,14 +145,14 @@ func follow_cvars(source: Object) -> bool:
 func set_cvar(cvar_name: String, value: String) -> bool:
 	var text := value.strip_edges()
 	if not text.is_valid_float():
-		DotLog.debug(CHANNEL, "refused a value", {"cvar": cvar_name, "value": value})
+		GSLog.debug(CHANNEL, "refused a value", {"cvar": cvar_name, "value": value})
 		return false
 	var number := text.to_float()
 	for spec in cvar_specs():
 		if spec["name"] != cvar_name:
 			continue
 		if not is_finite(number) or number < float(spec["min"]) or number > float(spec["max"]):
-			DotLog.debug(CHANNEL, "refused a value out of range", {"cvar": cvar_name, "value": value})
+			GSLog.debug(CHANNEL, "refused a value out of range", {"cvar": cvar_name, "value": value})
 			return false
 		match cvar_name:
 			CVAR_SWAY: sway = number

@@ -41,9 +41,9 @@ func _net() -> void:
 	# Kinds round-trip, and an unknown one becomes a shot rather than nothing: a watcher
 	# seeing the wrong animation beats a watcher seeing none.
 	for kind in [
-		DotWeaponOutcome.KIND_SHOT, DotWeaponOutcome.KIND_SWING,
-		DotWeaponOutcome.KIND_SPAWN, DotWeaponOutcome.KIND_BEAM,
-		DotWeaponOutcome.KIND_THROW,
+		GSWeaponOutcome.KIND_SHOT, GSWeaponOutcome.KIND_SWING,
+		GSWeaponOutcome.KIND_SPAWN, GSWeaponOutcome.KIND_BEAM,
+		GSWeaponOutcome.KIND_THROW,
 	]:
 		_check_quiet(
 			"%s survives the wire" % String(kind),
@@ -88,27 +88,27 @@ func _rig() -> void:
 	_run_rig(rig, 0, 60, 0)
 
 	var before := rig.fire_seq
-	_run_rig(rig, 60, 90, DotWeaponCommand.BUTTON_ATTACK)
+	_run_rig(rig, 60, 90, GSWeaponCommand.BUTTON_ATTACK)
 	_check("firing advances the replication counter", rig.fire_seq > before)
 
 	# Recoil and the replicated counter come from _record_use, which runs only for a used outcome.
 	var uses: Array[int] = []
-	rig.used.connect(func(_outcome: DotWeaponOutcome) -> void: uses.append(1))
+	rig.used.connect(func(_outcome: GSWeaponOutcome) -> void: uses.append(1))
 	var seq := rig.fire_seq
 	_run_rig(rig, 150, 154, 0)
 	_check("with no button down nothing is used and the counter stays", uses.is_empty() and rig.fire_seq == seq)
-	_run_rig(rig, 154, 198, DotWeaponCommand.BUTTON_ATTACK)
+	_run_rig(rig, 154, 198, GSWeaponCommand.BUTTON_ATTACK)
 	_check("every counted use emitted `used` once (%d)" % uses.size(), uses.size() > 0 and rig.fire_seq - seq == uses.size())
 
 	# A bash is the alt-fire the arsenal has no path for. An Array, not an int: a lambda captures locals by value,
 	# so a counter bumped in a handler stays zero outside it.
 	var bashes: Array[int] = []
-	rig.bashed.connect(func(_outcome: DotWeaponOutcome) -> void: bashes.append(1))
-	_run_rig(rig, 200, 204, DotWeaponCommand.BUTTON_ALT)
+	rig.bashed.connect(func(_outcome: GSWeaponOutcome) -> void: bashes.append(1))
+	_run_rig(rig, 200, 204, GSWeaponCommand.BUTTON_ALT)
 	_check("the alt-fire bashes", bashes.size() == 1)
 
 	# And it has its own cooldown, so holding it does not swing every tick.
-	_run_rig(rig, 204, 240, DotWeaponCommand.BUTTON_ALT)
+	_run_rig(rig, 204, 240, GSWeaponCommand.BUTTON_ALT)
 	_check("holding it does not swing every tick", bashes.size() < 4)
 
 	# A reload is heard: out when it starts, in when it ends — on the player's own machine,
@@ -148,10 +148,10 @@ func _rig_world_attachments() -> void:
 	var rig := ZeeWeaponRig.new()
 	rig.role = ZeeWeaponRig.Role.LOCAL
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.world_model_ref = DotNodeRef.of_path(world.get_path())
+	rig.world_model_ref = GSNodeRef.of_path(world.get_path())
 	add_child(rig)
 	rig.setup()
-	var catalogue := DotWeaponAttachments.new()
+	var catalogue := GSWeaponAttachments.new()
 	rig.arsenal.attachments = catalogue
 	rig.give(ZeeWeaponIds.PISTOL)
 	rig.arsenal.select(rig.arsenal.catalogue.get_def(ZeeWeaponIds.PISTOL).slot, 0)
@@ -208,7 +208,7 @@ func _rig_carrier() -> void:
 	rig.role = ZeeWeaponRig.Role.SERVER
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.player_ref = GSNodeRef.of_path(^"..")
 	carrier.add_child(rig)
 
 	var res := rig.setup()
@@ -221,8 +221,8 @@ func _rig_carrier() -> void:
 	var shots: Array = []
 
 	for tick in range(60, 120):
-		var command := DotWeaponCommand.new()
-		command.buttons = DotWeaponCommand.BUTTON_ATTACK
+		var command := GSWeaponCommand.new()
+		command.buttons = GSWeaponCommand.BUTTON_ATTACK
 		var outcome := rig.simulate_tick(command, tick)
 
 		if outcome != null and not outcome.shots.is_empty():
@@ -236,7 +236,7 @@ func _rig_carrier() -> void:
 		_end()
 		return
 
-	var shot: DotShot = shots[0]
+	var shot: GSShot = shots[0]
 
 	# Armed: with the resolution back inside `_resolve_presentation`, this is
 	# `(0, 0, 0)` and the next one is `(0, 0, -1)`.
@@ -272,8 +272,8 @@ func _rig_rollback() -> void:
 	)
 
 	# Spend some rounds and bash, then roll back.
-	_run_rig(rig, 60, 120, DotWeaponCommand.BUTTON_ATTACK)
-	_run_rig(rig, 200, 204, DotWeaponCommand.BUTTON_ALT)
+	_run_rig(rig, 60, 120, GSWeaponCommand.BUTTON_ATTACK)
+	_run_rig(rig, 200, 204, GSWeaponCommand.BUTTON_ALT)
 
 	var spent := rig.arsenal.slot_at(ZeeWeaponIds.SLOT_PRIMARY).magazine
 	_check("firing spent rounds", spent < magazine)
@@ -288,20 +288,20 @@ func _rig_rollback() -> void:
 	# The bug this guards: a snapshot that carried only the arsenal's half hands the
 	# player a free bash on every correction, because the cooldown lives in the rig.
 	var after: Array[int] = []
-	rig.bashed.connect(func(_o: DotWeaponOutcome) -> void: after.append(1))
+	rig.bashed.connect(func(_o: GSWeaponOutcome) -> void: after.append(1))
 
 	# The cooldown was saved before any bash happened, so a bash must now be allowed —
 	# proving the restore put a usable number back rather than leaving the spent one.
-	_run_rig(rig, 300, 304, DotWeaponCommand.BUTTON_ALT)
+	_run_rig(rig, 300, 304, GSWeaponCommand.BUTTON_ALT)
 	_check("a restored rig can bash again", after.size() == 1)
 
 	# And immediately afterwards it cannot, which is the cooldown actually running.
-	_run_rig(rig, 304, 308, DotWeaponCommand.BUTTON_ALT)
+	_run_rig(rig, 304, 308, GSWeaponCommand.BUTTON_ALT)
 	_check("but not twice in four ticks", after.size() == 1)
 
 	# A correction in the middle of a reload must not stop the reload motion: the video showed guns that did not move.
-	_run_rig(rig, 400, 410, DotWeaponCommand.BUTTON_ATTACK)
-	_run_rig(rig, 420, 424, DotWeaponCommand.BUTTON_RELOAD)
+	_run_rig(rig, 400, 410, GSWeaponCommand.BUTTON_ATTACK)
+	_run_rig(rig, 420, 424, GSWeaponCommand.BUTTON_RELOAD)
 	var mid := rig.snapshot()
 	_run_rig(rig, 424, 428, 0)
 	rig.restore(mid)
@@ -339,7 +339,7 @@ func _tick_rate() -> void:
 
 		# Two seconds idle, so nothing is still deploying, then one second on the trigger.
 		_run_rig(rig, 0, rate * 2, 0)
-		shots.append(_run_rig(rig, rate * 2, rate * 3, DotWeaponCommand.BUTTON_ATTACK))
+		shots.append(_run_rig(rig, rate * 2, rate * 3, GSWeaponCommand.BUTTON_ATTACK))
 
 		var def := rig.current_def()
 		reload_seconds.append(float(rig.arsenal.ticks_for(def, def.reload_ticks)) / float(rate))
@@ -347,12 +347,12 @@ func _tick_rate() -> void:
 		# The alt-fire pressed on every other tick for two seconds: the rig's own cooldown,
 		# which the arsenal never sees, decides how many land.
 		var count: Array[int] = [0]
-		rig.bashed.connect(func(_o: DotWeaponOutcome) -> void: count[0] += 1)
+		rig.bashed.connect(func(_o: GSWeaponOutcome) -> void: count[0] += 1)
 		var from := rate * 4
 		for tick in range(from, from + rate * 2):
-			var command := DotWeaponCommand.new()
-			command.buttons = DotWeaponCommand.BUTTON_ALT if (tick - from) % 2 == 0 else 0
-			var ctx := DotWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
+			var command := GSWeaponCommand.new()
+			command.buttons = GSWeaponCommand.BUTTON_ALT if (tick - from) % 2 == 0 else 0
+			var ctx := GSWeaponContext.make(1, tick, Vector3.ZERO, Vector3.FORWARD)
 			ctx.authority = true
 			rig.simulate_tick(command, tick, ctx)
 		bashes.append(count[0])
@@ -360,9 +360,9 @@ func _tick_rate() -> void:
 		# A quarter of a second into a switch, the drawn picture is as far along at either rate.
 		rig.give(ZeeWeaponIds.PISTOL)
 		var at := rate * 7
-		var cmd := DotWeaponCommand.new()
+		var cmd := GSWeaponCommand.new()
 		cmd.slot = ZeeWeaponIds.SLOT_SIDEARM
-		rig.simulate_tick(cmd, at, DotWeaponContext.make(1, at, Vector3.ZERO, Vector3.FORWARD))
+		rig.simulate_tick(cmd, at, GSWeaponContext.make(1, at, Vector3.ZERO, Vector3.FORWARD))
 		_run_rig(rig, at + 1, at + rate / 8, 0)
 		deploy_fraction.append(rig._deploy_fraction(at + rate / 8 - 1))
 
@@ -388,7 +388,7 @@ func _rig_idle() -> void:
 	var quick := _make_rig()
 
 	for rig: ZeeWeaponRig in [full, quick]:
-		var _setup: DotResult = rig.setup()
+		var _setup: GSResult = rig.setup()
 		var _given: Variant = rig.give_everything()
 		rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
 
@@ -397,15 +397,15 @@ func _rig_idle() -> void:
 	var same := true
 
 	for tick in range(900):
-		var command := DotWeaponCommand.new()
+		var command := GSWeaponCommand.new()
 
 		if (tick / 40) % 3 == 0:
-			command.set_button(DotWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
-			command.set_button(DotWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
-			command.set_button(DotWeaponCommand.BUTTON_ALT, rng.randf() < 0.05)
+			command.set_button(GSWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
+			command.set_button(GSWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
+			command.set_button(GSWeaponCommand.BUTTON_ALT, rng.randf() < 0.05)
 			command.slot = rng.randi_range(1, 4) if rng.randf() < 0.04 else 0
 
-		var ctx := DotWeaponContext.new()
+		var ctx := GSWeaponContext.new()
 		ctx.authority = true
 		var want := full.simulate_tick(command, tick, ctx)
 		var got := quick.simulate_tick(command.duplicate_command(), tick)
@@ -453,13 +453,13 @@ func _posture_rig(provider: bool) -> Array:
 	rig.role = ZeeWeaponRig.Role.LOCAL
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
-	rig.view_model_ref = DotNodeRef.of_path(view.get_path())
+	rig.player_ref = GSNodeRef.of_path(^"..")
+	rig.view_model_ref = GSNodeRef.of_path(view.get_path())
 	carrier.add_child(rig)
-	var _setup: DotResult = rig.setup()
+	var _setup: GSResult = rig.setup()
 	var _given: Variant = rig.give_everything()
 	rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
-	rig.arsenal.spread_rules = DotWeaponSpreadRules.new()
+	rig.arsenal.spread_rules = GSWeaponSpreadRules.new()
 	rig.arsenal.spread_rules.enabled = true
 	rig.arsenal.spread_rules.recovery = 40.0
 	if not provider:
@@ -475,7 +475,7 @@ func _rig_idle_posture() -> void:
 	var full_rig: ZeeWeaponRig = full[1]
 	var quick_rig: ZeeWeaponRig = quick[1]
 	_check("without a provider enabled rules still force the full context",
-		not full_rig.arsenal.is_idle_for(DotWeaponCommand.new(), null))
+		not full_rig.arsenal.is_idle_for(GSWeaponCommand.new(), null))
 	_check("the rig installs the provider by itself", quick_rig.arsenal.idle_posture.is_valid())
 
 	var rng := RandomNumberGenerator.new()
@@ -484,10 +484,10 @@ func _rig_idle_posture() -> void:
 	var skipped := 0
 
 	for tick in range(900):
-		var command := DotWeaponCommand.new()
+		var command := GSWeaponCommand.new()
 		if (tick / 40) % 3 == 0:
-			command.set_button(DotWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
-			command.set_button(DotWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
+			command.set_button(GSWeaponCommand.BUTTON_ATTACK, rng.randf() < 0.7)
+			command.set_button(GSWeaponCommand.BUTTON_RELOAD, rng.randf() < 0.03)
 			command.slot = rng.randi_range(1, 4) if rng.randf() < 0.04 else 0
 		(full[0] as PostureCarrier).posture = _posture_at(tick)
 		(quick[0] as PostureCarrier).posture = _posture_at(tick)
@@ -545,29 +545,29 @@ func _ads_rules() -> void:
 	rig.role = ZeeWeaponRig.Role.SERVER
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.player_ref = GSNodeRef.of_path(^"..")
 	carrier.add_child(rig)
 	var _setup := rig.setup()
 	var _given := rig.give_everything()
 	rig.arsenal.select(ZeeWeaponIds.SLOT_PRIMARY, 0)
 	_run_rig(rig, 0, 60, 0)
-	var tuning := rig.arsenal.current_def().tuning as DotWeaponBallistics
+	var tuning := rig.arsenal.current_def().tuning as GSWeaponBallistics
 	tuning.bloom = 0.0
 	# The neutral class isolates this pack's multiplier from dot-weapon's per-class aim factors.
 	tuning.accuracy_class = "none"
 	var plain := _first_spread(rig, 60, 0)
 	rig.ads_rules = rules
-	var fresh := _first_spread(rig, 240, DotWeaponCommand.BUTTON_USER_0)
-	_run_rig(rig, 300, 360, DotWeaponCommand.BUTTON_USER_0)
-	var held := _first_spread(rig, 360, DotWeaponCommand.BUTTON_USER_0)
+	var fresh := _first_spread(rig, 240, GSWeaponCommand.BUTTON_USER_0)
+	_run_rig(rig, 300, 360, GSWeaponCommand.BUTTON_USER_0)
+	var held := _first_spread(rig, 360, GSWeaponCommand.BUTTON_USER_0)
 	_check("the aim bit is a ramp: a first tick of aiming is still nearly the hip spread (%.3f)" % fresh, fresh > plain * 0.8)
 	_check("a shot while aiming is tighter by the multiplier (%.3f -> %.3f)" % [plain, held],
 		plain > 0.0 and is_equal_approx(held, plain * 0.5))
 	tuning.accuracy_class = "sniper"
 	var class_plain := _first_spread(rig, 600, 0)
-	var class_fresh := _first_spread(rig, 840, DotWeaponCommand.BUTTON_USER_0)
-	_run_rig(rig, 900, 960, DotWeaponCommand.BUTTON_USER_0)
-	var class_held := _first_spread(rig, 960, DotWeaponCommand.BUTTON_USER_0)
+	var class_fresh := _first_spread(rig, 840, GSWeaponCommand.BUTTON_USER_0)
+	_run_rig(rig, 900, 960, GSWeaponCommand.BUTTON_USER_0)
+	var class_held := _first_spread(rig, 960, GSWeaponCommand.BUTTON_USER_0)
 	_check("a class's hip spread is still there on the first tick of aiming, not dropped at once (%.3f of %.3f)" % [class_fresh, class_plain],
 		class_fresh > class_plain * 0.6)
 	_check("with the sights up the class's aim factor closes the cone (%.3f)" % class_held, class_held < 0.01)
@@ -597,7 +597,7 @@ func _sniper_rig(rules: ZeeAdsRules, carrier: Node3D) -> ZeeWeaponRig:
 	rig.role = ZeeWeaponRig.Role.SERVER
 	rig.authority = true
 	rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	rig.player_ref = DotNodeRef.of_path(^"..")
+	rig.player_ref = GSNodeRef.of_path(^"..")
 	rig.ads_rules = rules
 	carrier.add_child(rig)
 	var _setup := rig.setup()
@@ -614,7 +614,7 @@ func _ads_quickscope() -> void:
 	var _t := rules.set_value(&"", "aim_time", 0.5)
 	var rig := _sniper_rig(rules, carrier)
 	_check("the test rig holds the sniper", rig.arsenal.current_def().id == ZeeWeaponIds.SNIPER)
-	var both := DotWeaponCommand.BUTTON_USER_0 | DotWeaponCommand.BUTTON_ATTACK
+	var both := GSWeaponCommand.BUTTON_USER_0 | GSWeaponCommand.BUTTON_ATTACK
 
 	# Threshold 0: the first aimed tick may fire, as a quick scope.
 	var shot := _fire_at(rig, 1000, both)
@@ -633,12 +633,12 @@ func _ads_quickscope() -> void:
 	var first_progress := -1.0
 	var qs_late := false
 	for tick in range(1000, 1000 + 120):
-		var cmd := DotWeaponCommand.new()
-		cmd.buttons = both if tick % 2 == 0 else DotWeaponCommand.BUTTON_USER_0
+		var cmd := GSWeaponCommand.new()
+		cmd.buttons = both if tick % 2 == 0 else GSWeaponCommand.BUTTON_USER_0
 		var out := rig2.simulate_tick(cmd, tick)
 		if out != null and not out.shots.is_empty():
-			first_progress = float((out.shots[0] as DotShot).get_meta(&"ads_progress", -1.0))
-			qs_late = bool((out.shots[0] as DotShot).get_meta(&"quickscope", false))
+			first_progress = float((out.shots[0] as GSShot).get_meta(&"ads_progress", -1.0))
+			qs_late = bool((out.shots[0] as GSShot).get_meta(&"quickscope", false))
 			break
 		held += 1
 	_check("with threshold 1 the shot waits for the sights (%d ticks held)" % held, held >= int(0.5 * ZeeWeaponPack.TICK_RATE) - 1)
@@ -674,13 +674,13 @@ func _ads_quickscope() -> void:
 	carrier.queue_free()
 
 
-func _fire_at(rig: ZeeWeaponRig, from: int, buttons: int) -> DotShot:
+func _fire_at(rig: ZeeWeaponRig, from: int, buttons: int) -> GSShot:
 	for tick in range(from, from + 120):
-		var cmd := DotWeaponCommand.new()
-		cmd.buttons = buttons if tick % 2 == 0 else buttons & ~DotWeaponCommand.BUTTON_ATTACK
+		var cmd := GSWeaponCommand.new()
+		cmd.buttons = buttons if tick % 2 == 0 else buttons & ~GSWeaponCommand.BUTTON_ATTACK
 		var out := rig.simulate_tick(cmd, tick)
 		if out != null and not out.shots.is_empty():
-			return out.shots[0] as DotShot
+			return out.shots[0] as GSShot
 	return null
 
 
@@ -735,16 +735,16 @@ func _ads_view(rules: ZeeAdsRules) -> void:
 
 
 func _ads_sprint(rig: ZeeWeaponRig) -> void:
-	var sprint_ctx := DotWeaponContext.new()
-	var aim_cmd := DotWeaponCommand.new()
-	aim_cmd.buttons = DotWeaponCommand.BUTTON_USER_0
+	var sprint_ctx := GSWeaponContext.new()
+	var aim_cmd := GSWeaponCommand.new()
+	aim_cmd.buttons = GSWeaponCommand.BUTTON_USER_0
 	var cur := rig.arsenal.current_def()
 	var open_aim := rig._can_aim(aim_cmd, cur, sprint_ctx)
 	sprint_ctx.sprinting = true
 	var free_sprint := rig._can_aim(aim_cmd, cur, sprint_ctx)
 	sprint_ctx.sprint_blocks_aim = true
 	_check("sprinting refuses the aim bit only under sv_sprint_noaim", open_aim and free_sprint and not rig._can_aim(aim_cmd, cur, sprint_ctx))
-	var barrel_ctx := DotWeaponContext.new()
+	var barrel_ctx := GSWeaponContext.new()
 	barrel_ctx.direction = Vector3.FORWARD
 	barrel_ctx.sprinting = true
 	rig._aim_along_sprint_barrel(barrel_ctx)
@@ -762,13 +762,13 @@ func _ads_sprint(rig: ZeeWeaponRig) -> void:
 func _ads_wire_warning() -> void:
 	var warned: Array = []
 	var catch := func(rec: Dictionary) -> void: warned.append(rec)
-	DotLog.signals().record.connect(catch)
+	GSLog.signals().record.connect(catch)
 	var fat := ZeeAdsRules.new()
 	for n in 60:
 		var _f := fat.set_value(StringName("some_long_weapon_id_%d" % n), "move_speed_multiplier", 0.5)
 	var _b := fat.bind_cvars(func(_n: String, _v: String, _d: String, _f2: int) -> Variant: return null)
 	var _b2 := ZeeAdsRules.new().bind_cvars(func(_n: String, _v: String, _d: String, _f2: int) -> Variant: return null)
-	DotLog.signals().record.disconnect(catch)
+	GSLog.signals().record.disconnect(catch)
 	var long_warns := warned.filter(func(r: Dictionary) -> bool: return str(r.get("message", r.get("msg", ""))).contains("too long to replicate"))
 	_check("a wire over 1000 bytes warns once at bind and a short one does not (%d, %d bytes)" % [long_warns.size(), fat.to_wire().length()], long_warns.size() == 1 and fat.to_wire().length() > 1000)
 

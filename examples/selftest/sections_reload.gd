@@ -17,7 +17,7 @@ func _reload_sequences() -> void:
 	var styled := 0
 	var guns := 0
 	for art: ZeeWeaponArt in ZeeWeaponArtTable.all():
-		var def: DotWeaponDef = table.get(art.id)
+		var def: GSWeaponDef = table.get(art.id)
 		if def == null or not def.uses_magazine() or not art.has_model():
 			continue
 		guns += 1

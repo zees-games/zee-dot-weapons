@@ -2,7 +2,7 @@ extends "res://examples/zee_range_sheet.gd"
 
 ## A firing range you can walk around, holding every weapon in the pack: `godot --path . res://examples/zee_range.tscn`.
 ## Options after `--`: `--seconds N --weapon ID --fire --capture DIR --sheet DIR --dummy`. WASD, space, ctrl, mouse, R, 1-5, Q, wheel; F1 dumps the rig.
-## The half of the suite no assertion reaches: look at it (`tools/screenshot.sh`). It sets no [DotNodeRef]s; the defaults find everything by type.
+## The half of the suite no assertion reaches: look at it (`tools/screenshot.sh`). It sets no [GSNodeRef]s; the defaults find everything by type.
 
 const CHANNEL := "zee.range"
 
@@ -124,13 +124,13 @@ func _build_weapons() -> void:
 	# this false and let the server's copy of the same rig decide.
 	_rig.authority = true
 	_rig.tick_rate = ZeeWeaponPack.TICK_RATE
-	_rig.view_model_ref = DotNodeRef.of_path(_view.get_path())
+	_rig.view_model_ref = GSNodeRef.of_path(_view.get_path())
 	$Player.add_child(_rig)
 
 	var res := _rig.setup()
 
 	if not res.ok:
-		DotLog.error(CHANNEL, "the rig would not set up", {"why": res.error.message})
+		GSLog.error(CHANNEL, "the rig would not set up", {"why": res.error.message})
 		return
 
 	_rig.give_everything()
@@ -146,10 +146,10 @@ func _equip_requested() -> void:
 	if wanted == "":
 		return
 
-	var def: DotWeaponDef = ZeeWeaponPack.table().get(StringName(wanted), null)
+	var def: GSWeaponDef = ZeeWeaponPack.table().get(StringName(wanted), null)
 
 	if def == null:
-		DotLog.warn(CHANNEL, "no such weapon", {"asked_for": wanted})
+		GSLog.warn(CHANNEL, "no such weapon", {"asked_for": wanted})
 		return
 
 	# Forced rather than requested: a switch takes deploy_ticks to finish, and a
@@ -160,23 +160,23 @@ func _equip_requested() -> void:
 	_fit_requested(def)
 
 	for i in range(200):
-		_rig.simulate_tick(DotWeaponCommand.new(), i)
+		_rig.simulate_tick(GSWeaponCommand.new(), i)
 
 
 ## Honours `--fit zee_scope,zee_suppressor`: the pack's attachments on the weapon asked for, for an aimed-in look at an optic.
-func _fit_requested(def: DotWeaponDef) -> void:
+func _fit_requested(def: GSWeaponDef) -> void:
 	var wanted := _argument("--fit")
 	if wanted == "":
 		return
 	_rig.arsenal.attachments = ZeeAttachmentPack.attachments()
-	var fitting := DotWeaponFitting.make(def.id)
+	var fitting := GSWeaponFitting.make(def.id)
 	for id in wanted.split(",", false):
 		var att := _rig.arsenal.attachments.get_attachment(StringName(id))
 		if att != null:
 			fitting.fit(att.mount, att.id)
 	var fitted := _rig.arsenal.fit(def.slot, fitting)
 	if not fitted.ok:
-		DotLog.warn(CHANNEL, "the fitting was refused", {"why": fitted.error.message})
+		GSLog.warn(CHANNEL, "the fitting was refused", {"why": fitted.error.message})
 
 
 func _process(_delta: float) -> void:
@@ -193,7 +193,7 @@ func _process(_delta: float) -> void:
 	_rig.drive_view(
 		Vector2(state.yaw, state.pitch),
 		Vector2(state.velocity.x, state.velocity.z).length(),
-		state.mode != DotFpsState.Mode.AIR,
+		state.mode != GSFpsState.Mode.AIR,
 		state.crouch_fraction > 0.5
 	)
 
@@ -232,7 +232,7 @@ func _physics_process(_delta: float) -> void:
 	# semi-automatic fires too: a screenshot taken at a fixed second then catches a shot in
 	# flight, which is the only way a machine with no hands sees a tracer.
 	if _auto_fire:
-		command.set_button(DotWeaponCommand.BUTTON_ATTACK, (_tick / 6) % 2 == 0)
+		command.set_button(GSWeaponCommand.BUTTON_ATTACK, (_tick / 6) % 2 == 0)
 
 	# [b]The shot leaves the controller's eye, handed over explicitly.[/b] This rig has no
 	# player_ref — the range's player is a bare body with no `component()` for the bridge
@@ -245,7 +245,7 @@ func _physics_process(_delta: float) -> void:
 	# The eye, not the camera: the camera carries the recoil punch and the landing dip, and
 	# a shot aimed along those would make presentation part of where a bullet goes.
 	var eye := _controller.eye_transform()
-	var ctx := DotWeaponContext.make(1, _tick, eye.origin, -eye.basis.z)
+	var ctx := GSWeaponContext.make(1, _tick, eye.origin, -eye.basis.z)
 	var outcome := _rig.simulate_tick(command, _tick, ctx)
 
 	# The range is its own authority, so it resolves its own shots. A client would send
@@ -270,18 +270,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				print(line)
 
 
-func _on_used(outcome: DotWeaponOutcome) -> void:
+func _on_used(outcome: GSWeaponOutcome) -> void:
 	_capture_shot()
 
 	# Nothing here may run on a replayed tick, and nothing here is replayed: a range is
 	# its own authority so there is nothing to reconcile. In a networked game this is
 	# where `ctx.replayed` earns its keep.
-	if outcome.kind == DotWeaponOutcome.KIND_SWING:
+	if outcome.kind == GSWeaponOutcome.KIND_SWING:
 		return
 
 
 func _on_equipped(id: StringName) -> void:
-	var def: DotWeaponDef = ZeeWeaponPack.table().get(id, null)
+	var def: GSWeaponDef = ZeeWeaponPack.table().get(id, null)
 
 	if def != null:
 		print("equipped %s" % def.name_or_id())
@@ -295,9 +295,9 @@ func _on_landed(impact: float) -> void:
 ##
 ## [b]A range, not a combat system.[/b] dot-combat is what resolves a shot properly —
 ## hitboxes, hit groups, lag compensation, armour — and this pack does not depend on it
-## for anything but its [DotShot] type. What this does is put a mark on a wall so you can
+## for anything but its [GSShot] type. What this does is put a mark on a wall so you can
 ## see where the pellets went, which is the only question a firing range asks.
-func _trace(shot: DotShot) -> void:
+func _trace(shot: GSShot) -> void:
 	var space: PhysicsDirectSpaceState3D = get_viewport().world_3d.direct_space_state
 
 	for pellet in shot.pellets:
@@ -315,7 +315,7 @@ func _trace(shot: DotShot) -> void:
 
 
 ## A projectile, as the simplest thing that can possibly fly.
-func _launch(spawn: DotWeaponSpawn) -> void:
+func _launch(spawn: GSWeaponSpawn) -> void:
 	var body := RigidBody3D.new()
 	var mesh := MeshInstance3D.new()
 	var shape := CollisionShape3D.new()
@@ -391,7 +391,7 @@ func _draw_readout() -> void:
 	_readout.text = "%s\n%s\n%s%s" % [
 		def.name_or_id(),
 		rounds,
-		DotWeaponDef.Fire.keys()[def.fire_mode].to_lower(),
+		GSWeaponDef.Fire.keys()[def.fire_mode].to_lower(),
 		"  ·  reloading" if _rig.arsenal.is_reloading() else "",
 	]
 

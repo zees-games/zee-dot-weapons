@@ -1,7 +1,7 @@
 class_name ZeeWeaponInput
 extends RefCounted
 
-## Turns what the keyboard and mouse are doing into a [DotWeaponCommand].
+## Turns what the keyboard and mouse are doing into a [GSWeaponCommand].
 ##
 ## [b]The only file in the pack that touches an input device, and it is deliberately the
 ## only one.[/b] Everything downstream — the rig, the arsenal, every behaviour — is a
@@ -24,15 +24,15 @@ const CHANNEL := "zee.input"
 ## The actions this maps, and what they mean. A game that uses different names passes
 ## its own table to [method make].
 const DEFAULT_ACTIONS := {
-	&"attack": DotWeaponCommand.BUTTON_ATTACK,
-	&"attack_alt": DotWeaponCommand.BUTTON_ALT,
-	&"reload": DotWeaponCommand.BUTTON_RELOAD,
-	&"use": DotWeaponCommand.BUTTON_USE,
-	&"weapon_next": DotWeaponCommand.BUTTON_NEXT,
-	&"weapon_previous": DotWeaponCommand.BUTTON_PREVIOUS,
-	&"weapon_last": DotWeaponCommand.BUTTON_LAST,
-	&"weapon_drop": DotWeaponCommand.BUTTON_DROP,
-	&"weapon_fire_mode": DotWeaponCommand.BUTTON_FIRE_MODE,
+	&"attack": GSWeaponCommand.BUTTON_ATTACK,
+	&"attack_alt": GSWeaponCommand.BUTTON_ALT,
+	&"reload": GSWeaponCommand.BUTTON_RELOAD,
+	&"use": GSWeaponCommand.BUTTON_USE,
+	&"weapon_next": GSWeaponCommand.BUTTON_NEXT,
+	&"weapon_previous": GSWeaponCommand.BUTTON_PREVIOUS,
+	&"weapon_last": GSWeaponCommand.BUTTON_LAST,
+	&"weapon_drop": GSWeaponCommand.BUTTON_DROP,
+	&"weapon_fire_mode": GSWeaponCommand.BUTTON_FIRE_MODE,
 }
 
 ## Slot actions, in slot order. `weapon_slot_1` selects slot 1.
@@ -111,8 +111,8 @@ func set_aim(yaw: float, pitch: float) -> void:
 ## tick for an automatic weapon to keep firing, and a tapped one has to appear on the
 ## tick after the tap even though it is no longer down — so both go in, and the arsenal's
 ## own edge detection against the previous command sorts out which is which.
-func take(max_slots: int = MAX_SLOTS) -> DotWeaponCommand:
-	var command := DotWeaponCommand.new()
+func take(max_slots: int = MAX_SLOTS) -> GSWeaponCommand:
+	var command := GSWeaponCommand.new()
 	command.buttons = _held | _latched
 	command.slot = _slot
 	command.yaw = _yaw
@@ -181,7 +181,7 @@ static func register_default_actions() -> int:
 			InputMap.action_add_event(action, _event_for(action, code))
 
 	if not added.is_empty():
-		DotLog.info(CHANNEL, "added default weapon bindings the project did not define", {
+		GSLog.info(CHANNEL, "added default weapon bindings the project did not define", {
 			"added": added,
 			"kept_project_bindings": kept,
 		})
@@ -210,8 +210,8 @@ static func _event_for(_action: StringName, code: int) -> InputEvent:
 
 func describe() -> Dictionary:
 	return {
-		"held": Array(DotWeaponCommand.button_names(_held)),
-		"latched": Array(DotWeaponCommand.button_names(_latched)),
+		"held": Array(GSWeaponCommand.button_names(_held)),
+		"latched": Array(GSWeaponCommand.button_names(_latched)),
 		"slot": _slot,
 		"yaw": _yaw,
 		"pitch": _pitch,

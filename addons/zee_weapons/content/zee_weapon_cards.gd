@@ -11,7 +11,7 @@ extends RefCounted
 ## [/codeblock]
 ##
 ## [b]Derived from the documents, never written down twice.[/b] Every number is read off the
-## weapon's own [DotWeaponDef] and its ballistics at [constant ZeeWeaponPack.TICK_RATE], so a
+## weapon's own [GSWeaponDef] and its ballistics at [constant ZeeWeaponPack.TICK_RATE], so a
 ## retune shows on the card the day it lands; a second table of "card numbers" would be the one
 ## that is wrong. The bars are scaled against fixed ceilings rather than the pack's own maxima, so
 ## a second pack (zed-dot-weapons) with a bigger gun does not shrink every bar here.
@@ -72,7 +72,7 @@ const KIND := {
 
 ## Everything a card shows for [param def]: `detail`, `kind`, `stats` (`[{label, value, text}]`).
 ## Empty for null.
-static func card(def: DotWeaponDef) -> Dictionary:
+static func card(def: GSWeaponDef) -> Dictionary:
 	if def == null:
 		return {}
 	return {"detail": str(BLURB.get(def.id, def.description)), "kind": str(KIND.get(def.slot, "")), "stats": stats(def)}
@@ -81,12 +81,12 @@ static func card(def: DotWeaponDef) -> Dictionary:
 ## The bars for [param def]: what matters for its kind. A gun: damage per trigger pull, fire rate,
 ## range, accuracy, magazine. Melee: damage, swings a minute, reach. A grenade: blast, radius,
 ## carried.
-static func stats(def: DotWeaponDef) -> Array:
+static func stats(def: GSWeaponDef) -> Array:
 	if def == null:
 		return []
-	var b := def.tuning as DotWeaponBallistics
+	var b := def.tuning as GSWeaponBallistics
 	var per_min := 60.0 * float(ZeeWeaponPack.TICK_RATE) / float(maxi(def.use_interval_ticks, 1))
-	if def.fire_mode == DotWeaponDef.Fire.BURST:
+	if def.fire_mode == GSWeaponDef.Fire.BURST:
 		# A press fires burst_count rounds; the interval is between presses.
 		per_min *= float(maxi(def.burst_count, 1))
 	if def.slot == ZeeWeaponIds.SLOT_THROWN:

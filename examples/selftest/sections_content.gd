@@ -58,7 +58,7 @@ func _other_packs() -> void:
 	_begin("another pack adds to this one")
 
 	var before := ZeeWeaponPack.weapons().size()
-	ZeeWeaponPack.add_source(&"test_pack", func(_types: Dictionary) -> Array[DotWeaponDef]:
+	ZeeWeaponPack.add_source(&"test_pack", func(_types: Dictionary) -> Array[GSWeaponDef]:
 		var mine := ZeeWeaponPack.pistol()
 		mine.id = &"test_sidearm"
 		var clash := ZeeWeaponPack.pistol()
@@ -74,11 +74,11 @@ func _other_packs() -> void:
 		ZeeWeaponPack.catalogue().has(&"test_sidearm") and table.has(&"test_sidearm"))
 	_check("one more weapon, not two: an id this pack has stays this pack's",
 		ZeeWeaponPack.weapons().size() == before + 1)
-	_check("the pistol is still this pack's pistol", (table[&"pistol"] as DotWeaponDef).display_name == ZeeWeaponPack.pistol().display_name)
+	_check("the pistol is still this pack's pistol", (table[&"pistol"] as GSWeaponDef).display_name == ZeeWeaponPack.pistol().display_name)
 	_check("its art is in the table", ZeeWeaponArtTable.get_art(&"test_sidearm") != null)
 	_check("and the table still validates with it there", ZeeWeaponArtTable.validate().ok)
 	_check("and it sounds like the class it asked for",
-		ZeeWeaponSound.class_for(&"test_sidearm", DotWeaponOutcome.KIND_SHOT) == ZeeWeaponSound.MAGNUM)
+		ZeeWeaponSound.class_for(&"test_sidearm", GSWeaponOutcome.KIND_SHOT) == ZeeWeaponSound.MAGNUM)
 
 	ZeeWeaponPack.remove_source(&"test_pack")
 	ZeeWeaponArtTable.remove_source(&"test_pack")
@@ -107,7 +107,7 @@ func _pack_source() -> void:
 	_begin("ZeePackSource")
 
 	var provider := GDScript.new()
-	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[DotWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"ps_gun\"\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"ps_blade\"\n\treturn [a, b]\n"
+	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[GSWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"ps_gun\"\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"ps_blade\"\n\treturn [a, b]\n"
 	provider.reload()
 	var defs_source := Callable(provider, &"weapon_defs")
 	ZeePackSource.register(&"ps_test", provider, defs_source)
@@ -134,7 +134,7 @@ func _pack_scan() -> void:
 	_begin("ZeePackScan and ZeePackRoles")
 
 	var provider := GDScript.new()
-	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[DotWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"sc_gun\"\n\ta.tags = [&\"ranged\"]\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"sc_blade\"\n\tb.tags = [&\"melee\"]\n\treturn [a, b]\n"
+	provider.source_code = "extends RefCounted\nstatic func weapon_defs(_t: Dictionary) -> Array[GSWeaponDef]:\n\tvar a := ZeeWeaponPack.pistol()\n\ta.id = &\"sc_gun\"\n\ta.tags = [&\"ranged\"]\n\tvar b := ZeeWeaponPack.knife()\n\tb.id = &\"sc_blade\"\n\tb.tags = [&\"melee\"]\n\treturn [a, b]\n"
 	provider.reload()
 	var defs := ZeePackScan.defs_of({}, provider)
 	_check("defs_of hands the provider's defs through", defs.size() == 2)
@@ -165,7 +165,7 @@ func _damage() -> void:
 	_check("four damage types", table.size() == 4)
 
 	for id: StringName in table.keys():
-		var type: DotDamageType = table[id]
+		var type: GSDamageType = table[id]
 		_check_quiet("%s has its own id" % String(id), type.id == id)
 
 	_check(
@@ -235,7 +235,7 @@ func _pack() -> void:
 	# The roles have to actually differ, or this is one weapon with twenty-seven skins.
 	var damages: Dictionary = {}
 	for def in ZeeWeaponPack.weapons():
-		var b := def.tuning as DotWeaponBallistics
+		var b := def.tuning as GSWeaponBallistics
 		if b != null:
 			damages[snappedf(b.damage, 0.5)] = true
 
@@ -251,8 +251,8 @@ func _pack() -> void:
 	# always throw the body, and nothing light can.
 	var table := ZeeWeaponPack.table()
 	_check("the sniper and the launcher name the power launch",
-		(table[ZeeWeaponIds.SNIPER] as DotWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch"
-		and (table[ZeeWeaponIds.LAUNCHER] as DotWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch")
+		(table[ZeeWeaponIds.SNIPER] as GSWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch"
+		and (table[ZeeWeaponIds.LAUNCHER] as GSWeaponDef).params.get(ZeeWeaponIds.PARAM_DEATH_REACTION) == &"power_launch")
 	var powered := 0
 	var light_powered := 0
 	for def in ZeeWeaponPack.weapons():
@@ -295,27 +295,27 @@ func _workshop() -> void:
 
 	for e: Dictionary in entries:
 		var id := StringName(e["id"])
-		var def: DotWeaponDef = by_id.get(id, null)
+		var def: GSWeaponDef = by_id.get(id, null)
 		_check_quiet("%s: an entry for a code weapon" % id, def != null)
 		_check_quiet("%s: category is declared and matches the slot" % id,
 			cat_ids.has(e.get("category", "")) and def != null and e["category"] == ZeeDefExport.category_for(def.slot))
 		_check_quiet("%s: the file exists" % id, ResourceLoader.exists("res://" + String(e["def"])))
-		var loaded := load("res://" + String(e["def"])) as DotWeaponDef
-		_check_quiet("%s: loads as a DotWeaponDef with the entry's id" % id, loaded != null and String(loaded.id) == e["id"])
+		var loaded := load("res://" + String(e["def"])) as GSWeaponDef
+		_check_quiet("%s: loads as a GSWeaponDef with the entry's id" % id, loaded != null and String(loaded.id) == e["id"])
 		if loaded != null and def != null:
 			_check_quiet("%s: the .tres equals the code row" % id, _same(loaded, def, id))
 			_check_quiet("%s: behaviour stays in the host build" % id, loaded.behaviour_path.begins_with("res://addons/dot_weapon/"))
 		_check_quiet("%s: asset_root is declared" % id, (e.get("meta", {}) as Dictionary).has("asset_root"))
 
 	# Fed the way a mounted pack is: the index holds the document, the catalogue follows it.
-	var index := DotContentIndex.new()
-	index.set_session(DotContentIndex.SESSION_SOLO)
+	var index := GSContentIndex.new()
+	index.set_session(GSContentIndex.SESSION_SOLO)
 	var added := index.add_pack({
 		"content_id": "gamemann/zee-dot-weapons", "version": "1.0.0", "prefix": "res://",
 		"session": "solo", "source": "subscription", "provides": provides,
 	})
 	_check("the index takes the pack", added.ok)
-	var cat := DotWeaponCatalogue.new().follow_content(index)
+	var cat := GSWeaponCatalogue.new().follow_content(index)
 	_check("the catalogue resolves every weapon", cat.size() == code.size())
 	_check("and validates", cat.validate().ok)
 
@@ -354,29 +354,29 @@ func _attachments() -> void:
 					unsocketed.append("%s/%s" % [def.id, id])
 	_check("every drawn attachment a gun is offered has a socket on it: %s" % ", ".join(unsocketed), unsocketed.is_empty())
 
-	var rifle_def: DotWeaponDef = null
+	var rifle_def: GSWeaponDef = null
 	for def in ZeeWeaponPack.weapons():
 		if def.id == ZeeWeaponIds.RIFLE:
 			rifle_def = def
 	var offered := catalogue.choices_for(rifle_def) if rifle_def != null else {}
 	_check("the rifle is offered two optics, a suppressor and a magazine: %s" % [offered],
-		(offered.get(DotWeaponAttachment.MOUNT_OPTIC, []) as Array).size() == 2
-		and (offered.get(DotWeaponAttachment.MOUNT_MUZZLE, []) as Array).size() == 1
-		and (offered.get(DotWeaponAttachment.MOUNT_MAGAZINE, []) as Array).size() == 1)
-	var mag := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
-	mag.fit(DotWeaponAttachment.MOUNT_MAGAZINE, ZeeWeaponIds.ATT_EXTENDED_MAG)
-	var fed := catalogue.apply(rifle_def, mag) if rifle_def != null else DotResult.fail(DotError.CODE_INVALID, "no rifle")
+		(offered.get(GSWeaponAttachment.MOUNT_OPTIC, []) as Array).size() == 2
+		and (offered.get(GSWeaponAttachment.MOUNT_MUZZLE, []) as Array).size() == 1
+		and (offered.get(GSWeaponAttachment.MOUNT_MAGAZINE, []) as Array).size() == 1)
+	var mag := GSWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	mag.fit(GSWeaponAttachment.MOUNT_MAGAZINE, ZeeWeaponIds.ATT_EXTENDED_MAG)
+	var fed := catalogue.apply(rifle_def, mag) if rifle_def != null else GSResult.fail(GSError.CODE_INVALID, "no rifle")
 	_check("the extended magazine adds ten rounds: %s" % _why(fed),
-		fed.ok and (fed.value as DotWeaponDef).magazine == rifle_def.magazine + 10)
+		fed.ok and (fed.value as GSWeaponDef).magazine == rifle_def.magazine + 10)
 
 	var art := ZeeWeaponArtTable.get_art(ZeeWeaponIds.RIFLE)
 	var weapon := ZeeModelCache.instantiate(art.model_path) as Node3D
 	dress.ensure_sockets(weapon, art)
 	dress.ensure_sockets(weapon, art)
 	_check("a gun's sockets are added once", weapon != null and weapon.find_children("socket_*", "Node3D", true, false).size() == art.sockets.size())
-	var fitting := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
-	fitting.fit(DotWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_SCOPE)
-	fitting.fit(DotWeaponAttachment.MOUNT_MUZZLE, ZeeWeaponIds.ATT_SUPPRESSOR)
+	var fitting := GSWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	fitting.fit(GSWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_SCOPE)
+	fitting.fit(GSWeaponAttachment.MOUNT_MUZZLE, ZeeWeaponIds.ATT_SUPPRESSOR)
 	var state := dress.apply(weapon, fitting, art.model_forward, {})
 	_check("a scope and a suppressor draw two parts", (state.parts as Array).size() == 2)
 	_check("the scope sets the scoped look and its zoom", state.scoped and is_equal_approx(float(state.zoom), 0.4))
@@ -387,8 +387,8 @@ func _attachments() -> void:
 	var bare := ZeeModelCache.muzzle_distance(art.model_path, art.model_forward)
 	_check("the suppressor carries the muzzle past the bare barrel (%.3f > %.3f)" % [float(state.reach), bare], float(state.reach) > bare)
 	_check("the server's reach is the drawn one", is_equal_approx(dress.muzzle_reach(art, fitting), float(state.reach)))
-	var dot := DotWeaponFitting.make(ZeeWeaponIds.RIFLE)
-	dot.fit(DotWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_RED_DOT)
+	var dot := GSWeaponFitting.make(ZeeWeaponIds.RIFLE)
+	dot.fit(GSWeaponAttachment.MOUNT_OPTIC, ZeeWeaponIds.ATT_RED_DOT)
 	state = dress.apply(weapon, dot, art.model_forward, state)
 	_check("a red dot is looked through, not scoped", not state.scoped and not (state.line as Dictionary).is_empty())
 	if weapon != null:
@@ -431,7 +431,7 @@ func _arsenal() -> void:
 
 	var rifle := arsenal.slot_at(ZeeWeaponIds.SLOT_PRIMARY)
 	var before := rifle.magazine
-	var shots := _run(arsenal, 40, 100, DotWeaponCommand.BUTTON_ATTACK)
+	var shots := _run(arsenal, 40, 100, GSWeaponCommand.BUTTON_ATTACK)
 
 	_check("holding the trigger fires an automatic weapon", shots > 3)
 	_check("and spends the magazine", rifle.magazine < before)
@@ -441,13 +441,13 @@ func _arsenal() -> void:
 	rifle.magazine = 0
 
 	# Held through less than one reload, so nothing can legitimately come out yet.
-	var dry := _run(arsenal, 140, 200, DotWeaponCommand.BUTTON_ATTACK)
+	var dry := _run(arsenal, 140, 200, GSWeaponCommand.BUTTON_ATTACK)
 	_check("an empty weapon fires nothing while held", dry == 0)
 
 	# Kept held well past the reload. The bug this guards is that a held trigger cancels
 	# the reload it just started, every time the cadence comes round, so the magazine
 	# never refills — nothing errors and the weapon simply stops working.
-	_run(arsenal, 200, 400, DotWeaponCommand.BUTTON_ATTACK)
+	_run(arsenal, 200, 400, GSWeaponCommand.BUTTON_ATTACK)
 	_check(
 		"and refills anyway, rather than restarting its reload for ever",
 		rifle.magazine > 0
@@ -477,10 +477,10 @@ func _bash() -> void:
 	var bash := ZeeWeaponBash.new()
 	bash.for_def(ZeeWeaponPack.rifle())
 
-	var ctx := DotWeaponContext.make(7, 100, Vector3.ZERO, Vector3.FORWARD)
+	var ctx := GSWeaponContext.make(7, 100, Vector3.ZERO, Vector3.FORWARD)
 	var outcome := bash.use(ctx)
 
-	_check("a bash is a swing", outcome.kind == DotWeaponOutcome.KIND_SWING)
+	_check("a bash is a swing", outcome.kind == GSWeaponOutcome.KIND_SWING)
 	_check("it produces exactly one shot", outcome.shots.size() == 1)
 	_check("it spends no ammunition", outcome.ammo_used == 0)
 	_check("it sets its own cadence", outcome.cooldown_ticks > 0)
@@ -495,7 +495,7 @@ func _bash() -> void:
 
 	# A behaviour must be a pure function of its context: the same context twice must
 	# give the same answer, or a client and a server disagree about what happened.
-	var again := bash.use(DotWeaponContext.make(7, 100, Vector3.ZERO, Vector3.FORWARD))
+	var again := bash.use(GSWeaponContext.make(7, 100, Vector3.ZERO, Vector3.FORWARD))
 	_check(
 		"the same context produces the same damage twice",
 		is_equal_approx(again.shots[0].damage, outcome.shots[0].damage)
@@ -511,15 +511,15 @@ func _pack_ballistics() -> void:
 
 	var table := ZeeWeaponPack.table()
 	for id in [&"sniper", &"battle_rifle", &"pistol"]:
-		var b := table[id].tuning as DotWeaponBallistics
-		_check("%s is simulated" % id, DotWeaponTrajectory.is_simulated(b))
-		var d100 := float(DotWeaponTrajectory.drop_at(b, 100.0)["drop"])
-		var d300 := float(DotWeaponTrajectory.drop_at(b, 300.0)["drop"])
+		var b := table[id].tuning as GSWeaponBallistics
+		_check("%s is simulated" % id, GSWeaponTrajectory.is_simulated(b))
+		var d100 := float(GSWeaponTrajectory.drop_at(b, 100.0)["drop"])
+		var d300 := float(GSWeaponTrajectory.drop_at(b, 300.0)["drop"])
 		_check("%s drops more at 300 m than 100 m" % id, d100 > 0.0 and d300 > d100 * 3.0)
 		_check("%s 100 m drop is under 2 m" % id, d100 < 2.0)
 
 	for id in [&"shotgun", &"knife", &"fists"]:
 		var t: Variant = table[id].tuning
-		_check("%s stays hitscan" % id, not (t is DotWeaponBallistics) or not DotWeaponTrajectory.is_simulated(t))
+		_check("%s stays hitscan" % id, not (t is GSWeaponBallistics) or not GSWeaponTrajectory.is_simulated(t))
 
 	_end()

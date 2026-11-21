@@ -4,7 +4,7 @@ extends RefCounted
 ## What has to travel so that somebody else's weapon looks right on your screen.
 ##
 ## [b]dot-weapon already replicates the simulation; this replicates the picture.[/b]
-## [DotWeaponNetSync] sends the slot, the magazine and the reserve — everything needed to
+## [GSWeaponNetSync] sends the slot, the magazine and the reserve — everything needed to
 ## keep a carrier's state correct. None of that tells a watcher that a shot just
 ## happened, and a watcher who is not told sees a silent gun that never moves. So this
 ## adds four small fields on top, and a game concatenates the two spec lists.
@@ -21,7 +21,7 @@ extends RefCounted
 ##
 ## [b]Ammunition stays owner-only, and that is not a bandwidth decision.[/b] Exact
 ## magazine and reserve counts are information an opponent should not have; sending them
-## to everybody is how a modified client knows when to push. [DotWeaponNetSync] already
+## to everybody is how a modified client knows when to push. [GSWeaponNetSync] already
 ## makes that call and this changes none of it — what is added here is public because
 ## "that player is firing" is something anybody in the room can see anyway.
 ##
@@ -66,7 +66,7 @@ const KIND_BEAM := 4
 const KIND_THROW := 5
 
 
-## The fields this adds, on top of [method DotWeaponNetSync.specs].
+## The fields this adds, on top of [method GSWeaponNetSync.specs].
 static func specs() -> Array[Dictionary]:
 	return [
 		{
@@ -132,7 +132,7 @@ static func held_specs() -> Array[Dictionary]:
 ## weapons that are silent for everybody but their owner.
 static func all_specs() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	out.append_array(DotWeaponNetSync.specs())
+	out.append_array(GSWeaponNetSync.specs())
 	out.append_array(specs())
 	return out
 
@@ -147,7 +147,7 @@ static func properties() -> Array[StringName]:
 ## Bits one carrier's whole weapon state costs. For a bandwidth estimate.
 static func estimated_bits() -> int:
 	return (
-		DotWeaponNetSync.estimated_bits() + FIRE_SEQ_BITS + FIRE_KIND_BITS + 1 + 1
+		GSWeaponNetSync.estimated_bits() + FIRE_SEQ_BITS + FIRE_KIND_BITS + 1 + 1
 	)
 
 
@@ -162,10 +162,10 @@ static func pull(rig: Object, target: Object) -> void:
 
 	var arsenal: Variant = rig.get("arsenal")
 
-	if arsenal is DotWeaponArsenal:
-		DotWeaponNetSync.pull(arsenal, target)
-		target.set(&"net_reloading", (arsenal as DotWeaponArsenal).is_reloading())
-		target.set(&"net_switching", (arsenal as DotWeaponArsenal).is_switching())
+	if arsenal is GSWeaponArsenal:
+		GSWeaponNetSync.pull(arsenal, target)
+		target.set(&"net_reloading", (arsenal as GSWeaponArsenal).is_reloading())
+		target.set(&"net_switching", (arsenal as GSWeaponArsenal).is_switching())
 
 	target.set(&"net_fire_seq", int(rig.get("fire_seq")) % FIRE_SEQ_WRAP)
 	target.set(&"net_fire_kind", int(rig.get("fire_kind")))
@@ -244,7 +244,7 @@ static func apply(
 
 ## Which of dot-weapon's outcome kinds a number means, and back.
 ##
-## [b]Numbers on the wire, names in the code.[/b] [member DotWeaponOutcome.kind] is a
+## [b]Numbers on the wire, names in the code.[/b] [member GSWeaponOutcome.kind] is a
 ## [StringName] precisely so a game can invent a nineteenth kind without editing an addon
 ## — but a [StringName] is not something to put in a three-bit field, so this is the
 ## mapping, and a kind this pack does not know travels as [constant KIND_SHOT] rather
@@ -252,17 +252,17 @@ static func apply(
 ## no animation at all.
 static func kind_number(kind: StringName) -> int:
 	match kind:
-		DotWeaponOutcome.KIND_NONE:
+		GSWeaponOutcome.KIND_NONE:
 			return KIND_NONE
-		DotWeaponOutcome.KIND_SHOT:
+		GSWeaponOutcome.KIND_SHOT:
 			return KIND_SHOT
-		DotWeaponOutcome.KIND_SWING:
+		GSWeaponOutcome.KIND_SWING:
 			return KIND_SWING
-		DotWeaponOutcome.KIND_SPAWN:
+		GSWeaponOutcome.KIND_SPAWN:
 			return KIND_SPAWN
-		DotWeaponOutcome.KIND_BEAM:
+		GSWeaponOutcome.KIND_BEAM:
 			return KIND_BEAM
-		DotWeaponOutcome.KIND_THROW:
+		GSWeaponOutcome.KIND_THROW:
 			return KIND_THROW
 		_:
 			return KIND_SHOT
@@ -271,17 +271,17 @@ static func kind_number(kind: StringName) -> int:
 static func kind_name(number: int) -> StringName:
 	match number:
 		KIND_SHOT:
-			return DotWeaponOutcome.KIND_SHOT
+			return GSWeaponOutcome.KIND_SHOT
 		KIND_SWING:
-			return DotWeaponOutcome.KIND_SWING
+			return GSWeaponOutcome.KIND_SWING
 		KIND_SPAWN:
-			return DotWeaponOutcome.KIND_SPAWN
+			return GSWeaponOutcome.KIND_SPAWN
 		KIND_BEAM:
-			return DotWeaponOutcome.KIND_BEAM
+			return GSWeaponOutcome.KIND_BEAM
 		KIND_THROW:
-			return DotWeaponOutcome.KIND_THROW
+			return GSWeaponOutcome.KIND_THROW
 		_:
-			return DotWeaponOutcome.KIND_NONE
+			return GSWeaponOutcome.KIND_NONE
 
 
 ## How much a watcher's copy of the weapon moves for each kind of use.

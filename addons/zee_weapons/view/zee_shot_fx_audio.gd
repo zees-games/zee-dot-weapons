@@ -17,7 +17,7 @@ const DRY_GAP_MSEC := 250
 
 const CASING_GAP_MSEC := 90
 
-## Replaces the stock report and tail: `func(id: StringName, kind: StringName, at: Vector3, indoors: bool) -> bool`, e.g. wrapping a DotShotPlayer's `fire`. Return true when it played the shot; false falls back to the stock sound. Unset keeps the stock sound.
+## Replaces the stock report and tail: `func(id: StringName, kind: StringName, at: Vector3, indoors: bool) -> bool`, e.g. wrapping a GSShotPlayer's `fire`. Return true when it played the shot; false falls back to the stock sound. Unset keeps the stock sound.
 var shot_sound: Callable = Callable()
 
 var _layers: ZeeShotLayers = null
@@ -25,7 +25,7 @@ var _layers: ZeeShotLayers = null
 ## Play reports.
 @export var sounds: bool = true
 
-## The game's roof probe ([code]DotAmbienceRoof[/code], which the game steps); roofed means indoors, so a shot is followed by a room tail.
+## The game's roof probe ([code]GSAmbienceRoof[/code], which the game steps); roofed means indoors, so a shot is followed by a room tail.
 var roof: RefCounted = null
 
 var _voices: Array[AudioStreamPlayer3D] = []
@@ -71,7 +71,7 @@ func play_dry(at: Vector3, weapon_id: StringName = &"") -> void:
 func play_equip(at: Vector3, thrown: bool = false, weapon_id: StringName = &"") -> void:
 	if not is_inside_tree():
 		return
-	var pin := DotWeaponSound.pick(&"pin_pull", randi()) if thrown else null
+	var pin := GSWeaponSound.pick(&"pin_pull", randi()) if thrown else null
 	_play(pin if pin != null else ZeeWeaponSound.equip_stream(weapon_id), at, -6.0)
 
 
@@ -97,7 +97,7 @@ func _play_casing(at: Vector3) -> void:
 
 
 func _report(id: StringName, kind: StringName, at: Vector3) -> void:
-	if not sounds or kind == DotWeaponOutcome.KIND_NONE:
+	if not sounds or kind == GSWeaponOutcome.KIND_NONE:
 		return
 	if shot_sound.is_valid() and bool(shot_sound.call(id, kind, at, roof != null and bool(roof.get(&"roofed")))):
 		return
@@ -136,15 +136,15 @@ func _layered(id: StringName, kind: StringName, at: Vector3) -> bool:
 	return true
 
 
-## Indoors the class's distant recording follows the report, [constant DotWeaponSound.TAIL_DELAY] late.
+## Indoors the class's distant recording follows the report, [constant GSWeaponSound.TAIL_DELAY] late.
 func _play_tail(id: StringName, kind: StringName, at: Vector3) -> void:
 	var indoors := roof != null and bool(roof.get(&"roofed"))
-	var tail := DotWeaponSound.pick_tail(ZeeWeaponSound.class_for(id, kind), indoors, randi())
+	var tail := GSWeaponSound.pick_tail(ZeeWeaponSound.class_for(id, kind), indoors, randi())
 	if tail == null or not is_inside_tree():
 		return
-	await get_tree().create_timer(DotWeaponSound.TAIL_DELAY).timeout
+	await get_tree().create_timer(GSWeaponSound.TAIL_DELAY).timeout
 	if is_instance_valid(self) and is_inside_tree():
-		_play(tail, at, DotWeaponSound.TAIL_GAIN_DB)
+		_play(tail, at, GSWeaponSound.TAIL_GAIN_DB)
 
 
 ## Builds one report voice, idle and parked. Also what [method prewarm_voices] calls.

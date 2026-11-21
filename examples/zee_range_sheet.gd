@@ -10,7 +10,7 @@ const ReloadShots := preload("res://addons/dot_weapon/view/dot_weapon_reload_sho
 ## is 67 ms after the shot on any machine and under any renderer.
 const SHEET_STEP := 1.0 / 60.0
 
-@onready var _controller: DotFpsController = $Player/Controller
+@onready var _controller: GSFpsController = $Player/Controller
 @onready var _camera: Camera3D = $Player/Head/Camera
 @onready var _readout: Label = $UI/Readout
 @onready var _crosshair: Label = $UI/Crosshair
@@ -255,7 +255,7 @@ func _sheet_setup() -> void:
 	_crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 
-func _sheet_hold(def: DotWeaponDef) -> void:
+func _sheet_hold(def: GSWeaponDef) -> void:
 	# `--hold "x,y,z,pitch,yaw,roll,scale"` re-equips the weapon with that first-person
 	# placement instead of the table's: the knob for tuning a hold without an edit and a
 	# re-import per guess. The numbers that look right then go into ZeeWeaponArtTable.
@@ -309,10 +309,10 @@ func _sheet_fire(recoil: Vector2) -> void:
 	var eye := _controller.eye_transform()
 	for i in range(64):
 		_sheet_tick += 1
-		var command := DotWeaponCommand.new()
+		var command := GSWeaponCommand.new()
 		# Held for half a second and then let go: a grenade goes on the release.
-		command.set_button(DotWeaponCommand.BUTTON_ATTACK, i < 32)
-		var ctx := DotWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z)
+		command.set_button(GSWeaponCommand.BUTTON_ATTACK, i < 32)
+		var ctx := GSWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z)
 		var outcome := _rig.simulate_tick(command, _sheet_tick, ctx)
 		if outcome != null and outcome.used:
 			break
@@ -322,8 +322,8 @@ func _sheet_fire(recoil: Vector2) -> void:
 	# one's cooldown.
 	for i in range(64):
 		_sheet_tick += 1
-		var _idle := _rig.simulate_tick(DotWeaponCommand.new(), _sheet_tick,
-			DotWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z))
+		var _idle := _rig.simulate_tick(GSWeaponCommand.new(), _sheet_tick,
+			GSWeaponContext.make(1, _sheet_tick, eye.origin, -eye.basis.z))
 	# The rig pushes its own deploy and reload fractions; the sheet's frame decides them.
 	_view.on_reload(0.0)
 	_view.on_deploy(1.0)

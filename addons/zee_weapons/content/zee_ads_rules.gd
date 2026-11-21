@@ -3,7 +3,7 @@ extends Resource
 
 ## Aiming down sights, as a server owner sets it: one default profile and overrides by weapon id, assigned as `rig.ads_rules = ZeeAdsRules.load_config()`.
 ## Spread and move speed apply in [ZeeWeaponRig] from the command's aim bit (server and prediction alike); time, zoom, sway and toggle are the view model's.
-## Layered through [DotAddonConfig] (`cfg/addons/zee_weapons/*.yml`, env, argv); shape: `ads: {default: {zoom: 0.0}, weapons: {sniper: {zoom: 0.25}}}`.
+## Layered through [GSAddonConfig] (`cfg/addons/zee_weapons/*.yml`, env, argv); shape: `ads: {default: {zoom: 0.0}, weapons: {sniper: {zoom: 0.25}}}`.
 
 const ScopeView := preload("res://addons/dot_weapon/view/dot_weapon_scope_view.gd")
 
@@ -14,7 +14,7 @@ const PREDICTED := ["enabled", "aim_time", "move_speed_multiplier", "spread_mult
 ## The replicated cvar holding [method to_wire].
 const CVAR := "zee_ads_rules"
 
-## DotClientLink skips a replicated cvar over 1024 bytes without a word; warn from here.
+## GSClientLink skips a replicated cvar over 1024 bytes without a word; warn from here.
 const WIRE_WARN_BYTES := 1000
 
 const CHANNEL := "zee.ads"
@@ -88,11 +88,11 @@ static func defaults() -> Dictionary:
 ## Reads the layered config; a bad file is logged and the defaults stand.
 static func load_config(addon: String = ADDON) -> ZeeAdsRules:
 	var rules := ZeeAdsRules.new()
-	var res := DotAddonConfig.load_dir(addon, {"ads": {"default": defaults(), "weapons": {}}})
+	var res := GSAddonConfig.load_dir(addon, {"ads": {"default": defaults(), "weapons": {}}})
 	if not res.ok:
-		DotLog.warn(CHANNEL, "ads config refused", {"error": str(res.error)})
+		GSLog.warn(CHANNEL, "ads config refused", {"error": str(res.error)})
 		return rules
-	rules.apply_tree(DotAddonConfig.get_value(res.value, "ads", {}) as Dictionary)
+	rules.apply_tree(GSAddonConfig.get_value(res.value, "ads", {}) as Dictionary)
 	return rules
 
 
@@ -115,7 +115,7 @@ func apply_tree(tree: Dictionary) -> void:
 ## Sets one key on the default (empty [param id]) or on a weapon. False when refused.
 func set_value(id: StringName, key: String, value: Variant) -> bool:
 	if not SPECS.has(key):
-		DotLog.warn(CHANNEL, "unknown ads key", {"key": key, "weapon": id})
+		GSLog.warn(CHANNEL, "unknown ads key", {"key": key, "weapon": id})
 		return false
 	var spec: Dictionary = SPECS[key]
 	var clean: Variant = null
@@ -130,7 +130,7 @@ func set_value(id: StringName, key: String, value: Variant) -> bool:
 		if number >= float(spec["min"]) and number <= float(spec["max"]):
 			clean = number
 	if clean == null:
-		DotLog.warn(CHANNEL, "ads value refused", {"key": key, "value": str(value), "weapon": id})
+		GSLog.warn(CHANNEL, "ads value refused", {"key": key, "value": str(value), "weapon": id})
 		return false
 	if id == &"":
 		base[key] = clean
@@ -362,7 +362,7 @@ func adopt_wire(text: String) -> bool:
 func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	var size := to_wire().length()
 	if size > WIRE_WARN_BYTES:
-		DotLog.warn(CHANNEL, "ads rules too long to replicate; clients will not receive them", {"bytes": size, "limit": WIRE_WARN_BYTES})
+		GSLog.warn(CHANNEL, "ads rules too long to replicate; clients will not receive them", {"bytes": size, "limit": WIRE_WARN_BYTES})
 	var made: Variant = add.call(CVAR, to_wire(), "Aim-down-sights numbers the simulation uses (JSON). Players follow it, so their prediction agrees.", flags)
 	if not (made is Object):
 		return []

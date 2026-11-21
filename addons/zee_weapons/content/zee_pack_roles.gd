@@ -6,8 +6,8 @@ extends RefCounted
 ## A provider's defs with exactly one of [param tiers] tagged. [param overrides] (id -> tier) win over what the pack tags;
 ## a def with none joins [param melee] when tagged so, else [param fallback]. Bind it as a source Callable: zee builds
 ## the defs fresh on every rig, so the tag has to be given each time.
-static func tiered(types: Dictionary, provider: GDScript, tiers: Array, overrides: Dictionary, fallback: StringName = &"primary", melee: StringName = &"melee") -> Array[DotWeaponDef]:
-	var defs: Array[DotWeaponDef] = provider.call(&"weapon_defs", types)
+static func tiered(types: Dictionary, provider: GDScript, tiers: Array, overrides: Dictionary, fallback: StringName = &"primary", melee: StringName = &"melee") -> Array[GSWeaponDef]:
+	var defs: Array[GSWeaponDef] = provider.call(&"weapon_defs", types)
 
 	for def in defs:
 		var named := StringName(str(overrides.get(String(def.id), "")))
@@ -35,7 +35,7 @@ static func first_for_slot(ids: Array, by_id: Dictionary, slot: int, default_nam
 	var suffix := "_" + String(default_name)
 
 	for id: StringName in ids:
-		var def: DotWeaponDef = by_id.get(id)
+		var def: GSWeaponDef = by_id.get(id)
 
 		if def == null or def.slot != slot:
 			continue

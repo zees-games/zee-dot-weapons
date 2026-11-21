@@ -4,13 +4,13 @@
 
 **dot-weapon decides that a use happened and refuses to draw anything. This is the half that draws.**
 
-That refusal is dot-weapon being right: a dedicated server resolving thirty carriers must never need a mesh, and a `DotWeaponDef` that carried one could not be validated at boot by a server with no content installed. It leaves a weapon nobody can see, and every game was filling that gap privately and differently.
+That refusal is dot-weapon being right: a dedicated server resolving thirty carriers must never need a mesh, and a `GSWeaponDef` that carried one could not be validated at boot by a server with no content installed. It leaves a weapon nobody can see, and every game was filling that gap privately and differently.
 
 So the split is the same one, one level out. `ZeeWeaponPack` is documents a server validates; `ZeeWeaponArtTable` is filenames a client loads; and **a headless build never touches the second one**. If `ZeeModelCache` is reached in a headless run, something has asked a simulation question of the art layer.
 
-## The prefix is `Zee`, not `Dot`
+## The prefix is `Zee`, not `GS`
 
-`class_name` is global and these addons install side by side. `Dot` is the family's namespace and this is a pack on top of it, so it takes its own; a `DotWeaponArt` here would collide the first time dot-weapon grew one.
+`class_name` is global and these addons install side by side. `GS` is the family's namespace and this is a pack on top of it, so it takes its own; a `GSWeaponArt` here would collide the first time dot-weapon grew one.
 
 ## Weapons are named by role, never by model
 
@@ -20,7 +20,7 @@ The roles were assigned from measurements, not filenames: the two widest short m
 
 ## Durations are ticks
 
-Every duration in `ZeeWeaponPack` is in ticks, converted once at the top (`rpm_ticks`, `sec_ticks`), and the table is tuned for `ZeeWeaponPack.TICK_RATE`, 64. Every builder (`_gun`, `_melee`, `_thrown`) stamps `DotWeaponDef.authored_tick_rate = TICK_RATE` on its row, and dot-weapon's arsenal scales each count to the rate it runs at (see dot-weapon's [design](../../dot-weapon/docs/design.md#ticks-never-seconds)). A weapon therefore fires, reloads and deploys in the same wall-clock time at 128 Hz as at 64, and a grenade's fuse leaves the behaviour in the running rate's ticks, so a game flies it as given.
+Every duration in `ZeeWeaponPack` is in ticks, converted once at the top (`rpm_ticks`, `sec_ticks`), and the table is tuned for `ZeeWeaponPack.TICK_RATE`, 64. Every builder (`_gun`, `_melee`, `_thrown`) stamps `GSWeaponDef.authored_tick_rate = TICK_RATE` on its row, and dot-weapon's arsenal scales each count to the rate it runs at (see dot-weapon's [design](../../dot-weapon/docs/design.md#ticks-never-seconds)). A weapon therefore fires, reloads and deploys in the same wall-clock time at 128 Hz as at 64, and a grenade's fuse leaves the behaviour in the running rate's ticks, so a game flies it as given.
 
 Two things outside the arsenal read a duration, and both go through it: the rig's presentation (deploy, holster and reload fractions, the charge pull-back) uses `arsenal.ticks_for` and `charge_for`, and the bash, which the rig runs itself, scales its `bash_cooldown_ticks` through `ticks_for` too. Reading a raw field there draws a reload that ends halfway through its animation at 128 Hz.
 
@@ -36,11 +36,11 @@ The arsenal knows how far through a reload it is and keeps it private, correctly
 
 - **`switched` fires between the holster and the deploy**, not at the start of the holster. The holster half is noticed by watching `is_switching()` go true, before the arsenal runs; a rig that waited for `switched` draws the weapon at rest the whole way down.
 - **The previous command's buttons are simulation state and belong in the snapshot.** The bash, the reload and every semi-automatic weapon are edge-triggered against it. The arsenal is handed the previous command; the rig keeps one, so the rig saves it. Left out, a restored rig thinks the alt-fire was already down and refuses the next press, once.
-- **An idle tick builds no full context, even with a view and enabled spread rules.** `setup()` installs `_posture_now` as the arsenal's `idle_posture` (dot-weapon API 23), a motion-only context from `DotWeaponPlayerBridge.posture_for`, and the view's sprint flag is read from the same; eye, entity and direction are the cost and an idle tick needs none. `_rig_idle_posture` runs 900 ticks against a rig without the provider and compares outcomes, snapshots, spread and the drawn sprint.
+- **An idle tick builds no full context, even with a view and enabled spread rules.** `setup()` installs `_posture_now` as the arsenal's `idle_posture` (dot-weapon API 23), a motion-only context from `GSWeaponPlayerBridge.posture_for`, and the view's sprint flag is read from the same; eye, entity and direction are the cost and an idle tick needs none. `_rig_idle_posture` runs 900 ticks against a rig without the provider and compares outcomes, snapshots, spread and the drawn sprint.
 
 ## The rig needs its player on every role
 
-`player_ref` is resolved on a SERVER rig too, outside `_resolve_presentation()`'s `role == SERVER` early return. The view model and world model are drawing and belong there; the player does not, because it is where `DotWeaponPlayerBridge.context_for` takes the muzzle position and aim direction. A server rig with no player builds every context with `(0, 0, 0)` and `(0, 0, -1)`: every shot leaves the world origin pointing north, the weapon fires, the ammunition drops, the counter replicates, and nobody can be shot. A rig with no carrier (the range, a test) needs a context handed to it from the eye; the eye and not the camera, because the camera carries the punch.
+`player_ref` is resolved on a SERVER rig too, outside `_resolve_presentation()`'s `role == SERVER` early return. The view model and world model are drawing and belong there; the player does not, because it is where `GSWeaponPlayerBridge.context_for` takes the muzzle position and aim direction. A server rig with no player builds every context with `(0, 0, 0)` and `(0, 0, -1)`: every shot leaves the world origin pointing north, the weapon fires, the ammunition drops, the counter replicates, and nobody can be shot. A rig with no carrier (the range, a test) needs a context handed to it from the eye; the eye and not the camera, because the camera carries the punch.
 
 ## Replication is a counter, not an event
 
@@ -76,4 +76,4 @@ A pack is the game's tracked tree with `addons/` left out (dot-ci's `package.sh 
 
 ## Loadout cards
 
-`ZeeWeaponCards.card(def)` is what a loadout screen (dot-menu's `DotMenuLoadoutScreen`, on B) says about a weapon: a line (`BLURB`, the reasoning beside the weapon's row in `ZeeWeaponPack`, shortened), a kind from its slot, and bars. A gun's are damage per trigger pull (every pellet, or the splash when that is bigger), fire rate (a burst counts its rounds), range, accuracy and magazine (a belt for the minigun); melee is damage, swings a minute and reach; a grenade is blast, radius and how many are carried. Every number is read off the `DotWeaponDef` and its ballistics, so a retune is on the card the day it lands; a separate "card numbers" table would be the one that is wrong. Bars are scaled to fixed ceilings (`MAX_*`) rather than this pack's maxima, so a second pack with a bigger gun does not shrink every bar here. Content only: a dedicated server never calls it.
+`ZeeWeaponCards.card(def)` is what a loadout screen (dot-menu's `GSMenuLoadoutScreen`, on B) says about a weapon: a line (`BLURB`, the reasoning beside the weapon's row in `ZeeWeaponPack`, shortened), a kind from its slot, and bars. A gun's are damage per trigger pull (every pellet, or the splash when that is bigger), fire rate (a burst counts its rounds), range, accuracy and magazine (a belt for the minigun); melee is damage, swings a minute and reach; a grenade is blast, radius and how many are carried. Every number is read off the `GSWeaponDef` and its ballistics, so a retune is on the card the day it lands; a separate "card numbers" table would be the one that is wrong. Bars are scaled to fixed ceilings (`MAX_*`) rather than this pack's maxima, so a second pack with a bigger gun does not shrink every bar here. Content only: a dedicated server never calls it.

@@ -216,7 +216,7 @@ static func _warn_once(mesh: Mesh, message: String, fields: Dictionary) -> void:
 	var key := "%d|%s" % [mesh.get_instance_id(), message]
 	if not _warned.has(key):
 		_warned[key] = true
-		DotLog.warn(CHANNEL, message, fields)
+		GSLog.warn(CHANNEL, message, fields)
 
 
 static func _to_space(mi: Node, space: Node3D) -> Transform3D:
@@ -264,7 +264,7 @@ static func _cut_mesh(mesh: Mesh, to_space: Transform3D, planes: Array, cut: Dic
 				built[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3.ZERO, Vector3.ZERO, Vector3.ZERO])
 				if not _warned.has(mesh.get_instance_id()):
 					_warned[mesh.get_instance_id()] = true
-					DotLog.warn(CHANNEL, "sight cut removed a whole surface", {"mesh": mesh.resource_name, "surface": s})
+					GSLog.warn(CHANNEL, "sight cut removed a whole surface", {"mesh": mesh.resource_name, "surface": s})
 			result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, built)
 		if result.get_surface_count() > s:
 			result.surface_set_material(s, mesh.surface_get_material(s))

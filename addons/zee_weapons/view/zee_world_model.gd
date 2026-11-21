@@ -24,7 +24,7 @@ extends Node3D
 ## enough to tell a watcher that the gun went off.
 
 # No CHANNEL: a drawer. Its one failure, a model that will not load, is reported once by
-# ZeeModelCache and handed back as a DotResult; "nowhere to attach" is headless, not wrong.
+# ZeeModelCache and handed back as a GSResult; "nowhere to attach" is headless, not wrong.
 
 ## How much of a weapon's recoil a watcher sees.
 const Dress := preload("zee_attachment_dress.gd")
@@ -155,11 +155,11 @@ var _holder: Node3D = null
 var _weapon: Node3D = null
 var _attachments: Array[Node3D] = []
 var _dressed: Dictionary = {}
-var _fitting: DotWeaponFitting = null
+var _fitting: GSWeaponFitting = null
 var _fit_code: int = -1
 
 ## The catalogue [method on_fitted] decodes a replicated fitting against; the arsenal's own.
-var attachments: DotWeaponAttachments = null
+var attachments: GSWeaponAttachments = null
 ## Where this model gets its meshes, pose factors and documents; a pack with its own art assigns a [ZeeArtProvider] subclass.
 var art_provider: ZeeArtProvider = ZeeArtProvider.new()
 var _art: ZeeWeaponArt = null
@@ -246,7 +246,7 @@ func attach_to(character: Object) -> bool:
 # --- Weapons ----------------------------------------------------------------
 
 ## Draws [param art]'s weapon at the hand, replacing whatever was there.
-func equip(art: ZeeWeaponArt) -> DotResult:
+func equip(art: ZeeWeaponArt) -> GSResult:
 	_build()
 	_clear_models()
 
@@ -254,20 +254,20 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	if art == null:
 		_id = &""
-		return DotResult.fail(DotError.CODE_INVALID, "No art to equip.")
+		return GSResult.fail(GSError.CODE_INVALID, "No art to equip.")
 
 	_id = art.id
 	_holder.transform = _rest()
 	_support_local = Vector3.INF
 
 	if not art.has_model():
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	_weapon = art_provider.instantiate(art.model_path)
 
 	if _weapon == null:
-		return DotResult.fail(
-			DotError.CODE_IO, "No model for %s." % String(art.id), art.model_path
+		return GSResult.fail(
+			GSError.CODE_IO, "No model for %s." % String(art.id), art.model_path
 		)
 
 	_weapon.name = "Weapon"
@@ -281,11 +281,11 @@ func equip(art: ZeeWeaponArt) -> DotResult:
 
 	_apply_shadows()
 	_support_local = _support_point_for(art)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Draws [param fitting]'s attachments on the weapon in hand, and moves the muzzle to the suppressor's end.
-func set_fitting(fitting: DotWeaponFitting) -> void:
+func set_fitting(fitting: GSWeaponFitting) -> void:
 	_fitting = fitting.duplicate_fitting() if fitting != null else null
 	if _weapon == null or _art == null:
 		return
@@ -299,7 +299,7 @@ func on_fitted(code: int) -> void:
 		return
 	_fit_code = code
 	var base := art_provider.def_of(_id)
-	if base != null and attachments.code_bits(base) <= DotWeaponNetSync.FITTED_BITS:
+	if base != null and attachments.code_bits(base) <= GSWeaponNetSync.FITTED_BITS:
 		set_fitting(attachments.decode(base, code))
 
 
@@ -473,7 +473,7 @@ func reload_fraction() -> float:
 
 ## One cycle of the support hand: the weapon's whole reload, or one round of a reload by the round.
 func _cycle_seconds() -> float:
-	var def: DotWeaponDef = art_provider.def_of(_id) if _id != &"" else null
+	var def: GSWeaponDef = art_provider.def_of(_id) if _id != &"" else null
 	if def == null or def.reload_ticks <= 0:
 		return 1.5
 	var rate := float(def.authored_tick_rate) if def.authored_tick_rate > 0 else float(art_provider.tick_rate())

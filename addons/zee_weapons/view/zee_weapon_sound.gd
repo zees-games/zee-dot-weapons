@@ -19,7 +19,7 @@ extends RefCounted
 ## the synthesiser, so a game that gets audio for its rifle does not have to re-record the
 ## rest before it can use it.
 ##
-## [b]Deterministic.[/b] The grit is [method DotRandomStream.mix4] rather than [method
+## [b]Deterministic.[/b] The grit is [method GSRandomStream.mix4] rather than [method
 ## @GlobalScope.randf], so every machine bakes the same bytes, which is what lets the suite
 ## assert about a sound instead of listening to one.
 
@@ -270,7 +270,7 @@ static func set_stage_stream(id: StringName, stage: StringName, audio: AudioStre
 static func far_stream(sound_class: StringName) -> AudioStream:
 	if _overrides.has(sound_class):
 		return null
-	return DotWeaponSound.pick_far(sound_class, randi())
+	return GSWeaponSound.pick_far(sound_class, randi())
 
 
 ## The distant recording of [param id]'s report, or null (an override of the id, no such
@@ -287,11 +287,11 @@ static func far_for(id: StringName, kind: StringName) -> AudioStream:
 ## sniper must not sound like a sniper going off.
 static func class_for(id: StringName, kind: StringName) -> StringName:
 	match kind:
-		DotWeaponOutcome.KIND_SWING:
+		GSWeaponOutcome.KIND_SWING:
 			return SWING
-		DotWeaponOutcome.KIND_THROW:
+		GSWeaponOutcome.KIND_THROW:
 			return THROW
-		DotWeaponOutcome.KIND_BEAM:
+		GSWeaponOutcome.KIND_BEAM:
 			return BEAM
 
 	if _classes.has(id):
@@ -301,7 +301,7 @@ static func class_for(id: StringName, kind: StringName) -> StringName:
 	if provided != &"":
 		return provided
 
-	return LAUNCHER if kind == DotWeaponOutcome.KIND_SPAWN else RIFLE
+	return LAUNCHER if kind == GSWeaponOutcome.KIND_SPAWN else RIFLE
 
 
 ## The selector click for weapon [param id]: light for pistols, rifle for submachine guns and rifles, heavy for the rest.
@@ -333,11 +333,11 @@ static func reload_stream(id: StringName, stage: StringName) -> AudioStream:
 		return _overrides[own]
 	if _overrides.has(stage):
 		return _overrides[stage]
-	var real := DotWeaponSound.pick_reload(class_for(id, &""), &"out" if stage == RELOAD_OUT else &"in", randi())
+	var real := GSWeaponSound.pick_reload(class_for(id, &""), &"out" if stage == RELOAD_OUT else &"in", randi())
 	return real if real != null else stream(stage)
 
 
-## The dry-fire click of [param id]'s gun: its own, else its class's feel ([method DotWeaponSound.pick_feel]), else the generic one.
+## The dry-fire click of [param id]'s gun: its own, else its class's feel ([method GSWeaponSound.pick_feel]), else the generic one.
 static func dry_stream(id: StringName) -> AudioStream:
 	return _feel(id, DRY)
 
@@ -352,7 +352,7 @@ static func _feel(id: StringName, stage: StringName) -> AudioStream:
 	if _overrides.has(own):
 		return _overrides[own]
 	if id != &"" and not _overrides.has(stage):
-		var real := DotWeaponSound.pick_feel(class_for(id, &""), stage, randi())
+		var real := GSWeaponSound.pick_feel(class_for(id, &""), stage, randi())
 		if real != null:
 			return real
 	return stream(stage)
@@ -364,7 +364,7 @@ static func stream(sound_class: StringName) -> AudioStream:
 		return _overrides[sound_class]
 
 	# Recordings from dot-audio's stock when a game links it; null (and the bake) when not.
-	var real := DotWeaponSound.pick_class(sound_class, randi())
+	var real := GSWeaponSound.pick_class(sound_class, randi())
 	if real != null:
 		return real
 
@@ -429,8 +429,8 @@ static func bake(recipe: Dictionary, salt: int = 0) -> AudioStreamWAV:
 
 	for i in range(frames):
 		var t := float(i) / float(RATE)
-		var noise := DotRandomStream.unit_from(
-			DotRandomStream.mix4(i, salt, frames, 0x5EED)
+		var noise := GSRandomStream.unit_from(
+			GSRandomStream.mix4(i, salt, frames, 0x5EED)
 		) * 2.0 - 1.0
 
 		var sample := 0.0

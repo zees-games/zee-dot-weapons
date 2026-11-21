@@ -54,7 +54,7 @@ func _build() -> void:
 		var res := model.equip(art)
 
 		if not res.ok:
-			DotLog.warn(
+			GSLog.warn(
 				CHANNEL, "nothing to rack", {"id": String(art.id), "why": res.error.message}
 			)
 			continue

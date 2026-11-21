@@ -1,7 +1,7 @@
 class_name ZeeDefExport
 extends RefCounted
 
-## Writes the pack's weapons as Workshop files: one [DotWeaponDef] `.tres` per weapon and the
+## Writes the pack's weapons as Workshop files: one [GSWeaponDef] `.tres` per weapon and the
 ## `provides.json` that lists them (the contract is dot-cloud's docs/workshop.md).
 ##
 ## [b]The code table stays the source of truth.[/b] The `.tres` files are generated from
@@ -27,9 +27,9 @@ const CATEGORIES: Array[Dictionary] = [
 
 
 ## This pack's own weapons, built from code with no second pack mixed in.
-static func own_weapons() -> Array[DotWeaponDef]:
+static func own_weapons() -> Array[GSWeaponDef]:
 	var types := ZeeWeaponDamage.table()
-	var out: Array[DotWeaponDef] = []
+	var out: Array[GSWeaponDef] = []
 
 	for def in ZeeWeaponPack.weapons(types, false):
 		if ZeeWeaponIds.all().has(def.id):
@@ -47,7 +47,7 @@ static func category_for(slot: int) -> String:
 
 
 ## The `provides.json` document for [param defs].
-static func provides(defs: Array[DotWeaponDef]) -> Dictionary:
+static func provides(defs: Array[GSWeaponDef]) -> Dictionary:
 	var cats: Array = []
 	for c in CATEGORIES:
 		cats.append({"id": c["id"], "name": c["name"]})
@@ -76,14 +76,14 @@ static func provides(defs: Array[DotWeaponDef]) -> Dictionary:
 
 
 ## Writes everything under [param root] (a filesystem or `res://` directory). Returns a
-## [DotResult] whose value is the number of definitions written.
-static func export_to(root: String) -> DotResult:
+## [GSResult] whose value is the number of definitions written.
+static func export_to(root: String) -> GSResult:
 	var dir := root.path_join("weapons")
 	var made := DirAccess.make_dir_recursive_absolute(
 		ProjectSettings.globalize_path(dir)
 	)
 	if made != OK:
-		return DotResult.fail(DotError.CODE_IO, "Cannot create %s (error %d)." % [dir, made])
+		return GSResult.fail(GSError.CODE_IO, "Cannot create %s (error %d)." % [dir, made])
 
 	var defs := own_weapons()
 
@@ -91,7 +91,7 @@ static func export_to(root: String) -> DotResult:
 		var path := dir.path_join("%s.tres" % String(def.id))
 		var saved := ResourceSaver.save(def, path)
 		if saved != OK:
-			return DotResult.fail(DotError.CODE_IO, "Cannot save %s (error %d)." % [path, saved])
+			return GSResult.fail(GSError.CODE_IO, "Cannot save %s (error %d)." % [path, saved])
 
 	var cfg := write_cfg(root, ZeeWeaponPack.ADDON, "Zee Weapons", defs)
 	if not cfg.ok:
@@ -100,17 +100,17 @@ static func export_to(root: String) -> DotResult:
 	var json_path := root.path_join("provides.json")
 	var f := FileAccess.open(json_path, FileAccess.WRITE)
 	if f == null:
-		return DotResult.fail(DotError.CODE_IO, "Cannot write %s." % json_path)
+		return GSResult.fail(GSError.CODE_IO, "Cannot write %s." % json_path)
 
 	f.store_string(JSON.stringify(provides(defs), "\t", false) + "\n")
 	f.close()
-	return DotResult.success(defs.size())
+	return GSResult.success(defs.size())
 
 
 ## Writes `cfg/addons/<addon>/weapon/<id>.yml` for [param defs] under [param root] from the builders'
 ## numbers (never from a server's cfg), and copies the hand-written upgrade folders along when
 ## [param root] is not the project. A weapon that has a folder in the project's cfg keeps its folder form.
-static func write_cfg(root: String, addon: String, title: String, defs: Array[DotWeaponDef]) -> DotResult:
+static func write_cfg(root: String, addon: String, title: String, defs: Array[GSWeaponDef]) -> GSResult:
 	var rel := "cfg/addons/%s/weapon" % addon
 	var from := "res://".path_join(rel)
 	var to := root.path_join(rel)
@@ -122,8 +122,8 @@ static func write_cfg(root: String, addon: String, title: String, defs: Array[Do
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
 		var f := FileAccess.open(dir.path_join("%s.yml" % id), FileAccess.WRITE)
 		if f == null:
-			return DotResult.fail(DotError.CODE_IO, "Cannot write %s profile." % id)
-		f.store_string(DotWeaponProfiles.to_yaml(def, title))
+			return GSResult.fail(GSError.CODE_IO, "Cannot write %s profile." % id)
+		f.store_string(GSWeaponProfiles.to_yaml(def, title))
 		f.close()
 		if folder and to != from and DirAccess.dir_exists_absolute(from.path_join(id).path_join("upgrades")):
 			var ups := to.path_join(id).path_join("upgrades")
@@ -132,7 +132,7 @@ static func write_cfg(root: String, addon: String, title: String, defs: Array[Do
 				if u.get_extension() == "yml":
 					var o := FileAccess.open(ups.path_join(u), FileAccess.WRITE)
 					if o == null:
-						return DotResult.fail(DotError.CODE_IO, "Cannot write upgrade %s." % u)
+						return GSResult.fail(GSError.CODE_IO, "Cannot write upgrade %s." % u)
 					o.store_string(FileAccess.get_file_as_string(from.path_join(id).path_join("upgrades").path_join(u)))
 					o.close()
-	return DotResult.success(defs.size())
+	return GSResult.success(defs.size())

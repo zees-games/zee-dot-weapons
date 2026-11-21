@@ -29,27 +29,27 @@ static func load_provider(channel: String, dir: String, path: String, needs_defs
 	var script := load(path) as GDScript
 
 	if script == null or not script.can_instantiate():
-		DotLog.warn(channel, "a pack's provider does not load", {"pack": dir, "path": path})
+		GSLog.warn(channel, "a pack's provider does not load", {"pack": dir, "path": path})
 		return null
 
 	if needs_defs and not script.has_method(&"weapon_defs"):
-		DotLog.warn(channel, "a weapon pack has no weapon_defs", {"pack": dir})
+		GSLog.warn(channel, "a weapon pack has no weapon_defs", {"pack": dir})
 		return null
 
 	return script
 
 
 ## The defs of [param defs] a game keeps: not in [param excluded] and not in [param taken] (ids already in the catalogue).
-static func kept(defs: Array, excluded: Array, taken: Array = []) -> Array[DotWeaponDef]:
-	var out: Array[DotWeaponDef] = []
+static func kept(defs: Array, excluded: Array, taken: Array = []) -> Array[GSWeaponDef]:
+	var out: Array[GSWeaponDef] = []
 
 	for def: Variant in defs:
-		if def is DotWeaponDef and not excluded.has(String(def.id)) and not taken.has(def.id) and not taken.has(String(def.id)):
+		if def is GSWeaponDef and not excluded.has(String(def.id)) and not taken.has(def.id) and not taken.has(String(def.id)):
 			out.append(def)
 
 	return out
 
 
 ## A defs source that hands a provider's own `weapon_defs` through; a source Callable must be a static method, never a lambda.
-static func defs_of(types: Dictionary, provider: GDScript) -> Array[DotWeaponDef]:
+static func defs_of(types: Dictionary, provider: GDScript) -> Array[GSWeaponDef]:
 	return provider.call(&"weapon_defs", types)
