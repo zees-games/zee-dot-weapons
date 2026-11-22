@@ -4,7 +4,7 @@ Twenty-seven low-poly weapons for GameSpice games, in a bright toy-blaster style
 
 ### In GameSpice and Fatal Contact
 
-- GameSpice:** the pack is published to the Workshop as `gamemann/zee-gs-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
+- **GameSpice:** the pack is published to the Workshop as `gamemann/zee-gs-weapons`. Playlot needs it, and a server lists it in its pack overlay, so players get it with the game or the server and there is nothing to install. Its weapons appear in the spawn menu under Melee, Sidearms, Primary, Heavy and Thrown.
 - **Fatal Contact:** FC's own weapons are [fc-weapons](https://github.com/zees-games/fc-weapons). An FC server can add this pack to its overlay for extra weapons, and [zed-gs-weapons](https://github.com/zees-games/zed-gs-weapons) builds on it.
 - **Your own Godot game:** link or copy `addons/zee_weapons/` and `assets/` beside gs-weapon and use the code in [Using it](#using-it). Server owners retune any weapon in `cfg/addons/zee_weapons/weapon/<id>.yml`.
 
