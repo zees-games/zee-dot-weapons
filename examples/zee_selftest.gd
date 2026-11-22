@@ -641,7 +641,7 @@ func _red_dot() -> void:
 	add_child(next)
 	var next_dot := next.find_child(fit.RETICLE_NAME, true, false) as Node3D
 	fit.track(next, Vector3(0.004, -0.002, 0.0))
-	_check("the next gun's dot, renamed (%s), still tracks the eye" % next.name, next.name != fit.RED_GS_NAME and next.to_global(next_dot.position).is_equal_approx(Vector3(0.004, -0.002, -0.2)))
+	_check("the next gun's dot, renamed (%s), still tracks the eye" % next.name, next.name != fit.RED_DOT_NAME and next.to_global(next_dot.position).is_equal_approx(Vector3(0.004, -0.002, -0.2)))
 	next.queue_free()
 
 

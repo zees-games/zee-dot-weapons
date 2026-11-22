@@ -184,7 +184,7 @@ func _fit_sight(art: ZeeWeaponArt) -> void:
 	_sight_line = {}
 	var camera := get_parent() as Camera3D
 	var near := (camera.near if camera != null else 0.05) + NEAR_MARGIN
-	var dot := ads_rules.sight_gs_for(art.id) if ads_rules != null else float(ZeeAdsRules.SPECS["sight_dot"]["default"])
+	var dot := ads_rules.sight_dot_for(art.id) if ads_rules != null else float(ZeeAdsRules.SPECS["sight_dot"]["default"])
 	var fitted := SightFit.fit(art, _weapon, _holder, _dressed.get("line", {}), near, dot)
 	if not fitted.is_empty():
 		_sight_line = fitted.line

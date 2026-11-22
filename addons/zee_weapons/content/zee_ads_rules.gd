@@ -260,7 +260,7 @@ func hit_flinch_for(id: StringName) -> float:
 
 
 ## Degrees of the glowing dot on a model's own front post when aimed; 0 draws none.
-func sight_gs_for(id: StringName) -> float:
+func sight_dot_for(id: StringName) -> float:
 	return float(value_for(id, "sight_dot"))
 
 
