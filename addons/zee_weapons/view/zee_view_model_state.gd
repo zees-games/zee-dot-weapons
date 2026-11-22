@@ -137,8 +137,8 @@ const REFERENCE_DEPTH := GSViewLens.REFERENCE_DEPTH
 ## The most the hands are drawn closer than authored, in metres.
 const MAX_PULL_IN := GSViewLens.MAX_PULL_IN
 
-## Seconds to blend the sprint carry in or out (smoothstepped); 0.2 hopped 0.2 m in three frames at 15 fps.
-const SPRINT_SECONDS := 0.4
+## Seconds to blend the sprint carry in or out (smoothstepped); 0.2 hopped 0.2 m in three frames at 15 fps, and 0.4 still hopped 0.189 m (filmstrip view_pop, limit 0.15) at the sprint start; 0.55 measures 0.138 (0.5 would be about 0.151).
+const SPRINT_SECONDS := 0.55
 
 ## Whether sprinting changes the pose (a game's cvar to turn it off).
 var sprint_pose: bool = true
