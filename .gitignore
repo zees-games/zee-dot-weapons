@@ -39,3 +39,10 @@ Thumbs.db
 
 # Blender runs the art-src scripts and leaves bytecode beside them.
 __pycache__/
+
+# Sibling addons linked for local suites (absolute links must never be tracked; CI resolves them from addons.lock):
+/addons/godot-sqlite
+/addons/gs_bot
+/addons/gs_bot_record
+/addons/gs_sim
+/addons/gs_sql
