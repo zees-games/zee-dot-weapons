@@ -18,6 +18,8 @@
 /addons/gs_player_char
 /addons/gs_physics
 /addons/gs_audio
+/addons/gs_animation
+/addons/gs_sim
 
 # Exports
 build/

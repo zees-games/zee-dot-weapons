@@ -1,10 +1,7 @@
 extends Node3D
 
-## A studio render of each weapon for the README (tools/gen_readme.sh): a neutral backdrop, a three-light rig,
-## a 3/4 hero angle, rendered at twice the size with MSAA and scaled down, one PNG per weapon.
-## Pack-agnostic: what it draws comes from tools/readme.cfg ([shot] model_script + model_method, or a
-## model_glob such as "res://addons/<pack>/assets/{id}.glb"), the ids from weapons/*.tres unless --ids is given.
-## Not headless (a headless frame is black): run it through tools/readme_shot.sh on a GPU box.
+## A studio render of each weapon for the README (tools/gen_readme.sh): neutral backdrop, three-light rig, 3/4 angle, MSAA.
+## Models and ids come from tools/readme.cfg and weapons/*.tres (--ids narrows). Not headless (black frame): GPU box.
 ##   godot --path . res://tools/readme_shot.tscn -- --out /abs/dir [--ids a,b] [--width 1280] [--height 720]
 
 const CFG := "res://tools/readme.cfg"

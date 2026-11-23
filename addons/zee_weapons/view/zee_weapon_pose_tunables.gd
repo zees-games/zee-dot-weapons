@@ -46,20 +46,13 @@ var bob_lateral: float = 1.4
 ## Ground speed producing the full bob.
 var bob_reference: float = 6.0
 
-## Bob cycles per metre travelled.
-##
-## [b]Per metre, not per second.[/b] A bob driven by time keeps bobbing when the
-## player walks into a wall, and slides rather than steps when they slow down.
+## Bob cycles per metre travelled. [b]Per metre, not per second:[/b] a bob driven by time keeps
+## bobbing when the player walks into a wall, and slides rather than steps when they slow down.
 var bob_per_metre: float = 0.55
 
-## The most bob cycles a second, however fast the carrier moves: a cadence, not a speed.
-##
-## [b]Without it the bob became a buzz.[/b] Per metre alone, a carrier at 9 m/s (a fast
-## shooter's run) bobbed 10 footfalls a second, 1.1 cm up and down: a weapon vibrating
-## rather than carried, 2.3 mm of change in each frame's movement at 144 fps where a
-## walk's is a tenth of that (game-fatal-contact's `headless_feel`). A runner's legs speed up
-## to about three steps a second and then take longer strides, so the distance a cycle
-## covers grows past this rate instead. 1.5 cycles is three footfalls a second.
+## The most bob cycles a second, a cadence and not a speed. [b]Without it the bob became a buzz:[/b] at 9 m/s
+## per-metre alone gave 10 footfalls a second, a weapon vibrating (`headless_feel`). Legs top out near three
+## steps a second, then take longer strides; 1.5 cycles is three footfalls.
 var bob_max_rate: float = 1.5
 
 ## How quickly the bob amplitude follows speed, per second.
@@ -70,16 +63,9 @@ var bob_response: float = 7.0
 ## [b]Not the whole story, because the curve bends.[/b] See [member kick_knee].
 var kick_pitch: float = 4.0
 
-## How hard large recoil is compressed: climb is
-## [code]kick_pitch * r / (1 + r * kick_knee)[/code].
-##
-## [b]Compressed, and the range it replaced is why.[/b] The behaviours' recoil runs
-## from 0.12 (the minigun) to 4.0 (the sniper), and that range is right for what it
-## is for — a camera that climbs. Fed linearly into a view model, and multiplied by
-## the weapon's weight on top, it made one minigun shot move the gun 0.6 degrees and
-## one sniper shot 17 degrees and 13 cm: the automatics did not visibly fire and the
-## heavy weapons threw the gun half-way up the screen. Compressed, the same pack runs
-## from about one degree to about six, which is the range a hand can hold.
+## How hard large recoil is compressed: climb is [code]kick_pitch * r / (1 + r * kick_knee)[/code].
+## Recoil runs from 0.12 (minigun) to 4.0 (sniper); linearly it moved a sniper shot 17 degrees and 13 cm.
+## Compressed it runs from about one degree to about six, the range a hand can hold.
 var kick_knee: float = 0.45
 
 ## Degrees of sideways kick per degree of recoil yaw, compressed by the same curve.
@@ -112,17 +98,13 @@ var kick_rate_ref: float = 0.12
 ## The most that stiffening multiplies [member kick_response] by.
 var kick_rate_max: float = 1.8
 
-## [b]The spring is critically damped, and that is not a tunable any more.[/b] It was
-## 0.7, which overshoots: on a sniper the barrel dipped visibly under where it rested
-## after every shot, a wobble that reads as the model being loose in the hand rather
-## than as a weapon going off. Critical is also what makes [method _critical] exact.
+## [b]The spring is critically damped, and that is not a tunable any more.[/b] 0.7 overshoots: a sniper's
+## barrel dipped under its rest after every shot, a wobble that reads as a loose model. Critical is also
+## what makes [method _critical] exact.
 
-## The fraction of the weapon's climb the camera takes, for [method view_punch].
-##
-## Small, because the camera is not where the shot went: the simulation fires along
-## the command's angles and nothing here changes them. A punch that recovers inside a
-## fifth of a second reads as the weapon going off; a large one reads as the crosshair
-## lying about where the next shot lands.
+## The fraction of the weapon's climb the camera takes, for [method view_punch]. Small, because the camera
+## is not where the shot went: the simulation fires along the command's angles. A punch that recovers
+## inside a fifth of a second reads as a shot; a large one as the crosshair lying about where it lands.
 var camera_share: float = 0.3
 
 ## The draw, as keys from fully holstered (0) to in hand (1). See [method sample_keys].

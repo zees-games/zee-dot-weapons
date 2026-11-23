@@ -66,10 +66,8 @@ static func fit(art: ZeeWeaponArt, weapon: Node3D, holder: Node3D, dressed_line:
 
 
 ## [method IronSight.measure], cached by everything it reads: each mesh under [param weapon], its transform into
-## [param holder] and the material on each surface, plus [param forward]. The measure walks every triangle in GDScript
-## (27 ms for the SMG on a desktop) and every equip builds the same meshes in the same place, so only the first pays it;
-## a different mesh, placement or material is a different key, so the answer is always the one a fresh walk gives.
-## A copy is returned: a caller may change it.
+## [param holder], the material on each surface and [param forward]. The measure walks every triangle in GDScript
+## (27 ms for the SMG), so only the first equip pays it; any change of key gives a fresh walk. A copy is returned.
 static func measure(weapon: Node, holder: Node3D, forward: Vector3) -> Dictionary:
 	var key := _measure_key(weapon, holder, forward)
 	if not _measured.has(key):
