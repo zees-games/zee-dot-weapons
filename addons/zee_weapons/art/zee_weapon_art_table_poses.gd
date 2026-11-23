@@ -65,9 +65,9 @@ static func sprint_view(pose: StringName) -> Array:
 		POSE_THROWN:
 			return [Vector3(0.0, -0.14, 0.02), Vector3(-10.0, 0.0, 10.0)]
 		POSE_HEAVY:
-			return [Vector3(-0.1, -0.18, 0.17), Vector3(-18.0, 36.0, -28.0)]
+			return [Vector3(-0.1, -0.10, 0.10), Vector3(-18.0, 36.0, -28.0)]
 		_:
-			return [Vector3(-0.1, -0.16, 0.16), Vector3(-14.0, 38.0, -24.0)]
+			return [Vector3(-0.1, -0.08, 0.09), Vector3(-14.0, 38.0, -24.0)]
 
 
 ## The sprint stride in first person, [bob multiplier, roll degrees]: a long gun swings heavier than a pistol or a blade.
