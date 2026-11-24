@@ -4,6 +4,9 @@ extends RefCounted
 ## The key tables, by path: naming [ZeeWeaponPose] here would make the two scripts a cycle the parser cannot resolve.
 const _Keys := preload("zee_weapon_pose_keys.gd")
 
+## gs-weapon's look-over state and default keys, by path (no class_name).
+const Inspect := preload("res://addons/gs_weapon/view/gs_weapon_inspect.gd")
+
 ## How the springs behave. One resource for the whole rig; a weapon scales it by its own
 ## [member ZeeWeaponArt.weight] rather than carrying its own copy.
 ## Split out of [ZeeWeaponPose] for file size; the pose reaches it as [code]ZeeWeaponPose.Tunables[/code].
@@ -122,6 +125,15 @@ var sprint_rotation := Vector3.ZERO
 ## While sprinting: the bob's amplitude multiplier and a roll in degrees that rocks with each stride, both at full blend.
 var sprint_bob: float = 1.0
 var sprint_bob_roll: float = 0.0
+
+## Looking the weapon over, as keys over [member inspect_seconds] (gs-weapon's `GSWeaponInspect.KEYS` unless a weapon sets its own). Empty is none.
+var inspect_keys: Array = Inspect.KEYS
+
+## How long an inspect takes, in seconds.
+var inspect_seconds: float = 2.6
+
+## Seconds a cancelled inspect takes to ease back into the hand.
+var inspect_cancel_seconds: float = 0.2
 
 ## A melee swing, as keys over its own time (see [member swing_seconds]). Empty is none.
 var swing_keys: Array = _Keys.SWING_KEYS

@@ -431,6 +431,22 @@ func on_swing() -> void:
 	_pose.swing()
 
 
+## Looks the weapon over (the inspect keys). False when it is not resting in the hand; a shot, an aim, a reload,
+## a sprint, a swing or a switch ends it.
+func inspect() -> bool:
+	return _pose.inspect()
+
+
+## Eases a playing inspect back into the hand.
+func cancel_inspect() -> void:
+	_pose.cancel_inspect()
+
+
+## How far through an inspect, 0 to 1; 1 when none is playing.
+func inspect_fraction() -> float:
+	return _pose.inspect_fraction()
+
+
 ## How far recoil should turn the camera this frame, in degrees: x pitch up, y yaw.
 ## This node cannot apply it: controllers write the camera's angles from scratch each frame, so the game adds it
 ## where it writes the camera (`GSFpsView.external_angles`).

@@ -97,6 +97,32 @@ func _pose_swing() -> void:
 		and swinger.offset().origin.distance_to(at_rest.origin) < 0.001)
 
 
+func _pose_inspect() -> void:
+	# An inspect moves the weapon, ends at rest, and is cut by a shot or refused while the hand is busy.
+	var looker := ZeeWeaponPose.make(1.0)
+	var at_rest := looker.offset()
+	var started := looker.inspect()
+	var refused_twice := not looker.inspect()
+	var peak := 0.0
+	for i in range(60 * 3):
+		looker.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+		peak = maxf(peak, rad_to_deg(looker.offset().basis.get_rotation_quaternion().angle_to(at_rest.basis.get_rotation_quaternion())))
+	_check("an inspect turns the weapon (%.0f deg), then is back at rest" % peak,
+		started and refused_twice and peak > 20.0 and looker.inspect_fraction() >= 1.0
+		and looker.offset().origin.distance_to(at_rest.origin) < 0.001)
+	looker.inspect()
+	for i in range(30):
+		looker.advance(1.0 / 60.0, Vector2.ZERO, 0.0, true)
+	var playing := looker.inspecting()
+	looker.punch(Vector2(1.0, 0.0))
+	_check("a shot cuts an inspect", playing and not looker.inspecting())
+	var busy := ZeeWeaponPose.make(1.0)
+	busy.set_aim(1.0)
+	var sprinter := ZeeWeaponPose.make(1.0)
+	sprinter.set_sprint(1.0)
+	_check("an inspect is refused while aiming or sprinting", not busy.inspect() and not sprinter.inspect())
+
+
 func _pose_cadence() -> void:
 	# [b]A run bobs at a cadence, a walk per metre.[/b] Per metre alone, a 9 m/s run bobbed
 	# ten footfalls a second and the weapon buzzed (game-fatal-contact's `headless_feel`, 2.3 mm of
@@ -248,6 +274,7 @@ func _pose_keys() -> void:
 	_check("the draw's keys are at rest in hand",
 		ZeeWeaponPose.sample_keys(ZeeWeaponPose.DRAW_KEYS, 1.0)[0].length() < 0.0001)
 	_pose_swing()
+	_pose_inspect()
 
 	var odd: Vector3 = ZeeWeaponPose.sample_keys([[0.0, Vector3.ONE, Vector3.ONE]], NAN)[0]
 	_check("malformed keys sample as rest", odd == Vector3.ZERO)

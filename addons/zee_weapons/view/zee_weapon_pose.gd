@@ -58,6 +58,9 @@ static func sample_keys(keys: Array, t: float) -> Array:
 
 var tunables := Tunables.new()
 
+## The look-over in progress (gs-weapon's shared state); its keys and timing are the tunables'.
+var _inspect := Tunables.Inspect.new()
+
 ## Multiplies sway and bob, and slows the recoil spring. A heavy weapon moves more and
 ## settles more slowly.
 ##
@@ -207,6 +210,37 @@ func advance(
 	_advance_landing(step)
 	if _action < 1.0:
 		_action = minf(1.0, _action + step / maxf(0.05, _action_seconds))
+	_inspect.seconds = tunables.inspect_seconds
+	_inspect.cancel_seconds = tunables.inspect_cancel_seconds
+	_inspect.advance(step, _at_rest_for_inspect())
+
+
+## Looks the weapon over (the inspect keys). False when it is not resting in the hand: mid-switch,
+## reloading, aiming, sprinting, swinging, or already inspecting.
+func inspect() -> bool:
+	if tunables.inspect_keys.size() < 2:
+		return false
+	_inspect.seconds = tunables.inspect_seconds
+	return _inspect.start(_at_rest_for_inspect())
+
+
+## Eases a playing inspect back into the hand. A shot, an aim, a reload, a sprint, a swing or a switch call it.
+func cancel_inspect() -> void:
+	_inspect.cancel()
+
+
+## Whether an inspect is playing (not cancelled and not finished).
+func inspecting() -> bool:
+	return _inspect.playing()
+
+
+## How far through the inspect, 0 to 1; 1 when none is playing or easing out.
+func inspect_fraction() -> float:
+	return _inspect.fraction()
+
+
+func _at_rest_for_inspect() -> bool:
+	return _deploy >= 1.0 and _reload <= 0.0 and _aim <= 0.0 and _sprint <= 0.05 and _action >= 1.0
 
 
 ## Adds recoil. [param recoil] is the pitch and yaw in degrees a behaviour asked for.
@@ -229,6 +263,7 @@ func punch(recoil: Vector2, signed_yaw: bool = false) -> void:
 	if not is_finite(recoil.x) or not is_finite(recoil.y):
 		return
 
+	cancel_inspect()
 	var scale := maxf(0.0, feel)
 	var climb := kick_degrees(recoil.x) * scale
 	var side := _compress(absf(recoil.y)) * tunables.kick_yaw * scale
@@ -304,6 +339,8 @@ func land(impact: float) -> void:
 ## Where the switch is: 1 fully in hand, 0 fully out of frame.
 func set_deploy(fraction: float) -> void:
 	_deploy = clampf(fraction, 0.0, 1.0) if is_finite(fraction) else _deploy
+	if _deploy < 1.0:
+		cancel_inspect()
 
 
 ## How far into aiming, 0 to 1. The view model eases it; the pose only applies it.
@@ -353,6 +390,7 @@ func reset() -> void:
 	_landing = 0.0
 	_aim = 0.0
 	_action = 1.0
+	_inspect.reset()
 
 
 # --- The result -------------------------------------------------------------
@@ -407,12 +445,17 @@ func offset() -> Transform3D:
 		var cut := sample_keys(tunables.reload_keys, _release_at)
 		reloaded = [(cut[0] as Vector3) * _release, (cut[1] as Vector3) * _release]
 	var swung := sample_keys(_action_keys, _action) if _action < 1.0 else [Vector3.ZERO, Vector3.ZERO]
-	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) \
+	var looked := [Vector3.ZERO, Vector3.ZERO]
+	if _inspect.fraction() < 1.0 and tunables.inspect_keys.size() >= 2:
+		var shown := _inspect.shown()
+		var seen := sample_keys(tunables.inspect_keys, _inspect.fraction())
+		looked = [(seen[0] as Vector3) * shown, (seen[1] as Vector3) * shown]
+	var acted: Vector3 = (drawn[1] as Vector3) + (reloaded[1] as Vector3) + (swung[1] as Vector3) + (looked[1] as Vector3) \
 		+ tunables.sprint_rotation * _sprint
 	# A strafe right drags the muzzle left (positive yaw, about the grip).
 	acted.y += _strafe * tunables.strafe_yaw * carried * _strafe_rule(&"tilt", rules.strafe_tilt) * _strafe_rule(&"yaw", rules.strafe_yaw) * strafe_hold
 	acted.z += sin(_bob_distance * tunables.bob_per_metre * PI) * tunables.sprint_bob_roll * _sprint * _bob_amount
-	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3) \
+	position += (drawn[0] as Vector3) + (reloaded[0] as Vector3) + (swung[0] as Vector3) + (looked[0] as Vector3) \
 		+ tunables.sprint_offset * _sprint
 	var hand := Basis.from_euler(Vector3(
 		deg_to_rad(acted.x), deg_to_rad(acted.y), deg_to_rad(acted.z)
@@ -623,6 +666,7 @@ func describe() -> Dictionary:
 		"charge": _charge,
 		"landing": _landing,
 		"action": _action,
+		"inspect": _inspect.fraction(),
 		"weight": weight,
 		"feel": feel,
 	}
