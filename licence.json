@@ -10,7 +10,12 @@
  },
  {
   "paths": [
-   "assets/blaster-kit"
+   "assets/blaster-kit",
+   "assets/attachments",
+   "assets/ammo/bullet-foam.glb",
+   "assets/ammo/bullet-foam-thick.glb",
+   "assets/ammo/bullet-foam-tip.glb",
+   "assets/ammo/bullet-foam-tip-thick.glb"
   ],
   "licence": "CC0-1.0",
   "author": "Kenney",
