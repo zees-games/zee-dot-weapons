@@ -19,7 +19,7 @@ on:
 
 jobs:
     validate:
-        uses: gamespice-platform/ci/.github/workflows/validate.yml@4933912ce233344fd6121ce23cbc80c94183dcb1  # v1 plus the source-lock restore; back to @v1 once the tag moves
+        uses: gamespice-platform/ci/.github/workflows/validate.yml@1f427d257382fc5e1944ceaf54c3074cc13f7731  # v1.4.2 plus the source-lock restore (validate/resolve-deps/package); back to @v1 once the tag moves
         with:
             efficiency: true
             hygiene: true
