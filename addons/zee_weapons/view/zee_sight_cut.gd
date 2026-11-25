@@ -248,7 +248,9 @@ static func _cut_mesh(mesh: Mesh, to_space: Transform3D, planes: Array, cut: Dic
 			or arrays[Mesh.ARRAY_BONES] != null or mesh.get_blend_shape_count() > 0
 		var cut_surface: Array = [] if plain else _cut_surface(arrays, to_space, planes)
 		if cut_surface.is_empty():
-			result.add_surface_from_arrays(mesh.surface_get_primitive_type(s), arrays)
+			# The surface's own flags go with its arrays: a float custom channel (or 8 bone weights) re-added without them
+			# is read as the default format and refused ("Invalid array format for surface").
+			result.add_surface_from_arrays(mesh.surface_get_primitive_type(s), arrays, [], {}, _surface_flags(mesh.surface_get_format(s)))
 		else:
 			removed += int(cut_surface[1])
 			for p: Vector3 in cut_surface[2]:
@@ -271,6 +273,15 @@ static func _cut_mesh(mesh: Mesh, to_space: Transform3D, planes: Array, cut: Dic
 	if removed == 0:
 		return {"mesh": mesh, "removed": 0, "near": 0.0, "far": 0.0}
 	return {"mesh": result, "removed": removed, "near": near, "far": far}
+
+
+## The flags of a surface format [param format] that [method ArrayMesh.add_surface_from_arrays] takes back: each custom
+## channel's format, 8 bone weights and compression (the per-array bits it works out from the arrays itself).
+static func _surface_flags(format: int) -> int:
+	var keep := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS | Mesh.ARRAY_FLAG_COMPRESS_ATTRIBUTES | Mesh.ARRAY_FLAG_USE_2D_VERTICES
+	for shift in [Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT, Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT, Mesh.ARRAY_FORMAT_CUSTOM2_SHIFT, Mesh.ARRAY_FORMAT_CUSTOM3_SHIFT]:
+		keep |= Mesh.ARRAY_FORMAT_CUSTOM_MASK << int(shift)
+	return format & keep
 
 
 ## `[arrays, removed, points]` for one surface (non-indexed, every attribute interpolated), or `[]` when nothing is inside.
