@@ -154,7 +154,7 @@ So gs-weapon `view/gs_weapon_iron_sight.gd` measures and builds one per gun at e
 
 | | |
 | --- | --- |
-| Blasters | 18, from 0.42 m (`blaster-b`) to 1.39 m (`blaster-e`) |
+| Blasters | removed: the Kenney toy guns are no longer shipped (the real-world guns replaced them) |
 | Blaster axis | every one points **-Z**; the side render with a +Z marker is the proof, not the rack |
 | Sniper | art-src/guns' kitbash, 1.30 m long and centred (z -0.65 to +0.65) like every model, so the hold needs no slide: the trigger is at about z +0.13, as on the marksman. Receiver z +0.19 to -0.07, top at y 0.055; bolt knob (0.047, 0.028, -0.016). It carries its own scope. The Blaster Kit's `blaster-e`, which it replaced, had its origin at the muzzle and was slid 0.8 m forward |
 | Hip holds | rifle 0.19 / -0.23 / -0.40 at 0.60, yaw 10 roll 30; heavy 0.19 / -0.24 / -0.42 at 0.55, yaw 10 roll 26; pistol 0.15 / -0.19 / -0.36 at 0.55, yaw 8 roll 22; melee 0.22 / -0.25 / -0.40 at 1.2, (70, 80, 40); aim fallback 0 / -0.135 / -0.46 straight (the measured sight hold replaces it) |

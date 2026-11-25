@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bn3rcx1i5va7c"
-path="res://.godot/imported/blaster-k.glb-f25e0d5acac51db27e8dcf3ddfdeb63c.scn"
+uid="uid://7n84oemym001"
+path="res://.godot/imported/crate-medium.glb-0eaf6cd5cc5624953df691302127a51a.scn"
 
 [deps]
 
-source_file="res://assets/blaster-kit/blaster-k.glb"
-dest_files=["res://.godot/imported/blaster-k.glb-f25e0d5acac51db27e8dcf3ddfdeb63c.scn"]
+source_file="res://assets/range/crate-medium.glb"
+dest_files=["res://.godot/imported/crate-medium.glb-0eaf6cd5cc5624953df691302127a51a.scn"]
 
 [params]
 

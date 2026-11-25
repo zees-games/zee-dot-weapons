@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://33pfokpt2kyt"
-path="res://.godot/imported/crate-small.glb-b6631b7cf138558ada5d6ca8900071f5.scn"
+uid="uid://dmokcpnvihw6i"
+path="res://.godot/imported/silencer-larger.glb-c0e41933de3255897df929b5d6d231b2.scn"
 
 [deps]
 
-source_file="res://assets/blaster-kit/crate-small.glb"
-dest_files=["res://.godot/imported/crate-small.glb-b6631b7cf138558ada5d6ca8900071f5.scn"]
+source_file="res://assets/attachments/silencer-larger.glb"
+dest_files=["res://.godot/imported/silencer-larger.glb-c0e41933de3255897df929b5d6d231b2.scn"]
 
 [params]
 

@@ -8,7 +8,7 @@
 #   donor(...)  loose parts picked out of a Quaternius gun (src/quaternius_donors.blend), by
 #               where they sit in the donor's side view: u along its length (0 the butt,
 #               1 the muzzle) and v up its height (0 the bottom), both from the donor's bounds.
-#   kenney(...) a Kenney Blaster Kit part, from this repo's assets/blaster-kit/.
+#   kenney(...) a Kenney attachment (CC0), from this repo's assets/attachments/.
 #   box/cyl/... our own, beveled.
 # Every part is given one of our palette's materials: nothing keeps the source's colours.
 import bmesh
@@ -20,7 +20,7 @@ from mathutils import Matrix, Vector
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 DONORS = os.path.join(HERE, "src", "quaternius_donors.blend")
-KENNEY = os.path.join(REPO, "assets", "blaster-kit")
+KENNEY = os.path.join(REPO, "assets", "attachments")
 
 # --- Palette ----------------------------------------------------------------
 #

@@ -509,14 +509,13 @@ static func _tube(art: ZeeWeaponArt) -> ZeeWeaponArt:
 
 ## A real-world gun from [constant GUNS]: placed like a blaster (the same poses, the same -Z muzzle).
 static func _gun(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
-	var art := _blaster(id, "", pose)
-	art.model_path = GUNS + model + ".glb"
+	var art := _posed(id, GUNS + model + ".glb", pose)
 	art.ejects = true
 	return art
 
 
-static func _blaster(id: StringName, model: String, pose: StringName) -> ZeeWeaponArt:
-	var art := ZeeWeaponArt.make(id, BLASTERS + model + ".glb")
+static func _posed(id: StringName, path: String, pose: StringName) -> ZeeWeaponArt:
+	var art := ZeeWeaponArt.make(id, path)
 	art.model_forward = Vector3.FORWARD
 	art.pose = pose
 	art.view_offset = pose_offset(pose)

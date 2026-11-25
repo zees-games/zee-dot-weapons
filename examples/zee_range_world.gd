@@ -2,7 +2,7 @@ extends Node
 
 ## The range's floor, walls and targets, split out of zee_range.gd for file size.
 
-const TARGETS := "res://assets/blaster-kit/"
+const TARGETS := "res://assets/range/"
 
 
 ## In code so the example reads top to bottom; a scene file cannot.

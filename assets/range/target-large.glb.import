@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b4t41nxrj05av"
-path="res://.godot/imported/grenade-b.glb-3af7ca929dc8a7769f4190b08ee6f18c.scn"
+uid="uid://60sqf75xx63g"
+path="res://.godot/imported/target-large.glb-accc73554bf8d8f41741fb9d5bd9b5e6.scn"
 
 [deps]
 
-source_file="res://assets/blaster-kit/grenade-b.glb"
-dest_files=["res://.godot/imported/grenade-b.glb-3af7ca929dc8a7769f4190b08ee6f18c.scn"]
+source_file="res://assets/range/target-large.glb"
+dest_files=["res://.godot/imported/target-large.glb-accc73554bf8d8f41741fb9d5bd9b5e6.scn"]
 
 [params]
 

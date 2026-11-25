@@ -731,7 +731,7 @@ The twelve real-world guns are rebuilt by `blender -b --python art-src/guns/buil
 | Asset | Author / source | Licence |
 | --- | --- | --- |
 | Twelve real-world guns (parts) | [Quaternius](https://quaternius.com), [Ultimate Low Poly Guns Pack](https://opengameart.org/content/low-poly-guns-pack) | CC0 1.0 |
-| Toy and sci-fi weapons, two gun parts | [Kenney](https://kenney.nl/assets/blaster-kit), Blaster Kit | CC0 1.0 |
+| Gun attachments (clips, scopes, silencers), foam darts, range targets | [Kenney](https://kenney.nl/assets/blaster-kit), Blaster Kit | CC0 1.0 |
 | Melee weapons, ammunition | [Kenney](https://kenney.nl), Weapon Pack and Survival Kit | CC0 1.0 |
 | Blocky arms (third style) | [Kenney](https://kenney.nl), Blocky Characters | CC0 1.0 |
 | First-person arm (`assets/arms/arms-rigged.glb`) | para, [fps arms (rigged only)](https://opengameart.org/content/fps-arms-rigged-only), reshaped by `art-src/arms/build_arms.py`; changes in `assets/arms/LICENSE-fps-arms-para.txt` | CC0 1.0 |

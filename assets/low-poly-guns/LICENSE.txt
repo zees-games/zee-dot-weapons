@@ -20,7 +20,7 @@ Quaternius, "Ultimate Low Poly Guns Pack" (July 2019)
 
 Kenney, "Blaster Kit" 2.1
   https://kenney.nl/assets/blaster-kit
-  Licence: CC0 1.0 (assets/blaster-kit/LICENSE-kenney-blaster-kit.txt)
+  Licence: CC0 1.0 (assets/attachments/LICENSE-kenney-blaster-kit.txt)
   Parts taken: silencer-larger (the smg's integral suppressor, stretched), scope-small (the launcher's sight).
 
 Modelled in the scripts (CC0 with the rest of this folder's art): every handguard, barrel, brake, flash hider, compensator, suppressor band, rail, sight, ring, sunshade, the revolver's under-lug and vent rib, the shotgun's heat shield, tube and pump, the launcher's tube, venturi and grips' housing, and the magazines of the machine pistol and the battle rifle.

@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dt65xmdbjx2gu"
-path="res://.godot/imported/bullet-foam.glb-0e46d47c169953704526a977218a7a78.scn"
+uid="uid://wynf0mj0s7dr"
+path="res://.godot/imported/scope-large-a.glb-bf04f396c3412de2201ded995bf4e6af.scn"
 
 [deps]
 
-source_file="res://assets/blaster-kit/bullet-foam.glb"
-dest_files=["res://.godot/imported/bullet-foam.glb-0e46d47c169953704526a977218a7a78.scn"]
+source_file="res://assets/attachments/scope-large-a.glb"
+dest_files=["res://.godot/imported/scope-large-a.glb-bf04f396c3412de2201ded995bf4e6af.scn"]
 
 [params]
 
