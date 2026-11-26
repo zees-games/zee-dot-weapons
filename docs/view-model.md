@@ -190,3 +190,7 @@ Sprinting lowers the weapon on its own layer, separate from the aim layer: `ZeeV
 ## The third-person gun stops at walls
 
 `ZeeWorldModel` probes from 0.45 m behind the hand along the person's flattened forward, the gun's drawn length plus a margin, every 50 ms, and eases the holder back (up to `wall_max_pull`, 0.3 m) and tilts the muzzle up (`wall_tilt_per_m` degrees per metre pulled). `ZeeWorldModel.wall_pull(hit, length)` is the pure distance-to-offset rule the selftest checks. `wall_response = false` turns it off; `wall_mask` picks what counts as a wall. `tools/world_sheet.sh`-style check: `world_sheet.tscn -- --weapon rifle --wall 0.3` draws a translucent slab that far in front of the figure.
+
+## Baked clips for Nightly's viewer
+
+`ZeeAnimBake` drives a real `ZeeViewModel` through fire or swing, reload, reload_empty, draw, holster, inspect, ads and idle at 60 fps and reads every drawn part's transform back (weapon, magazine, hands, view punch, reload props with their shapes). `tools/export_anim_tracks.gd -- out_dir [ids]` writes one `<asset>.anim.json` per model, named like Nightly's GLB; `-` as out_dir prints `SIDECAR<TAB>asset<TAB>json` lines for offloaded runs. A separate magazine model gets its own sidecar. There is no bolt track: the bolt is virtual (it moves the hands, not a node). Models with no motion (ammo, arms, attachments, range) have no sidecar. The suite's `_anim_bake` section checks every weapon.
