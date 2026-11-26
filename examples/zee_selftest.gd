@@ -20,7 +20,7 @@ extends "res://examples/selftest/sections_anim.gd"
 ## Every check this suite makes. A script error aborts the section it is in, and a section
 ## that aborts after its last `_check` still counts as finished; only a total can see the
 ## checks that never ran. It was counted and compared with nothing until 2026-09-24.
-const CHECKS := 907
+const CHECKS := 909
 const IronSight := preload("res://addons/gs_weapon/view/gs_weapon_iron_sight.gd")
 const SightFit := preload("res://addons/zee_weapons/view/zee_sight_fit.gd")
 
@@ -79,6 +79,7 @@ func _ready() -> void:
 	_hip_converge_any_forward()
 	_thrown_span_sized()
 	_anim_bake()
+	_anim_attachments()
 
 	var passed := _report()
 

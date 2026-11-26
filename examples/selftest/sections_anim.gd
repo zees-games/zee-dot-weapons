@@ -71,6 +71,44 @@ func _anim_bake() -> void:
 	_end()
 
 
+func _anim_attachments() -> void:
+	_begin("attachments bake attach and detach clips, the rest of the models stay static")
+	var bad: Array[String] = []
+	var models := ZeeAttachmentBake.models()
+	for path in models:
+		var side := ZeeAttachmentBake.bake(path)
+		if side.is_empty() or side.asset != ZeeAnimBake.asset_of(path):
+			bad.append("%s: no sidecar" % path)
+			continue
+		var by_name := {}
+		for c: Dictionary in side.clips:
+			by_name[c.name] = c
+			var t: Dictionary = c.tracks[0]
+			if (t.values as Array).size() != 7 * int(c.frames) or not (t.values as Array).all(func(v: float) -> bool: return is_finite(v)):
+				bad.append("%s/%s: bad track" % [path, c.name])
+			elif not _anim_moves(c, "weapon"):
+				bad.append("%s/%s: moves nothing" % [path, c.name])
+		if not by_name.has("attach") or not by_name.has("detach"):
+			bad.append("%s: clips %s" % [path, by_name.keys()])
+		else:
+			# attach ends seated at the origin, detach starts there
+			var a: Array = by_name.attach.tracks[0].values
+			var d: Array = by_name.detach.tracks[0].values
+			var seated := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+			for i in 7:
+				if absf(a[a.size() - 7 + i] - seated[i]) > 1e-4 or absf(d[i] - seated[i]) > 1e-4:
+					bad.append("%s: not seated at the clip's end" % path)
+					break
+	_check("all 7 attachment models bake (%d; bad: %s)" % [models.size(), bad], models.size() == 7 and bad.is_empty())
+	var statics := ZeeAttachmentBake.static_models()
+	var mounted: Array[String] = []
+	for path in statics:
+		if not ZeeAttachmentBake.bake(path).is_empty():
+			mounted.append(path)
+	_check("the %d ammo, arms and range models stay static, no sidecar (bad: %s)" % [statics.size(), mounted], statics.size() >= 10 and mounted.is_empty())
+	_end()
+
+
 ## Whether [param clip]'s track [param target] changes between frames.
 func _anim_moves(clip: Dictionary, target: String) -> bool:
 	for t: Dictionary in clip.tracks:

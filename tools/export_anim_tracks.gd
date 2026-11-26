@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Bakes each weapon's procedural first-person animations into <asset>.anim.json (see ZeeAnimBake): the sidecar Nightly's asset viewer plays next to the model.
-## Args: out_dir (or - to print one SIDECAR<TAB>asset<TAB>json line each to stdout) [id,id ...]; the file is named like Nightly's GLB for the model (pack__path__with__underscores) so the viewer finds it beside the asset. No ids bakes every weapon, plus each separate magazine model.
+## Args: out_dir (or - to print one SIDECAR<TAB>asset<TAB>json line each to stdout) [id,id ...]; the file is named like Nightly's GLB for the model (pack__path__with__underscores) so the viewer finds it beside the asset. No ids bakes every weapon, plus each separate magazine model and each attachment (attach, detach); the ammo, arms and range models are static and get no sidecar.
 ## godot --headless --path . --script res://tools/export_anim_tracks.gd -- out_dir rifle,pistol
 
 
@@ -32,6 +32,12 @@ func _initialize() -> void:
 				continue
 			done[part.asset] = true
 			failed += _write(out, part)
+	# the attachments mount rather than shoot: attach and detach clips, baked when no weapon ids narrow the run (or an attachment's file stem is named)
+	for model in ZeeAttachmentBake.models():
+		var stem := model.get_file().get_basename()
+		if not wanted.is_empty() and not stem in wanted:
+			continue
+		failed += _write(out, ZeeAttachmentBake.bake(model))
 	quit(1 if failed > 0 else 0)
 
 

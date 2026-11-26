@@ -33,6 +33,25 @@ static func asset_of(model_path: String) -> String:
 	return PACK_PREFIX + model_path.trim_prefix("res://").get_basename().replace("/", "__")
 
 
+## The lens block every sidecar carries.
+static func lens() -> Dictionary:
+	return {
+		"viewmodel_fov_h": VIEWMODEL_FOV_H, "world_fov_h": WORLD_FOV_H,
+		"reference_fov": GSViewLens.REFERENCE_FOV, "reference_depth": GSViewLens.REFERENCE_DEPTH,
+		"max_pull_in": GSViewLens.MAX_PULL_IN, "depth_comp": 1.0,
+	}
+
+
+## A transform as 7 floats: position, then the rotation quaternion.
+static func t7(t: Transform3D) -> Array:
+	return _t7(t)
+
+
+## [param values] rounded to the sidecar's precision.
+static func rounded(values: Array) -> Array:
+	return _round(values)
+
+
 ## The clips a weapon has, in play order, each {name, loop}.
 static func clip_names(art: ZeeWeaponArt, def: GSWeaponDef) -> Array[Dictionary]:
 	var out: Array[Dictionary] = [{"name": "fire", "loop": false}]
@@ -83,11 +102,7 @@ func bake(host: Node, id: StringName) -> Dictionary:
 		"model": art.model_path.get_file().get_basename(),
 		"asset": asset_of(art.model_path),
 		"fps": FPS,
-		"lens": {
-			"viewmodel_fov_h": VIEWMODEL_FOV_H, "world_fov_h": WORLD_FOV_H,
-			"reference_fov": GSViewLens.REFERENCE_FOV, "reference_depth": GSViewLens.REFERENCE_DEPTH,
-			"max_pull_in": GSViewLens.MAX_PULL_IN, "depth_comp": 1.0,
-		},
+		"lens": lens(),
 		"third_person": _third_person(art),
 		"nodes": {"bolt": "", "magazine": String(art.hide_during_reload) if art.hide_during_reload != &"" else ("magazine" if art.magazine_path != "" else "")},
 		"clips": clips,
