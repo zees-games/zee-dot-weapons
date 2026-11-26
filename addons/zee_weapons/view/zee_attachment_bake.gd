@@ -5,6 +5,7 @@ extends RefCounted
 ## really mounts on, a silencer turning as it screws on. The clips are authored here (a mount slide is not procedural view motion); the model rests at the origin, which is where it sits on a gun.
 ## Models with nothing to mount (ammo, the arms, the range's props) stay static and get no sidecar: [method static_models].
 
+const Sidecar := preload("res://addons/gs_weapon/view/gs_weapon_anim_sidecar.gd")
 const ATTACH_SECONDS := 0.45
 const HOLD_SECONDS := 0.15
 ## Metres the part starts from the mount, and the turns a silencer makes.
@@ -52,31 +53,20 @@ static func bake(model_path: String) -> Dictionary:
 	if kind == &"":
 		return {}
 	var stem := model_path.get_file().get_basename()
-	var move := int(ATTACH_SECONDS * ZeeAnimBake.FPS)
-	var hold := int(HOLD_SECONDS * ZeeAnimBake.FPS)
+	var move := int(ATTACH_SECONDS * Sidecar.FPS)
+	var hold := int(HOLD_SECONDS * Sidecar.FPS)
 	var attach: Array = []
 	var detach: Array = []
 	for i in move + hold:
 		# attach: travel for [move] frames, then hold seated; detach: hold seated, then travel back
-		attach.append_array(ZeeAnimBake.t7(_pose(kind, 1.0 - _ease(float(i) / float(move)))))
-		detach.append_array(ZeeAnimBake.t7(_pose(kind, _ease(float(maxi(i - hold, 0)) / float(move)))))
-	return {
-		"version": ZeeAnimBake.VERSION,
-		"weapon": stem,
-		"model": stem,
-		"asset": ZeeAnimBake.asset_of(model_path),
-		"fps": ZeeAnimBake.FPS,
-		"lens": ZeeAnimBake.lens(),
-		"nodes": {"bolt": "", "magazine": ""},
-		"clips": [_clip("attach", attach, move + hold), _clip("detach", detach, move + hold)],
-	}
+		attach.append_array(Sidecar.t7(_pose(kind, 1.0 - _ease(float(i) / float(move)))))
+		detach.append_array(Sidecar.t7(_pose(kind, _ease(float(maxi(i - hold, 0)) / float(move)))))
+	var clips: Array = [_clip("attach", attach, move + hold), _clip("detach", detach, move + hold)]
+	return Sidecar.sidecar(stem, stem, ZeeAnimBake.asset_of(model_path), ZeeAnimBake.lens(), "", "", clips)
 
 
 static func _clip(clip_name: String, values: Array, frames: int) -> Dictionary:
-	return {
-		"name": clip_name, "length": snappedf(float(frames) / float(ZeeAnimBake.FPS), 0.001), "frames": frames, "loop": false,
-		"tracks": [{"target": "weapon", "path": "transform", "values": ZeeAnimBake.rounded(values)}],
-	}
+	return Sidecar.clip(clip_name, false, frames, [Sidecar.track("weapon", "transform", values)])
 
 
 ## The part's transform when it is [param away] from the mount (1 = clear, 0 = seated).

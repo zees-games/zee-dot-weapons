@@ -6,10 +6,10 @@ extends RefCounted
 ## Space: the view model's own (no hands lens, hands_fov 0), metres, -Z forward; the viewer applies the lens itself.
 ## The sidecar format is Nightly's version 1 (see the pack's docs/testing.md). The magazine's own model gets a sidecar of its own: [method split].
 
-const FPS := 60
-const STEP := 1.0 / float(FPS)
-const VERSION := 1
-const PACK_PREFIX := "zee-gs-weapons__"
+const Sidecar := preload("res://addons/gs_weapon/view/gs_weapon_anim_sidecar.gd")
+const FPS := Sidecar.FPS
+const STEP := Sidecar.STEP
+const PACK := "zee-gs-weapons"
 ## The menu's viewmodel_fov default and field_of_view default, horizontal degrees on 4:3.
 const VIEWMODEL_FOV_H := 54.0
 const WORLD_FOV_H := 90.0
@@ -20,8 +20,8 @@ const SWAY_DEGREES := 3.0
 const SWAY_SECONDS := 4.0
 
 var _view: ZeeViewModel = null
-var _tracks: Dictionary = {}
-var _frames := 0
+## The shared recorder: tracks and frame count of the clip being baked.
+var _rec := Sidecar.new()
 ## The magazine model's transform in view space, one transform per frame (7 floats), while a clip is recorded.
 var _mag_view: Array = []
 ## The reload parts built in code (ammo box, casing, cell ...) the clip drew: index -> {part, shapes}; their tracks are prop.<index>, .scale and .visible.
@@ -30,26 +30,12 @@ var _props: Dictionary = {}
 
 ## Nightly's asset name for a model path: the pack, then the path under res:// with "/" as "__".
 static func asset_of(model_path: String) -> String:
-	return PACK_PREFIX + model_path.trim_prefix("res://").get_basename().replace("/", "__")
+	return Sidecar.asset_of(PACK, model_path)
 
 
 ## The lens block every sidecar carries.
 static func lens() -> Dictionary:
-	return {
-		"viewmodel_fov_h": VIEWMODEL_FOV_H, "world_fov_h": WORLD_FOV_H,
-		"reference_fov": GSViewLens.REFERENCE_FOV, "reference_depth": GSViewLens.REFERENCE_DEPTH,
-		"max_pull_in": GSViewLens.MAX_PULL_IN, "depth_comp": 1.0,
-	}
-
-
-## A transform as 7 floats: position, then the rotation quaternion.
-static func t7(t: Transform3D) -> Array:
-	return _t7(t)
-
-
-## [param values] rounded to the sidecar's precision.
-static func rounded(values: Array) -> Array:
-	return _round(values)
+	return Sidecar.lens(VIEWMODEL_FOV_H, WORLD_FOV_H)
 
 
 ## The clips a weapon has, in play order, each {name, loop}.
@@ -91,22 +77,13 @@ func bake(host: Node, id: StringName) -> Dictionary:
 		if not _mag_view.is_empty() and art.magazine_path != "":
 			mag_clips.append({
 				"name": baked.name, "length": baked.length, "frames": baked.frames, "loop": baked.loop,
-				"tracks": [{"target": "weapon", "path": "transform", "values": _round(_mag_view)}],
+				"tracks": [Sidecar.track("weapon", "transform", _mag_view)],
 			})
 		clips.append(baked)
 		host.remove_child(view)
 		view.free()
-	var out := {
-		"version": VERSION,
-		"weapon": String(id),
-		"model": art.model_path.get_file().get_basename(),
-		"asset": asset_of(art.model_path),
-		"fps": FPS,
-		"lens": lens(),
-		"third_person": _third_person(art),
-		"nodes": {"bolt": "", "magazine": String(art.hide_during_reload) if art.hide_during_reload != &"" else ("magazine" if art.magazine_path != "" else "")},
-		"clips": clips,
-	}
+	var magazine_node := String(art.hide_during_reload) if art.hide_during_reload != &"" else ("magazine" if art.magazine_path != "" else "")
+	var out := Sidecar.sidecar(String(id), art.model_path.get_file().get_basename(), asset_of(art.model_path), lens(), "", magazine_node, clips, {"third_person": _third_person(art)})
 	if not mag_clips.is_empty():
 		out["magazine_clips"] = mag_clips
 		out["magazine_asset"] = asset_of(art.magazine_path)
@@ -121,7 +98,7 @@ static func split(sidecar: Dictionary) -> Array[Dictionary]:
 	var mag := {}
 	if weapon.has("magazine_clips"):
 		mag = {
-			"version": VERSION, "weapon": "%s_magazine" % sidecar.weapon, "model": sidecar.magazine_model, "asset": sidecar.magazine_asset,
+			"version": Sidecar.VERSION, "weapon": "%s_magazine" % sidecar.weapon, "model": sidecar.magazine_model, "asset": sidecar.magazine_asset,
 			"fps": FPS, "lens": sidecar.lens, "nodes": {"bolt": "", "magazine": ""}, "clips": sidecar.magazine_clips,
 		}
 	for k in ["magazine_clips", "magazine_asset", "magazine_model"]:
@@ -130,10 +107,9 @@ static func split(sidecar: Dictionary) -> Array[Dictionary]:
 
 
 func _clip(name: String, loop: bool, art: ZeeWeaponArt, def: GSWeaponDef) -> Dictionary:
-	_tracks = {}
+	_rec.begin()
 	_props = {}
 	_mag_view = []
-	_frames = 0
 	_view.on_reload(0.0)
 	_view.on_deploy(1.0)
 	for _i in SETTLE:
@@ -153,19 +129,7 @@ func _clip(name: String, loop: bool, art: ZeeWeaponArt, def: GSWeaponDef) -> Dic
 			_ads()
 		"idle":
 			_idle()
-	var tracks: Array = []
-	for key: String in _tracks:
-		var t: Dictionary = _tracks[key]
-		# a part the game frees mid-clip (a casing, an ammo box) stops reporting: hold its last set, hidden
-		var width: int = {"transform": 7, "position": 3, "visible": 1}[t.path]
-		var vals: Array = t.values
-		while vals.size() < width * _frames:
-			if t.path == "visible":
-				vals.append(0.0)
-			else:
-				vals.append_array(vals.slice(vals.size() - width))
-		tracks.append({"target": key, "path": t.path, "values": _round(vals)})
-	return {"name": name, "length": snappedf(float(_frames) / float(FPS), 0.001), "frames": _frames, "loop": loop, "tracks": tracks}
+	return _rec.finish(name, loop)
 
 
 func _fire(seconds: float, art: ZeeWeaponArt, def: GSWeaponDef) -> void:
@@ -250,15 +214,15 @@ func _snap() -> void:
 	var parent := _view.get_parent() as Node3D
 	var to_view := parent.global_transform.affine_inverse() if parent != null else Transform3D.IDENTITY
 	var to_weapon := weapon.global_transform.affine_inverse()
-	_put("weapon", "transform", _t7(to_view * weapon.global_transform))
+	_rec.put("weapon", "transform", Sidecar.t7(to_view * weapon.global_transform))
 	# The separate magazine model when the gun has one, else the gun's own magazine node.
 	var sep: Node3D = _view.get(&"_magazine")
 	var mag: Node3D = sep if sep != null else _view._own_magazine()
 	if mag != null:
-		_put("magazine", "transform", _t7(to_weapon * mag.global_transform))
-		_put("magazine.visible", "visible", [1.0 if mag.is_visible_in_tree() else 0.0])
+		_rec.put("magazine", "transform", Sidecar.t7(to_weapon * mag.global_transform))
+		_rec.put("magazine.visible", "visible", [1.0 if mag.is_visible_in_tree() else 0.0])
 		if sep != null:
-			_mag_view.append_array(_t7(to_view * sep.global_transform))
+			_mag_view.append_array(Sidecar.t7(to_view * sep.global_transform))
 	var props: Node3D = _view._props
 	if props != null:
 		for k: Variant in props._nodes:
@@ -266,40 +230,19 @@ func _snap() -> void:
 			if not _props.has(k):
 				_props[k] = {"part": String(n.get_meta(&"part", &"")), "shapes": _shapes(n)}
 			var at := to_view * n.global_transform
-			_put("prop.%d" % k, "transform", _t7(at.orthonormalized()))
-			_put("prop.%d.scale" % k, "position", [at.basis.get_scale().x, at.basis.get_scale().y, at.basis.get_scale().z])
-			_put("prop.%d.visible" % k, "visible", [1.0 if n.is_visible_in_tree() else 0.0], [0.0])
+			_rec.put("prop.%d" % k, "transform", Sidecar.t7(at.orthonormalized()))
+			_rec.put("prop.%d.scale" % k, "position", [at.basis.get_scale().x, at.basis.get_scale().y, at.basis.get_scale().z])
+			_rec.put("prop.%d.visible" % k, "visible", [1.0 if n.is_visible_in_tree() else 0.0], [0.0])
 	var arms: ZeeViewArms = _view._arms
 	if arms != null and not arms.last_hands.is_empty():
 		var to_arms: Transform3D = to_view * arms.global_transform
 		for k: String in ["right", "left", "right_shoulder", "left_shoulder"]:
 			if arms.last_hands.has(k):
 				var p: Vector3 = to_arms * (arms.last_hands[k] as Vector3)
-				_put("hand.%s" % k, "position", [p.x, p.y, p.z])
+				_rec.put("hand.%s" % k, "position", [p.x, p.y, p.z])
 	var punch := _view.view_punch()
-	_put("view_punch", "position", [punch.x, punch.y, 0.0])
-	_frames += 1
-
-
-func _put(key: String, path: String, values: Array, before: Array = []) -> void:
-	if not _tracks.has(key):
-		var back: Array = []
-		for _i in _frames:
-			back.append_array(before if not before.is_empty() else values)
-		_tracks[key] = {"path": path, "values": back}
-	(_tracks[key].values as Array).append_array(values)
-
-
-static func _t7(t: Transform3D) -> Array:
-	var q := t.basis.orthonormalized().get_rotation_quaternion()
-	return [t.origin.x, t.origin.y, t.origin.z, q.x, q.y, q.z, q.w]
-
-
-static func _round(values: Array) -> Array:
-	var out: Array = []
-	for v: float in values:
-		out.append(snappedf(v, 0.00001))
-	return out
+	_rec.put("view_punch", "position", [punch.x, punch.y, 0.0])
+	_rec.frame_done()
 
 
 ## Where the weapon sits in the hand mount, as ZeeWorldModel's holder places it (the art's world transform, its basis scaled by the pose's share of the hand scale): 12 floats, basis columns then origin.
