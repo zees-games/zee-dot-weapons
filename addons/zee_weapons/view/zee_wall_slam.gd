@@ -96,14 +96,15 @@ static func probe_from(space: PhysicsDirectSpaceState3D, eye: Transform3D, reach
 	var best := INF
 	var best_normal := Vector3.ZERO
 	for dir: Vector3 in [muzzle_dir, forward]:
-		var query := PhysicsRayQueryParameters3D.create(from, from + dir * (reach + margin), mask, exclude.duplicate())
+		var query := PhysicsRayQueryParameters3D.create(from, from + dir * (reach + margin), mask, exclude)  # create() copies the list
 		query.collide_with_areas = false
+		var skips := 0
 		for _hop in range(8):
 			var found := space.intersect_ray(query)
 			if found.is_empty():
 				break
 			if ignore_characters and found["collider"] is CharacterBody3D:
-				query.exclude.append(found["rid"])
+				skips = skip_body(query, exclude, skips, found["rid"])
 				continue
 			var n: Vector3 = found["normal"]
 			var floor_like := n.y > 0.7 and pitch_down < floor_look
@@ -131,15 +132,16 @@ static func probe_from(space: PhysicsDirectSpaceState3D, eye: Transform3D, reach
 		var sides: Dictionary = out["sides"]
 		for key: String in offsets:
 			var dir: Vector3 = (muzzle_dir * reach + (offsets[key] as Vector3) * spread).normalized()
-			var q := PhysicsRayQueryParameters3D.create(from, from + dir * (reach + margin), mask, exclude.duplicate())
+			var q := PhysicsRayQueryParameters3D.create(from, from + dir * (reach + margin), mask, exclude)
 			q.collide_with_areas = false
 			var d := INF
+			var skips := 0
 			for _hop in range(8):
 				var f := space.intersect_ray(q)
 				if f.is_empty():
 					break
 				if ignore_characters and f["collider"] is CharacterBody3D:
-					q.exclude.append(f["rid"])
+					skips = skip_body(q, exclude, skips, f["rid"])
 					continue
 				var fn: Vector3 = f["normal"]
 				if (fn.y > 0.7 and pitch_down < floor_look) or (fn.y < -0.7 and -pitch_down < floor_look):
@@ -152,36 +154,67 @@ static func probe_from(space: PhysicsDirectSpaceState3D, eye: Transform3D, reach
 	return out
 
 
+## The exclude list a probe grows as it steps past characters. A query's `exclude` getter returns a copy, so
+## `query.exclude.append(rid)` changes nothing: the list is grown here and assigned back (the setter copies it).
+static var _skipped: Array[RID] = []
+
+
+## Adds [param rid] to [param query]'s exclude list, which started as [param base]; [param skips] is how many bodies
+## this query has skipped so far (0 restarts the list from [param base]). Returns the new count. [param query] is a
+## [PhysicsRayQueryParameters3D] or a [PhysicsShapeQueryParameters3D].
+static func skip_body(query: RefCounted, base: Array[RID], skips: int, rid: RID) -> int:
+	if skips == 0:
+		_skipped.assign(base)
+	_skipped.append(rid)
+	if query is PhysicsRayQueryParameters3D:
+		(query as PhysicsRayQueryParameters3D).exclude = _skipped
+	else:
+		(query as PhysicsShapeQueryParameters3D).exclude = _skipped
+	return skips + 1
+
+
+static var _sweep_sphere: SphereShape3D
+static var _sweep_q: PhysicsShapeQueryParameters3D
+static var _sweep_probe: PhysicsShapeQueryParameters3D
+
+
 ## A sphere of [param radius] swept from [param from] along [param dir]: `{distance, normal}` to the surface it stops against
 ## (INF and zero for none). The gun has thickness, so a wall its tip would miss by a hair still catches its body.
 static func _sweep(space: PhysicsDirectSpaceState3D, from: Vector3, dir: Vector3, length: float, radius: float, mask: int,
 		exclude: Array[RID], ignore_characters: bool) -> Dictionary:
 	var out := {"distance": INF, "normal": Vector3.ZERO}
-	var sphere := SphereShape3D.new()
-	sphere.radius = radius
-	var q := PhysicsShapeQueryParameters3D.new()
-	q.shape = sphere
+	# One shape and two queries for every call: a new SphereShape3D is a physics server shape made and freed per frame.
+	if _sweep_q == null:
+		_sweep_sphere = SphereShape3D.new()
+		_sweep_q = PhysicsShapeQueryParameters3D.new()
+		_sweep_q.shape = _sweep_sphere
+		_sweep_q.collide_with_areas = false
+		_sweep_probe = PhysicsShapeQueryParameters3D.new()
+		_sweep_probe.shape = _sweep_sphere
+		_sweep_probe.collide_with_areas = false
+	if _sweep_sphere.radius != radius:
+		_sweep_sphere.radius = radius
+	var q := _sweep_q
 	q.transform = Transform3D(Basis.IDENTITY, from)
 	q.motion = dir * maxf(length - radius, 0.0)
 	q.collision_mask = mask
-	q.collide_with_areas = false
-	q.exclude = exclude.duplicate()
+	q.exclude = exclude  # the setter copies it into the query
+	var probe_q := _sweep_probe
+	probe_q.collision_mask = mask
+	probe_q.exclude = exclude
+	var skips := 0
 	for _hop in range(4):
 		var fractions := space.cast_motion(q)
 		if fractions.size() < 2 or fractions[0] >= 1.0:
 			return out
 		var at := from + q.motion * fractions[1]
-		var probe_q := PhysicsShapeQueryParameters3D.new()
-		probe_q.shape = sphere
 		probe_q.transform = Transform3D(Basis.IDENTITY, at)
-		probe_q.collision_mask = mask
-		probe_q.collide_with_areas = false
-		probe_q.exclude = q.exclude
 		var rest := space.get_rest_info(probe_q)
 		if ignore_characters and not rest.is_empty():
 			var body := instance_from_id(int(rest.get("collider_id", 0)))
 			if body is CharacterBody3D:
-				q.exclude.append(rest["rid"])
+				skips = skip_body(q, exclude, skips, rest["rid"])
+				probe_q.exclude = _skipped
 				continue
 		out["distance"] = (q.motion * fractions[0]).length() + radius
 		if not rest.is_empty():
